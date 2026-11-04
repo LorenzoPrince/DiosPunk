@@ -82,7 +82,17 @@ Una entrada por decisión; nunca se borran (si cambian: `Superseded by ADR-XXX`)
 - **Estado:** Aceptada · **Fecha:** 2026-11-04
 - **Decisión:** módulos desacoplados vía eventos (C# events / SO channels), una `.asmdef` por módulo, lógica pura (juicio, combo, vida, Modo Punk) sin dependencias de `MonoBehaviour` para testearla en EditMode.
 
-<!-- Añadir ADR-006+ debajo -->
+### ADR-006 — Conversión de timestamps de input a tiempo DSP
+- **Estado:** Aceptada · **Fecha:** 2026-11-04
+- **Contexto:** `dspTime` avanza a saltos (por buffer de audio); `InputAction.CallbackContext.time` está en la línea de tiempo de `Time.realtimeSinceStartup`.
+- **Decisión:** `SongClock` estima `offset = dspTime − realtime` conservando su máximo reciente (el `dspTime` observado solo puede estar retrasado), con decaimiento de 0.5 ms/s y resync si diverge > 100 ms. `SongTime = realtime + offset − songStartDsp`; los inputs se convierten con el mismo offset y se les resta la calibración de latencia.
+- **Consecuencias:** `Time.realtimeSinceStartupAsDouble` se usa **solo** como puente de dominios (nunca `Time.time` ni `deltaTime`). Las notas se mueven con `SongTime` (sin calibración); el juicio y los Miss usan `JudgementTime = SongTime − latencia`.
+
+### ADR-007 — Juicio M02: Perfect ±30 / Good ±70 / Miss
+- **Estado:** Aceptada · **Fecha:** 2026-11-04 · **Reemplaza** la propuesta de ±40/±80/±120 y el juicio "Great" (Q-C).
+- **Decisión:** `HitWindows.Judge(deltaMs)` (lógica pura). Input > 70 ms tarde = no juzga (la nota pasa a Miss al cruzar la ventana). Input temprano entre 70 y 120 ms (`earlyMissMs`) = Miss que consume la nota; más temprano se ignora (sin penalizar taps fantasma).
+
+<!-- Añadir ADR-008+ debajo -->
 
 ---
 
@@ -128,10 +138,10 @@ Assets/
 | Módulo | Responsabilidad | Estado |
 |---|---|---|
 | Core / Bootstrap | Servicios, eventos, flujo de escenas | ⬜ |
-| SongClock / Audio | Reloj `dspTime`, offset, calibración de latencia | ⬜ |
-| Chart / Notas | `SongData`, `NoteData`, spawner, pooling, 4 lanes | ⬜ |
-| Input | Acciones D-F-J-K / flechas, timestamp | ⬜ |
-| Judgement | Ventanas Hit/Miss, precisión, combo, vida | ⬜ |
+| SongClock / Audio (M01) | Reloj `dspTime`, offset, calibración de latencia | 🟨 Prototipo escrito, sin probar |
+| Chart / Notas (M01) | `SongData`, `NoteData`, spawner, pooling, 4 lanes | 🟨 Prototipo escrito, sin probar |
+| Input (M02) | Acciones D-F-J-K / flechas, timestamp | 🟨 Prototipo escrito, sin probar |
+| Judgement (M02) | Ventanas Perfect/Good/Miss (combo y vida pendientes) | 🟨 Ventanas listas; combo/vida ⬜ |
 | Debuffs | Scheduler 25 s/5 s, efecto visual + chart | ⬜ |
 | Modo Punk | Barra dual, escudo, ventana ampliada, efecto | ⬜ |
 | Narrativa | Diálogos SO, respuestas cortas | ⬜ |
@@ -151,6 +161,7 @@ Formato: `YYYY-MM-DD · [módulo] · descripción · archivos`
 - 2026-11-04 · [Docs] · Creación de la bitácora · `Assets/Docs/TECHNICAL_LOG.md`
 - 2026-11-04 · [Docs] · Versión definitiva con GDD, stack y ADR-001..005 · `Assets/Docs/TECHNICAL_LOG.md`
 - 2026-11-04 · [Docs] · Resueltas Q-A, Q-C, Q-E, Q-G; Q-B, Q-D, Q-F con valores provisionales · `Assets/Docs/TECHNICAL_LOG.md`
+- 2026-11-04 · [Rhythm] · Prototipo vertical M01+M02 en `Assets/_Project/Scripts/Rhythm/`: `DiosPunk.Rhythm.asmdef`, `NoteData`, `HitWindows`/`HitType`, `SongData`, `SongClock`, `RhythmInputReader`, `NoteView`, `RhythmTrackController`, `RhythmDebugHUD`. Sin compilar/probar en Unity al momento de escribir.
 - 2026-11-04 · [Git] · Reglas LFS (audio/texturas) y normalización de YAML de Unity · `.gitattributes`
 
 ---
@@ -161,7 +172,7 @@ Formato: `YYYY-MM-DD · [módulo] · descripción · archivos`
 |---|---|---|
 | Q-A | Notas "injustas" del debuff | **Resuelta:** patrones densos definidos a mano por canción en `SongData` |
 | Q-B | Modo Punk: umbrales, tasas de carga, duración, ampliación de ventana | Abierta → se implementa con **valores provisionales** en un SO de config (ajustables en testeo) |
-| Q-C | Juicio | **Resuelta:** Perfect/Great/Good/Miss; ventanas de partida ±40/±80/±120 ms en SO de config. Puntaje/precisión: fórmula provisional (a documentar al implementar) |
+| Q-C | Juicio | **Resuelta (actualizada, ver ADR-007):** Perfect ±30 / Good ±70 / Miss. Puntaje/precisión: pendiente |
 | Q-D | Vida: máximo, daño por fallo, recuperación | Abierta → provisional en SO de config (100 HP, −10 por Miss, +1 por acierto) |
 | Q-E | Notas hold | **Resuelta:** solo notas simples en MVP; hold queda para ampliación |
 | Q-F | Guardado | Abierta → provisional: JSON en `persistentDataPath` (nivel desbloqueado, mejores resultados, ajustes) |
