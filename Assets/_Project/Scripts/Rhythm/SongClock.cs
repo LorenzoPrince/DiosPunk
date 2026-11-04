@@ -19,6 +19,9 @@ namespace DiosPunk.Rhythm
         private const double OffsetDecayPerSecond = 0.0005;
         private const double OffsetResyncThreshold = 0.1;
 
+        // Al reanudar, el audio se reprograma con este adelanto; SongTime se mantiene congelado hasta alcanzarlo.
+        private const double ResumeDelaySeconds = 0.15;
+
         [SerializeField] private AudioSource _audioSource;
 
         [Tooltip("Segundos entre pedir Play y el primer sample del audio (lead-in para ver caer las primeras notas).")]
@@ -32,6 +35,10 @@ namespace DiosPunk.Rhythm
         private double _lastRealtime;
         private bool _offsetInitialized;
         private bool _isPlaying;
+        private bool _isPaused;
+        private double _pausedSongTime;
+        private bool _hasFloor;
+        private double _floor;
 
         /// <summary>Segundos desde el primer sample del audio (negativo durante el lead-in). Se refresca en Update.</summary>
         public double SongTime { get; private set; }
@@ -40,6 +47,7 @@ namespace DiosPunk.Rhythm
         public double JudgementTime { get; private set; }
 
         public bool IsPlaying => _isPlaying;
+        public bool IsPaused => _isPaused;
 
         public float LatencyOffsetMs
         {
@@ -63,6 +71,8 @@ namespace DiosPunk.Rhythm
         {
             _audioSource.Stop();
 
+            _isPaused = false;
+            _hasFloor = false;
             _offsetInitialized = false;
             SampleOffset(Time.realtimeSinceStartupAsDouble);
 
@@ -71,6 +81,7 @@ namespace DiosPunk.Rhythm
             if (clip != null)
             {
                 _audioSource.clip = clip;
+                _audioSource.timeSamples = 0;
                 _audioSource.PlayScheduled(_songStartDsp);
             }
 
@@ -81,7 +92,55 @@ namespace DiosPunk.Rhythm
         public void Stop()
         {
             _isPlaying = false;
+            _isPaused = false;
             _audioSource.Stop();
+        }
+
+        /// <summary>Congela SongTime y detiene el audio.</summary>
+        public void Pause()
+        {
+            if (!_isPlaying || _isPaused) return;
+
+            RefreshTimes(Time.realtimeSinceStartupAsDouble);
+            _pausedSongTime = SongTime;
+            _isPaused = true;
+            _audioSource.Stop();
+        }
+
+        /// <summary>Reprograma el audio desde la posición congelada y continúa sin saltos de SongTime.</summary>
+        public void Resume()
+        {
+            if (!_isPaused) return;
+
+            double realtimeNow = Time.realtimeSinceStartupAsDouble;
+            _offsetInitialized = false;
+            SampleOffset(realtimeNow);
+
+            double dspNow = AudioSettings.dspTime;
+            _songStartDsp = dspNow + ResumeDelaySeconds - _pausedSongTime;
+
+            AudioClip clip = _audioSource.clip;
+            if (clip != null)
+            {
+                if (_pausedSongTime >= 0.0)
+                {
+                    if (_pausedSongTime < clip.length)
+                    {
+                        _audioSource.timeSamples = Mathf.Clamp((int)(_pausedSongTime * clip.frequency), 0, clip.samples - 1);
+                        _audioSource.PlayScheduled(dspNow + ResumeDelaySeconds);
+                    }
+                }
+                else
+                {
+                    _audioSource.timeSamples = 0;
+                    _audioSource.PlayScheduled(_songStartDsp);
+                }
+            }
+
+            _floor = _pausedSongTime;
+            _hasFloor = true;
+            _isPaused = false;
+            RefreshTimes(realtimeNow);
         }
 
         /// <summary>
@@ -93,17 +152,34 @@ namespace DiosPunk.Rhythm
             return inputRealtime + _dspMinusRealtime - _songStartDsp - _latencyOffsetMs * 0.001;
         }
 
+        /// <summary>
+        /// Inversa exacta de InputRealtimeToSongTime: el timestamp de input que, tras la conversión,
+        /// resulta en judgedSongTime. Lo usa el bot de depuración para emitir deltas exactos.
+        /// </summary>
+        public double SongTimeToInputRealtime(double judgedSongTime)
+        {
+            return judgedSongTime + _latencyOffsetMs * 0.001 + _songStartDsp - _dspMinusRealtime;
+        }
+
         private void Update()
         {
-            if (!_isPlaying) return;
+            if (!_isPlaying || _isPaused) return;
             RefreshTimes(Time.realtimeSinceStartupAsDouble);
         }
 
         private void RefreshTimes(double realtimeNow)
         {
             SampleOffset(realtimeNow);
-            SongTime = realtimeNow + _dspMinusRealtime - _songStartDsp;
-            JudgementTime = SongTime - _latencyOffsetMs * 0.001;
+            double raw = realtimeNow + _dspMinusRealtime - _songStartDsp;
+
+            if (_hasFloor)
+            {
+                if (raw < _floor) raw = _floor;
+                else _hasFloor = false;
+            }
+
+            SongTime = raw;
+            JudgementTime = raw - _latencyOffsetMs * 0.001;
         }
 
         private void SampleOffset(double realtimeNow)

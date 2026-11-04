@@ -92,7 +92,13 @@ Una entrada por decisión; nunca se borran (si cambian: `Superseded by ADR-XXX`)
 - **Estado:** Aceptada · **Fecha:** 2026-11-04 · **Reemplaza** la propuesta de ±40/±80/±120 y el juicio "Great" (Q-C).
 - **Decisión:** `HitWindows.Judge(deltaMs)` (lógica pura). Input > 70 ms tarde = no juzga (la nota pasa a Miss al cruzar la ventana). Input temprano entre 70 y 120 ms (`earlyMissMs`) = Miss que consume la nota; más temprano se ignora (sin penalizar taps fantasma).
 
-<!-- Añadir ADR-008+ debajo -->
+### ADR-008 — Bot de prueba con timestamps exactos
+- **Estado:** Aceptada · **Fecha:** 2026-11-04
+- **Decisión:** `RhythmDebugAutoPlayer` planifica un delta por nota y emite el input vía `RhythmInputReader.InjectLanePress` con `SongClock.SongTimeToInputRealtime(...)`, la inversa exacta de la conversión de inputs. Corre con execution order −50 (después de `SongClock`, antes del controlador).
+- **Consecuencias:** valida spawn, `HitWindows`, eventos y estadísticas sin error humano; **no** valida el offset `dspTime↔realtime` (usa el mismo) ni la latencia real del dispositivo, que se calibran a mano con el HUD.
+- **Pausa:** `SongClock.Pause` congela `SongTime` y detiene el audio; `Resume` reprograma con `PlayScheduled` (+150 ms) y mantiene `SongTime` congelado hasta alcanzar esa posición.
+
+<!-- Añadir ADR-009+ debajo -->
 
 ---
 
@@ -138,10 +144,10 @@ Assets/
 | Módulo | Responsabilidad | Estado |
 |---|---|---|
 | Core / Bootstrap | Servicios, eventos, flujo de escenas | ⬜ |
-| SongClock / Audio (M01) | Reloj `dspTime`, offset, calibración de latencia | 🟨 Prototipo escrito, sin probar |
-| Chart / Notas (M01) | `SongData`, `NoteData`, spawner, pooling, 4 lanes | 🟨 Prototipo escrito, sin probar |
-| Input (M02) | Acciones D-F-J-K / flechas, timestamp | 🟨 Prototipo escrito, sin probar |
-| Judgement (M02) | Ventanas Perfect/Good/Miss (combo y vida pendientes) | 🟨 Ventanas listas; combo/vida ⬜ |
+| SongClock / Audio (M01) | Reloj `dspTime`, offset, calibración de latencia, pausa | 🟩 Validado en Play Mode (2026-11-04) |
+| Chart / Notas (M01) | `SongData`, `NoteData`, spawner, pooling, 4 lanes | 🟩 Validado en Play Mode (2026-11-04) |
+| Input (M02) | Acciones D-F-J-K / flechas, timestamp | 🟩 Validado en Play Mode (2026-11-04) |
+| Judgement (M02) | Ventanas Perfect/Good/Miss (puntaje y vida pendientes) | 🟩 Ventanas validadas; puntaje/vida ⬜ |
 | Debuffs | Scheduler 25 s/5 s, efecto visual + chart | ⬜ |
 | Modo Punk | Barra dual, escudo, ventana ampliada, efecto | ⬜ |
 | Narrativa | Diálogos SO, respuestas cortas | ⬜ |
@@ -162,6 +168,9 @@ Formato: `YYYY-MM-DD · [módulo] · descripción · archivos`
 - 2026-11-04 · [Docs] · Versión definitiva con GDD, stack y ADR-001..005 · `Assets/Docs/TECHNICAL_LOG.md`
 - 2026-11-04 · [Docs] · Resueltas Q-A, Q-C, Q-E, Q-G; Q-B, Q-D, Q-F con valores provisionales · `Assets/Docs/TECHNICAL_LOG.md`
 - 2026-11-04 · [Rhythm] · Prototipo vertical M01+M02 en `Assets/_Project/Scripts/Rhythm/`: `DiosPunk.Rhythm.asmdef`, `NoteData`, `HitWindows`/`HitType`, `SongData`, `SongClock`, `RhythmInputReader`, `NoteView`, `RhythmTrackController`, `RhythmDebugHUD`. Sin compilar/probar en Unity al momento de escribir.
+- 2026-11-04 · [Rhythm/Editor] · Herramienta `DiosPunk/Rhythm/Build Test Setup` (`Assets/_Project/Scripts/Rhythm/Editor/`, asmdef `DiosPunk.Rhythm.Editor`): genera sprites placeholder (`Art/Placeholders`), WAV de metrónomo 120 BPM (`Audio/Placeholders`, PCM mono), `Prefabs/Note.prefab`, `Data/Songs/TestSong_120BPM.asset` (64 notas, 1 por beat) y arma la escena (RhythmTrack, HitBar y=-3.5, cámara ortográfica 5, DebugCanvas + RhythmDebugHUD). Idempotente. Scripts M01/M02 compilan sin errores; en Play Mode inició sin errores, el feel de timing aún no se probó con teclado.
+- 2026-11-04 · [Rhythm/Debug] · Sistema de Debug & Testing: `RhythmHitFeedback` (pads por carril Verde/Amarillo/Rojo), gizmos de ventanas Perfect/Good/Early Miss en `RhythmTrackController`, `RhythmDebugAutoPlayer` (bot: AlwaysPerfect/AlwaysGood/SimulateMisses/HumanRandom gaussiano con semilla), `RhythmDebugTools` (F1 autoplay, F2 reiniciar, F3 pausa, F4 modo bot, +/- latencia ±5 ms; resumen en consola al terminar/pausar; monitor de GC con ProfilerRecorder), `RhythmStats` (media y desvío estándar por Welford). `SongClock` gana `Pause/Resume` y `SongTimeToInputRealtime` (inversa exacta). El builder del escenario agrega todo. Compila sin errores; la prueba end-to-end en Play Mode no se pudo ejecutar con el editor sin foco.
+- 2026-11-04 · [Rhythm] · Validación manual en Play Mode por el equipo: M01/M02 + sistema de debug funcionan según lo esperado (reportado por el usuario; sin cifras de GC/latencia registradas aún).
 - 2026-11-04 · [Git] · Reglas LFS (audio/texturas) y normalización de YAML de Unity · `.gitattributes`
 
 ---

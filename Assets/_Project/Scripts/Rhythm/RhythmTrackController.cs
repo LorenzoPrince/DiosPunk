@@ -38,6 +38,9 @@ namespace DiosPunk.Rhythm
 
         [SerializeField] private bool _playOnStart = true;
 
+        [Header("Debug")]
+        [SerializeField] private bool _drawWindowGizmos = true;
+
         private ObjectPool<NoteView> _pool;
         private NoteData[] _notes = Array.Empty<NoteData>();
         private readonly List<NoteView> _active = new List<NoteView>(64);
@@ -52,8 +55,20 @@ namespace DiosPunk.Rhythm
         /// <summary>Se dispara cuando se spawnearon y resolvieron todas las notas.</summary>
         public event Action SongFinished;
 
+        /// <summary>Se dispara al iniciar o reiniciar la canción (las estadísticas ya fueron reseteadas).</summary>
+        public event Action SongStarted;
+
+        /// <summary>Se dispara al pausar.</summary>
+        public event Action SongPaused;
+
         public bool IsRunning => _running;
+        public bool IsPaused => _clock.IsPaused;
         public SongClock Clock => _clock;
+        public HitWindows Windows => _windows;
+        public RhythmStats Stats { get; } = new RhythmStats();
+        public int TotalNotes => _notes.Length;
+        public int ActiveNoteCount => _active.Count;
+        public NoteView GetActiveNote(int index) => _active[index];
 
         private void Awake()
         {
@@ -100,9 +115,14 @@ namespace DiosPunk.Rhythm
         {
             ReleaseAllActive();
             _nextSpawn = 0;
+            Stats.Reset();
             _running = true;
             _clock.Play(_song.AudioClip);
+            SongStarted?.Invoke();
         }
+
+        /// <summary>Reinicia la pista desde t = 0 (primer compás).</summary>
+        public void RestartSong() => StartSong();
 
         public void StopSong()
         {
@@ -111,9 +131,28 @@ namespace DiosPunk.Rhythm
             ReleaseAllActive();
         }
 
+        public void PauseSong()
+        {
+            if (!_running || _clock.IsPaused) return;
+            _clock.Pause();
+            SongPaused?.Invoke();
+        }
+
+        public void ResumeSong()
+        {
+            if (!_running || !_clock.IsPaused) return;
+            _clock.Resume();
+        }
+
+        public void TogglePause()
+        {
+            if (_clock.IsPaused) ResumeSong();
+            else PauseSong();
+        }
+
         private void Update()
         {
-            if (!_running) return;
+            if (!_running || _clock.IsPaused) return;
 
             // SongClock tiene execution order -100: SongTime/JudgementTime ya están refrescados.
             double songTime = _clock.SongTime;
@@ -171,13 +210,13 @@ namespace DiosPunk.Rhythm
                 _active.RemoveAt(0);
                 int lane = head.LaneIndex;
                 _pool.Release(head);
-                NoteJudged?.Invoke(HitType.Miss, lane, (float)(late * 1000.0));
+                Report(HitType.Miss, lane, (float)(late * 1000.0));
             }
         }
 
         private void OnLanePressed(int lane, double inputRealtime)
         {
-            if (!_running) return;
+            if (!_running || _clock.IsPaused) return;
 
             // Primera nota (la más próxima en el tiempo) de ese carril.
             int index = -1;
@@ -195,7 +234,13 @@ namespace DiosPunk.Rhythm
 
             _active.RemoveAt(index);
             _pool.Release(view);
-            NoteJudged?.Invoke(result, lane, (float)deltaMs);
+            Report(result, lane, (float)deltaMs);
+        }
+
+        private void Report(HitType type, int lane, float deltaMs)
+        {
+            Stats.Record(type, deltaMs);
+            NoteJudged?.Invoke(type, lane, deltaMs);
         }
 
         // ---------- Setup / pool ----------
@@ -239,19 +284,55 @@ namespace DiosPunk.Rhythm
 #if UNITY_EDITOR
         private void OnDrawGizmos()
         {
-            Gizmos.color = Color.cyan;
             float half = (RhythmInputReader.LaneCount - 1) * 0.5f;
+            float halfWidth = half * _laneSpacing + _laneSpacing * 0.5f;
+
+            Matrix4x4 previous = Gizmos.matrix;
+            Gizmos.matrix = transform.localToWorldMatrix;
+
+            // Carriles
+            Gizmos.color = Color.cyan;
             for (int lane = 0; lane < RhythmInputReader.LaneCount; lane++)
             {
                 float x = (lane - half) * _laneSpacing;
-                Gizmos.DrawLine(transform.TransformPoint(new Vector3(x, _hitLineY, 0f)),
-                                transform.TransformPoint(new Vector3(x, _spawnY, 0f)));
+                Gizmos.DrawLine(new Vector3(x, _hitLineY, 0f), new Vector3(x, _spawnY, 0f));
             }
 
+            // Barra de impacto
             Gizmos.color = Color.yellow;
-            float w = half * _laneSpacing + _laneSpacing * 0.5f;
-            Gizmos.DrawLine(transform.TransformPoint(new Vector3(-w, _hitLineY, 0f)),
-                            transform.TransformPoint(new Vector3(w, _hitLineY, 0f)));
+            Gizmos.DrawLine(new Vector3(-halfWidth, _hitLineY, 0f), new Vector3(halfWidth, _hitLineY, 0f));
+
+            if (_drawWindowGizmos)
+            {
+                // Distancia espacial = ms * 0.001 * velocidad. Arriba = nota temprana (aún no llegó a la barra).
+                float perfectH = _windows.perfectMs * 0.001f * _noteSpeed;
+                float goodH = _windows.goodMs * 0.001f * _noteSpeed;
+                float earlyH = _windows.earlyMissMs * 0.001f * _noteSpeed;
+
+                // Early Miss (solo por encima de Good)
+                DrawBand(halfWidth, _hitLineY + (goodH + earlyH) * 0.5f, earlyH - goodH, new Color(1f, 0.15f, 0.15f, 0.20f));
+                // Good (±goodMs)
+                DrawBand(halfWidth, _hitLineY, goodH * 2f, new Color(1f, 0.9f, 0.1f, 0.22f));
+                // Perfect (±perfectMs)
+                DrawBand(halfWidth, _hitLineY, perfectH * 2f, new Color(0.1f, 1f, 0.2f, 0.35f));
+
+                UnityEditor.Handles.color = Color.white;
+                UnityEditor.Handles.Label(transform.TransformPoint(new Vector3(halfWidth + 0.2f, _hitLineY + perfectH, 0f)),
+                    "Perfect ±" + _windows.perfectMs.ToString("0") + " ms");
+                UnityEditor.Handles.Label(transform.TransformPoint(new Vector3(halfWidth + 0.2f, _hitLineY + goodH, 0f)),
+                    "Good ±" + _windows.goodMs.ToString("0") + " ms");
+                UnityEditor.Handles.Label(transform.TransformPoint(new Vector3(halfWidth + 0.2f, _hitLineY + earlyH, 0f)),
+                    "Early Miss hasta -" + _windows.earlyMissMs.ToString("0") + " ms");
+            }
+
+            Gizmos.matrix = previous;
+        }
+
+        private static void DrawBand(float halfWidth, float centerY, float height, Color color)
+        {
+            if (height <= 0f) return;
+            Gizmos.color = color;
+            Gizmos.DrawCube(new Vector3(0f, centerY, 0f), new Vector3(halfWidth * 2f, height, 0.01f));
         }
 #endif
     }

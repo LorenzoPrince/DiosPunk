@@ -14,6 +14,11 @@ namespace DiosPunk.Rhythm
         public int LaneIndex { get; private set; }
         public double TargetTime { get; private set; }
 
+        // Estado exclusivo del bot de depuración (RhythmDebugAutoPlayer). Se resetea en cada Init.
+        [System.NonSerialized] public bool AutoPlanned;
+        [System.NonSerialized] public bool AutoFired;
+        [System.NonSerialized] public float AutoPlanMs;
+
         private void Awake()
         {
             _transform = transform;
@@ -24,6 +29,9 @@ namespace DiosPunk.Rhythm
         {
             LaneIndex = laneIndex;
             TargetTime = targetTime;
+            AutoPlanned = false;
+            AutoFired = false;
+            AutoPlanMs = 0f;
             if (_renderer != null) _renderer.color = isDebuffNote ? _debuffColor : _normalColor;
         }
 

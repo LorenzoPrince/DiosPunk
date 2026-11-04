@@ -26,6 +26,12 @@ namespace DiosPunk.Rhythm
         private InputAction[] _actions;
         private Action<InputAction.CallbackContext>[] _handlers;
 
+        /// <summary>Emite un input sintético (bot de depuración) con el timestamp indicado.</summary>
+        public void InjectLanePress(int lane, double inputRealtime)
+        {
+            LanePressed?.Invoke(lane, inputRealtime);
+        }
+
         private void Awake()
         {
             _actions = new InputAction[LaneCount];
