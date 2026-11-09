@@ -10,6 +10,11 @@ namespace DiosPunk.Rhythm
     /// estima el offset (dspTime - realtime) quedándonos con su máximo reciente: el valor observado
     /// de dspTime nunca está adelantado, solo retrasado, así que el máximo converge al offset real.
     /// Time.time / Time.deltaTime NO se usan para el timing rítmico.
+    ///
+    /// Doble pista (GDD, Audio Pipeline): además de la mezcla base puede reproducir una segunda mezcla
+    /// (guitarra distorsionada, "punkStem") en un segundo AudioSource, programada con PlayScheduled sobre el
+    /// mismo dspTime que la base, así que ambas arrancan sample-accurate. El volumen del stem punk queda en 0
+    /// salvo mientras el Modo Punk está activo: SetPunkStemActive hace un crossfade rápido entre ambas mezclas.
     /// </summary>
     [DefaultExecutionOrder(-100)]
     [RequireComponent(typeof(AudioSource))]
@@ -24,11 +29,17 @@ namespace DiosPunk.Rhythm
 
         [SerializeField] private AudioSource _audioSource;
 
+        [Tooltip("Segundo AudioSource para la mezcla del Modo Punk. Si falta se crea en Awake.")]
+        [SerializeField] private AudioSource _punkSource;
+
         [Tooltip("Segundos entre pedir Play y el primer sample del audio (lead-in para ver caer las primeras notas).")]
         [SerializeField, Min(0.1f)] private float _startDelaySeconds = 2f;
 
         [Tooltip("Calibración de latencia. Se resta al tiempo de los inputs. Valor sugerido = promedio de Delta mostrado en el HUD.")]
         [SerializeField, Range(-300f, 300f)] private float _latencyOffsetMs;
+
+        [Tooltip("Duración del crossfade entre la mezcla base y la mezcla Punk (segundos).")]
+        [SerializeField, Range(0.02f, 2f)] private float _punkCrossfadeSeconds = 0.25f;
 
         private double _songStartDsp;
         private double _dspMinusRealtime;
@@ -40,6 +51,10 @@ namespace DiosPunk.Rhythm
         private bool _hasFloor;
         private double _floor;
 
+        private bool _hasPunkStem;
+        private float _punkBlend;
+        private float _punkBlendTarget;
+
         /// <summary>Segundos desde el primer sample del audio (negativo durante el lead-in). Se refresca en Update.</summary>
         public double SongTime { get; private set; }
 
@@ -48,6 +63,12 @@ namespace DiosPunk.Rhythm
 
         public bool IsPlaying => _isPlaying;
         public bool IsPaused => _isPaused;
+
+        /// <summary>true si la canción en curso tiene una segunda mezcla (stem del Modo Punk).</summary>
+        public bool HasPunkStem => _hasPunkStem;
+
+        /// <summary>Mezcla actual: 0 = solo base, 1 = solo stem punk.</summary>
+        public float PunkBlend => _punkBlend;
 
         public float LatencyOffsetMs
         {
@@ -65,14 +86,34 @@ namespace DiosPunk.Rhythm
             if (_audioSource == null) _audioSource = GetComponent<AudioSource>();
             _audioSource.playOnAwake = false;
 
+            if (_punkSource == null || _punkSource == _audioSource)
+            {
+                _punkSource = null;
+                AudioSource[] sources = GetComponents<AudioSource>();
+                for (int i = 0; i < sources.Length; i++)
+                {
+                    if (sources[i] != _audioSource) { _punkSource = sources[i]; break; }
+                }
+                if (_punkSource == null) _punkSource = gameObject.AddComponent<AudioSource>();
+            }
+            _punkSource.playOnAwake = false;
+            _punkSource.loop = false;
+            _punkSource.spatialBlend = 0f;
+            _punkSource.outputAudioMixerGroup = _audioSource.outputAudioMixerGroup;
+            _punkSource.volume = 0f;
+
             // Latencia calibrada por el jugador (si la hay); el ajuste en vivo del debug sigue pudiendo modificarla.
             if (GameSettings.LatencyOffsetMs != 0f) LatencyOffsetMs = GameSettings.LatencyOffsetMs;
         }
 
-        /// <summary>Programa el audio con PlayScheduled y arranca el reloj. clip puede ser null (reloj mudo).</summary>
-        public void Play(AudioClip clip)
+        /// <summary>
+        /// Programa el audio con PlayScheduled y arranca el reloj. clip puede ser null (reloj mudo).
+        /// punkStem es opcional: si se pasa, suena en sincronía con clip pero con volumen 0 hasta SetPunkStemActive(true).
+        /// </summary>
+        public void Play(AudioClip clip, AudioClip punkStem = null)
         {
             _audioSource.Stop();
+            _punkSource.Stop();
 
             _isPaused = false;
             _hasFloor = false;
@@ -81,11 +122,28 @@ namespace DiosPunk.Rhythm
 
             _songStartDsp = AudioSettings.dspTime + _startDelaySeconds;
 
+            _hasPunkStem = clip != null && punkStem != null;
+            _punkBlend = 0f;
+            _punkBlendTarget = 0f;
+            ApplyMix();
+
             if (clip != null)
             {
                 _audioSource.clip = clip;
                 _audioSource.timeSamples = 0;
                 _audioSource.PlayScheduled(_songStartDsp);
+            }
+
+            if (_hasPunkStem)
+            {
+                WarnIfStemMismatch(clip, punkStem);
+                _punkSource.clip = punkStem;
+                _punkSource.timeSamples = 0;
+                _punkSource.PlayScheduled(_songStartDsp); // mismo dspTime que la base: arranque sample-accurate
+            }
+            else
+            {
+                _punkSource.clip = null;
             }
 
             _isPlaying = true;
@@ -97,6 +155,10 @@ namespace DiosPunk.Rhythm
             _isPlaying = false;
             _isPaused = false;
             _audioSource.Stop();
+            _punkSource.Stop();
+            _punkBlend = 0f;
+            _punkBlendTarget = 0f;
+            ApplyMix();
         }
 
         /// <summary>Congela SongTime y detiene el audio.</summary>
@@ -108,6 +170,7 @@ namespace DiosPunk.Rhythm
             _pausedSongTime = SongTime;
             _isPaused = true;
             _audioSource.Stop();
+            _punkSource.Stop();
         }
 
         /// <summary>Reprograma el audio desde la posición congelada y continúa sin saltos de SongTime.</summary>
@@ -122,28 +185,43 @@ namespace DiosPunk.Rhythm
             double dspNow = AudioSettings.dspTime;
             _songStartDsp = dspNow + ResumeDelaySeconds - _pausedSongTime;
 
-            AudioClip clip = _audioSource.clip;
-            if (clip != null)
-            {
-                if (_pausedSongTime >= 0.0)
-                {
-                    if (_pausedSongTime < clip.length)
-                    {
-                        _audioSource.timeSamples = Mathf.Clamp((int)(_pausedSongTime * clip.frequency), 0, clip.samples - 1);
-                        _audioSource.PlayScheduled(dspNow + ResumeDelaySeconds);
-                    }
-                }
-                else
-                {
-                    _audioSource.timeSamples = 0;
-                    _audioSource.PlayScheduled(_songStartDsp);
-                }
-            }
+            // Ambas pistas se reprograman desde la misma posición y con el mismo instante dsp.
+            ScheduleResume(_audioSource, dspNow);
+            if (_hasPunkStem) ScheduleResume(_punkSource, dspNow);
 
             _floor = _pausedSongTime;
             _hasFloor = true;
             _isPaused = false;
             RefreshTimes(realtimeNow);
+        }
+
+        private void ScheduleResume(AudioSource source, double dspNow)
+        {
+            AudioClip clip = source.clip;
+            if (clip == null) return;
+
+            if (_pausedSongTime >= 0.0)
+            {
+                if (_pausedSongTime < clip.length)
+                {
+                    source.timeSamples = Mathf.Clamp((int)(_pausedSongTime * clip.frequency), 0, clip.samples - 1);
+                    source.PlayScheduled(dspNow + ResumeDelaySeconds);
+                }
+            }
+            else
+            {
+                source.timeSamples = 0;
+                source.PlayScheduled(_songStartDsp);
+            }
+        }
+
+        /// <summary>
+        /// Activa o desactiva la mezcla del Modo Punk: crossfade rápido hacia el stem distorsionado (true) o de
+        /// vuelta a la mezcla base (false). Sin stem cargado no hace nada audible.
+        /// </summary>
+        public void SetPunkStemActive(bool active)
+        {
+            _punkBlendTarget = active ? 1f : 0f;
         }
 
         /// <summary>
@@ -193,6 +271,37 @@ namespace DiosPunk.Rhythm
             // Con canción en curso se refrescan los tiempos; sin ella (menús, calibración) solo se mantiene el offset.
             if (_isPlaying && !_isPaused) RefreshTimes(realtime);
             else SampleOffset(realtime);
+
+            // Crossfade entre mezclas: solo trabaja mientras haya una transición en curso (cero garbage).
+            if (_punkBlend != _punkBlendTarget)
+            {
+                _punkBlend = Mathf.MoveTowards(_punkBlend, _punkBlendTarget, Time.unscaledDeltaTime / _punkCrossfadeSeconds);
+                ApplyMix();
+            }
+        }
+
+        /// <summary>Con stem: base = 1 - mezcla, punk = mezcla (el stem punk vale 0 con el Modo Punk apagado). Sin stem: base a pleno.</summary>
+        private void ApplyMix()
+        {
+            if (!_hasPunkStem)
+            {
+                _audioSource.volume = 1f;
+                _punkSource.volume = 0f;
+                return;
+            }
+
+            _audioSource.volume = 1f - _punkBlend;
+            _punkSource.volume = _punkBlend;
+        }
+
+        private static void WarnIfStemMismatch(AudioClip baseClip, AudioClip stem)
+        {
+            // Solo ocurre con un asset mal exportado (camino de error, una vez por Play).
+            if (baseClip.frequency != stem.frequency || Mathf.Abs(baseClip.length - stem.length) > 0.05f)
+            {
+                Debug.LogWarning("[Audio] El stem punk '" + stem.name + "' no coincide con la pista base '" + baseClip.name +
+                                 "' (frecuencia o duracion distintas): se perdera la sincronia.");
+            }
         }
 
         private void RefreshTimes(double realtimeNow)

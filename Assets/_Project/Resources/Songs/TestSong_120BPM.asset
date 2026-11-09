@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: DiosPunk.Rhythm::DiosPunk.Rhythm.SongData
   _title: Test Song (Metronome 120 BPM)
   _audioClip: {fileID: 8300000, guid: ffbb258ad3ce1c245b4f67237d74f5d8, type: 3}
+  _punkStemClip: {fileID: 8300000, guid: a3ff92331d330794aaa513c1ae0d913b, type: 3}
   _bpm: 120
   _notes:
   - targetTimeDSP: 2

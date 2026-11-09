@@ -35,6 +35,9 @@ namespace DiosPunk.Rhythm.Editor
             new LevelSpec { title = "Lucha Interior", stage = "El escenario final", difficulty = "Dificil", songName = "Song_05_LuchaInterior", bpm = 140f, beats = 96, offbeatEvery = 1, warmupBeats = 0, speed = 1.05f }
         };
 
+        // Nota raíz (Hz) del acorde de potencia del stem punk de cada nivel: E2, G2, A2, D2, F2.
+        private static readonly float[] StemRoots = { 82.41f, 98f, 110f, 73.42f, 87.31f };
+
         // ---------------- Canciones (audio + chart) ----------------
 
         private static SongData[] CreateLevelSongs()
@@ -58,6 +61,10 @@ namespace DiosPunk.Rhythm.Editor
                 importer.SaveAndReimport();
                 var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(wavPath);
 
+                // Segunda mezcla (guitarra distorsionada) para el Modo Punk, alineada con la base.
+                AudioClip punkStem = CreatePunkStemClip($"{AudioDir}/Level{i + 1}_{spec.bpm:0}BPM_PunkStem.wav",
+                    spec.bpm, FirstBeatSeconds, spec.beats, StemRoots[i % StemRoots.Length]);
+
                 string songPath = $"{SongDir}/{spec.songName}.asset";
                 var song = AssetDatabase.LoadAssetAtPath<SongData>(songPath);
                 if (song == null)
@@ -69,6 +76,7 @@ namespace DiosPunk.Rhythm.Editor
                 var so = new SerializedObject(song);
                 so.FindProperty("_title").stringValue = spec.title + " (placeholder " + spec.bpm.ToString("0") + " BPM)";
                 so.FindProperty("_audioClip").objectReferenceValue = clip;
+                so.FindProperty("_punkStemClip").objectReferenceValue = punkStem;
                 so.FindProperty("_bpm").floatValue = spec.bpm;
                 so.FindProperty("_testFirstBeatSeconds").floatValue = FirstBeatSeconds;
                 so.FindProperty("_testBeatCount").intValue = spec.beats;
@@ -130,6 +138,9 @@ namespace DiosPunk.Rhythm.Editor
                     : song == null ? "no se encuentra la cancion '" + level.SongResource + "' en Resources/Songs"
                     : song.Notes.Length == 0 ? "chart vacio"
                     : song.AudioClip == null ? "cancion sin audio"
+                    : song.PunkStemClip == null ? "sin stem punk (segunda mezcla)"
+                    : song.PunkStemClip.samples != song.AudioClip.samples || song.PunkStemClip.frequency != song.AudioClip.frequency
+                        ? "el stem punk no coincide en muestras/frecuencia con la pista base"
                     : null;
 
                 if (problem != null)

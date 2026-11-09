@@ -1,0 +1,75 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6087ee9bac94c140925cf02145adce8, type: 3}
+  m_Name: SfxLibrary
+  m_EditorClassIdentifier: DiosPunk.Rhythm::DiosPunk.Rhythm.SfxLibrary
+  _uiClick:
+    clips:
+    - {fileID: 8300000, guid: 6cd5ac130696a1e42a7df761aaafd17c, type: 3}
+    volume: 0.8
+    pitchMin: 0.95
+    pitchMax: 1.05
+  _uiHover:
+    clips:
+    - {fileID: 8300000, guid: 38a0829ece8b81e4f9e58e60085fe421, type: 3}
+    volume: 0.35
+    pitchMin: 0.97
+    pitchMax: 1.03
+  _hitPerfect:
+    clips:
+    - {fileID: 8300000, guid: 3f425e786b6b33244a63564921898437, type: 3}
+    volume: 0.7
+    pitchMin: 1
+    pitchMax: 1.08
+  _hitGood:
+    clips:
+    - {fileID: 8300000, guid: 786e5379cfd7c91458d503bffb109f73, type: 3}
+    volume: 0.6
+    pitchMin: 0.95
+    pitchMax: 1.02
+  _miss:
+    clips:
+    - {fileID: 8300000, guid: 0c76cf7dcaaa4a4409fa1644f5cba5c7, type: 3}
+    volume: 0.7
+    pitchMin: 1
+    pitchMax: 1
+  _npcThrow:
+    clips:
+    - {fileID: 8300000, guid: 228e4d10fb3713549b5f358e34ef49cf, type: 3}
+    volume: 0.8
+    pitchMin: 0.95
+    pitchMax: 1.05
+  _tomatoImpact:
+    clips:
+    - {fileID: 8300000, guid: 79e8f8e7a673d1f4e84acc1147c4563d, type: 3}
+    volume: 0.9
+    pitchMin: 0.92
+    pitchMax: 1.06
+  _shieldBreak:
+    clips:
+    - {fileID: 8300000, guid: 45b018d44ad7cdf4ea3396e97513c8f1, type: 3}
+    volume: 0.85
+    pitchMin: 1
+    pitchMax: 1
+  _punkActivate:
+    clips:
+    - {fileID: 8300000, guid: b9ba68239a339d842b344e858b1cba13, type: 3}
+    volume: 0.9
+    pitchMin: 1
+    pitchMax: 1
+  _punkShout:
+    clips:
+    - {fileID: 8300000, guid: 60792ac98deb5e7468aa731a5a94a232, type: 3}
+    - {fileID: 8300000, guid: 6a664036f5823ab409b02dc18dc50e7f, type: 3}
+    volume: 1
+    pitchMin: 1
+    pitchMax: 1

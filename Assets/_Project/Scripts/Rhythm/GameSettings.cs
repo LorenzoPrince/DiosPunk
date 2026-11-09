@@ -14,12 +14,16 @@ namespace DiosPunk.Rhythm
         /// <summary>Calibración de latencia (ms) que SongClock toma al iniciar. Positivo = el jugador pulsa tarde.</summary>
         public static float LatencyOffsetMs;
 
+        /// <summary>Volumen de efectos de sonido (0..1), independiente de la música. Lo ajusta el slider de Opciones.</summary>
+        public static float SfxVolume = 1f;
+
         // Con "Enter Play Mode" sin recarga de dominio los estáticos sobreviven entre ejecuciones.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
         {
             ReduceVisualEffects = false;
             LatencyOffsetMs = 0f;
+            SfxVolume = 1f;
         }
     }
 }

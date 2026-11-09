@@ -115,9 +115,18 @@ namespace DiosPunk.Rhythm
             Punk.RegisterHit(type);
         }
 
-        private void OnPunkActivated() => _track.SetPermissiveWindows(true);
+        // Modo Punk: ventanas permisivas y crossfade a la mezcla con guitarra distorsionada (y de vuelta al terminar).
+        private void OnPunkActivated()
+        {
+            _track.SetPermissiveWindows(true);
+            _track.Clock.SetPunkStemActive(true);
+        }
 
-        private void OnPunkDeactivated(bool shieldConsumed) => _track.SetPermissiveWindows(false);
+        private void OnPunkDeactivated(bool shieldConsumed)
+        {
+            _track.SetPermissiveWindows(false);
+            _track.Clock.SetPunkStemActive(false);
+        }
 
         private void OnDepleted()
         {

@@ -16,6 +16,8 @@ namespace DiosPunk.Flow
         [SerializeField] private Button[] _tabButtons = Array.Empty<Button>();
         [SerializeField] private GameObject[] _tabPages = Array.Empty<GameObject>();
         [SerializeField] private Slider _volume;
+        [Tooltip("Volumen de efectos de sonido (GameSettings.SfxVolume), independiente del volumen general.")]
+        [SerializeField] private Slider _sfxVolume;
         [SerializeField] private Toggle _fullscreen;
         [SerializeField] private Toggle _reduceEffects;
         [SerializeField] private Button _back;
@@ -36,6 +38,7 @@ namespace DiosPunk.Flow
             }
 
             _volume.onValueChanged.AddListener(value => AudioListener.volume = value);
+            if (_sfxVolume != null) _sfxVolume.onValueChanged.AddListener(OnSfxVolumeChanged);
             _fullscreen.onValueChanged.AddListener(value => Screen.fullScreen = value);
             _reduceEffects.onValueChanged.AddListener(value => GameSettings.ReduceVisualEffects = value);
             _back.onClick.AddListener(() => BackRequested?.Invoke());
@@ -45,6 +48,7 @@ namespace DiosPunk.Flow
         private void OnEnable()
         {
             _volume.SetValueWithoutNotify(AudioListener.volume);
+            if (_sfxVolume != null) _sfxVolume.SetValueWithoutNotify(GameSettings.SfxVolume);
             _fullscreen.SetIsOnWithoutNotify(Screen.fullScreen);
             _reduceEffects.SetIsOnWithoutNotify(GameSettings.ReduceVisualEffects);
 
@@ -55,6 +59,18 @@ namespace DiosPunk.Flow
             }
 
             ShowTab(0);
+        }
+
+        // Al arrastrar el slider se oye un clic de muestra, como mucho cada 0.15 s para no saturar las voces.
+        private const float PreviewIntervalSeconds = 0.15f;
+        private float _lastPreviewTime = -1f;
+
+        private void OnSfxVolumeChanged(float value)
+        {
+            GameSettings.SfxVolume = value;
+            if (Time.unscaledTime - _lastPreviewTime < PreviewIntervalSeconds) return;
+            _lastPreviewTime = Time.unscaledTime;
+            SoundEffectManager.Play(SfxId.HitPerfect);
         }
 
         private void ShowTab(int index)

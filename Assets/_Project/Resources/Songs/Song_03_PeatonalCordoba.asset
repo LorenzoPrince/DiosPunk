@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: DiosPunk.Rhythm::DiosPunk.Rhythm.SongData
   _title: "Peatonal C\xF3rdoba (placeholder 120 BPM)"
   _audioClip: {fileID: 8300000, guid: 822721f911527cd438bc9109d3acb6fe, type: 3}
+  _punkStemClip: {fileID: 8300000, guid: 8c5860c4a18a8fd44ae9f1b4188d2bae, type: 3}
   _bpm: 120
   _notes:
   - targetTimeDSP: 2

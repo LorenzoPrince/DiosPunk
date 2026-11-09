@@ -56,7 +56,9 @@ namespace DiosPunk.Rhythm.Editor
             MigrateSongAsset();
             BuiltAssets assets = BuildAssets();
             FxAssets fx = BuildFxAssets();
-            CreateLevelSongs();                                  // 5 canciones (audio placeholder + chart) en Resources/Songs
+            BuildSfxAssets(false);                               // SFX placeholders + SfxLibrary (Resources/Audio)
+            BuildTransitionOverlayPrefab(assets);                // cortinilla de carga (Resources/UI)
+            CreateLevelSongs();                                // 5 canciones (audio placeholder + chart) en Resources/Songs
             DialogueData[] dialogues = CreateStoryDialogues(fx.Portrait);
             CreateEpilogue(fx.Portrait);
             LevelData[] levels = CreateLevels(dialogues);
@@ -243,6 +245,7 @@ namespace DiosPunk.Rhythm.Editor
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.matchWidthOrHeight = 0.5f;
             canvasGo.AddComponent<GraphicRaycaster>();
+            canvasGo.AddComponent<UiSfxBinder>(); // sonidos de UI en cada botón / toggle / slider
             Transform ui = canvasGo.transform;
 
             EnsureEventSystem();
@@ -411,8 +414,12 @@ namespace DiosPunk.Rhythm.Editor
             for (int i = 0; i < 4; i++) pages[i] = FindOrCreateRect(paperRt, pageNames[i], new Vector2(0f, -30f), new Vector2(1100f, 480f));
 
             FindOrCreateText(pages[0].transform, "VolumeLabel", "Volumen general", 44f, TextAlignmentOptions.Left,
-                Center, Center, new Vector2(-300f, 60f), new Vector2(500f, 70f), Color.black);
-            Slider volume = FindOrCreateSlider(pages[0].transform, "VolumeSlider", new Vector2(0f, -40f), new Vector2(700f, 36f));
+                Center, Center, new Vector2(-300f, 190f), new Vector2(500f, 70f), Color.black);
+            Slider volume = FindOrCreateSlider(pages[0].transform, "VolumeSlider", new Vector2(0f, 135f), new Vector2(700f, 36f));
+
+            FindOrCreateText(pages[0].transform, "SfxVolumeLabel", "Volumen de efectos (SFX)", 44f, TextAlignmentOptions.Left,
+                Center, Center, new Vector2(-250f, 60f), new Vector2(600f, 70f), Color.black);
+            Slider sfxVolume = FindOrCreateSlider(pages[0].transform, "SfxVolumeSlider", new Vector2(0f, 5f), new Vector2(700f, 36f));
 
             // Recalibrar latencia: solo en la escena MainMenu (desde el gameplay habría que salir de la canción).
             Button recalibrate = null;
@@ -420,9 +427,9 @@ namespace DiosPunk.Rhythm.Editor
             if (includeRecalibrate)
             {
                 latencyLabel = FindOrCreateText(pages[0].transform, "LatencyLabel", "Latencia actual: 0 ms", 40f,
-                    TextAlignmentOptions.Left, Center, Center, new Vector2(-250f, -130f), new Vector2(560f, 70f), Color.black);
+                    TextAlignmentOptions.Left, Center, Center, new Vector2(-250f, -90f), new Vector2(560f, 70f), Color.black);
                 recalibrate = CreateButton(pages[0].transform, "RecalibrateButton", "RECALIBRAR LATENCIA",
-                    new Vector2(0f, -220f), new Vector2(680f, 90f), panel);
+                    new Vector2(0f, -180f), new Vector2(680f, 90f), panel);
             }
 
             Toggle fullscreen = FindOrCreateToggle(pages[1].transform, "FullscreenToggle", "Pantalla completa",
@@ -440,7 +447,7 @@ namespace DiosPunk.Rhythm.Editor
             var screen = GetOrAdd<OptionsScreen>(root.gameObject);
             SetRefArray(screen, "_tabButtons", tabs);
             SetRefArray(screen, "_tabPages", pages);
-            SetRefs(screen, ("_volume", volume), ("_fullscreen", fullscreen), ("_reduceEffects", reduce), ("_back", back),
+            SetRefs(screen, ("_volume", volume), ("_sfxVolume", sfxVolume), ("_fullscreen", fullscreen), ("_reduceEffects", reduce), ("_back", back),
                 ("_recalibrate", recalibrate), ("_latencyLabel", latencyLabel));
             return screen;
         }

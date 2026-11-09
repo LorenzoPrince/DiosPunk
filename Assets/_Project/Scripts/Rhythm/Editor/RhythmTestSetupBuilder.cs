@@ -54,7 +54,8 @@ namespace DiosPunk.Rhythm.Editor
             Sprite whiteSprite = CreateSprite(WhitePngPath, 16, 16, 0, Color.white, Color.white, 16f, 0);
 
             AudioClip clip = CreateMetronomeClip();
-            SongData song = CreateSongData(clip);
+            AudioClip stem = CreatePunkStemClip(AudioDir + "/Metronome_120BPM_PunkStem.wav", Bpm, FirstBeatSeconds, BeatCount, 82.41f);
+            SongData song = CreateSongData(clip, stem);
             NoteView notePrefab = CreateNotePrefab(noteSprite);
 
             AssetDatabase.SaveAssets();
@@ -174,7 +175,7 @@ namespace DiosPunk.Rhythm.Editor
             }
         }
 
-        private static SongData CreateSongData(AudioClip clip)
+        private static SongData CreateSongData(AudioClip clip, AudioClip punkStem)
         {
             var song = AssetDatabase.LoadAssetAtPath<SongData>(SongPath);
             if (song == null)
@@ -186,6 +187,7 @@ namespace DiosPunk.Rhythm.Editor
             var so = new SerializedObject(song);
             so.FindProperty("_title").stringValue = "Test Song (Metronome 120 BPM)";
             so.FindProperty("_audioClip").objectReferenceValue = clip;
+            so.FindProperty("_punkStemClip").objectReferenceValue = punkStem;
             so.FindProperty("_bpm").floatValue = Bpm;
             so.FindProperty("_testFirstBeatSeconds").floatValue = FirstBeatSeconds;
             so.FindProperty("_testBeatCount").intValue = BeatCount;
@@ -235,7 +237,13 @@ namespace DiosPunk.Rhythm.Editor
             var audioSource = track.GetComponent<AudioSource>();
             audioSource.playOnAwake = false;
 
-            SetRefs(clock, ("_audioSource", audioSource));
+            // Segundo AudioSource para el stem del Modo Punk (el primero es la mezcla base).
+            AudioSource[] clockSources = track.GetComponents<AudioSource>();
+            AudioSource punkSource = clockSources.Length > 1 ? clockSources[1] : track.AddComponent<AudioSource>();
+            punkSource.playOnAwake = false;
+            punkSource.volume = 0f;
+
+            SetRefs(clock, ("_audioSource", audioSource), ("_punkSource", punkSource));
             SetRefs(controller,
                 ("_clock", clock),
                 ("_input", input),
@@ -287,6 +295,10 @@ namespace DiosPunk.Rhythm.Editor
             var session = GetOrAdd<RhythmSession>(track);
             SetRefs(session, ("_track", controller));
 
+            // SFX de juego (juicios, debuffs, Modo Punk) por eventos de la sesión.
+            var sfxBridge = GetOrAdd<GameplaySfxBridge>(track);
+            SetRefs(sfxBridge, ("_session", session));
+
             // --- Cámara ---
             Camera cam = Camera.main;
             if (cam == null)
@@ -317,6 +329,7 @@ namespace DiosPunk.Rhythm.Editor
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.matchWidthOrHeight = 0.5f;
             GetOrAdd<GraphicRaycaster>(canvasGo); // sin esto los botones no reciben clics
+            GetOrAdd<DiosPunk.Flow.UiSfxBinder>(canvasGo); // sonidos de UI en cada botón / toggle / slider
             Transform ui = canvasGo.transform;
 
             // Capa del debuff (detrás del HUD): se activa por script mientras dura un debuff

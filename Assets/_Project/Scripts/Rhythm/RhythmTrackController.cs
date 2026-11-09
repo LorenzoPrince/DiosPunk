@@ -166,7 +166,7 @@ namespace DiosPunk.Rhythm
             _nextSpawn = 0;
             Stats.Reset();
             _running = true;
-            _clock.Play(_song.AudioClip);
+            _clock.Play(_song.AudioClip, _song.PunkStemClip);
             SongStarted?.Invoke();
         }
 
