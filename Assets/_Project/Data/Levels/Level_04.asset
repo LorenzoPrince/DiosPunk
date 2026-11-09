@@ -17,3 +17,4 @@ MonoBehaviour:
   _difficulty: Media
   _songResource: Song_04_FacultadDeMedicina
   _dialogue: {fileID: 11400000, guid: 78e381edeb9d94a46a27094a6a8e1b50, type: 2}
+  _noteSpeedMultiplier: 1

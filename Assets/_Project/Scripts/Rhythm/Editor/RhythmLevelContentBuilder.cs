@@ -20,16 +20,19 @@ namespace DiosPunk.Rhythm.Editor
             public float bpm;
             public int beats;
             public int offbeatEvery;
+            public int warmupBeats;       // beats iniciales a media densidad
+            public float speed;           // multiplicador de velocidad de caída del nivel
         }
 
-        // Dificultad creciente: más BPM (velocidad percibida), más duración y más notas a contratiempo.
+        // Dificultad creciente y orgánica: BPM, duración y contratiempos suben de a poco; el nivel 2 entra con
+        // media densidad y cae más lento para que el paso desde el nivel 1 no sea un salto brusco.
         private static readonly LevelSpec[] Specs =
         {
-            new LevelSpec { title = "Comienzos", stage = "El cuarto", difficulty = "Facil", songName = "Song_01_Comienzos", bpm = 100f, beats = 56, offbeatEvery = 0 },
-            new LevelSpec { title = "Sueños Punk Rock", stage = "El garaje", difficulty = "Facil", songName = "Song_02_SuenosPunkRock", bpm = 110f, beats = 64, offbeatEvery = 8 },
-            new LevelSpec { title = "Peatonal Córdoba", stage = "La peatonal", difficulty = "Media", songName = "Song_03_PeatonalCordoba", bpm = 120f, beats = 72, offbeatEvery = 4 },
-            new LevelSpec { title = "Facultad de Medicina", stage = "Las escalinatas", difficulty = "Media", songName = "Song_04_FacultadDeMedicina", bpm = 130f, beats = 80, offbeatEvery = 2 },
-            new LevelSpec { title = "Lucha Interior", stage = "El escenario final", difficulty = "Dificil", songName = "Song_05_LuchaInterior", bpm = 140f, beats = 96, offbeatEvery = 1 }
+            new LevelSpec { title = "Comienzos", stage = "El cuarto", difficulty = "Facil", songName = "Song_01_Comienzos", bpm = 100f, beats = 56, offbeatEvery = 0, warmupBeats = 0, speed = 1.00f },
+            new LevelSpec { title = "Sueños Punk Rock", stage = "El garaje", difficulty = "Facil", songName = "Song_02_SuenosPunkRock", bpm = 110f, beats = 64, offbeatEvery = 12, warmupBeats = 16, speed = 0.90f },
+            new LevelSpec { title = "Peatonal Córdoba", stage = "La peatonal", difficulty = "Media", songName = "Song_03_PeatonalCordoba", bpm = 120f, beats = 72, offbeatEvery = 4, warmupBeats = 0, speed = 0.95f },
+            new LevelSpec { title = "Facultad de Medicina", stage = "Las escalinatas", difficulty = "Media", songName = "Song_04_FacultadDeMedicina", bpm = 130f, beats = 80, offbeatEvery = 2, warmupBeats = 0, speed = 1.00f },
+            new LevelSpec { title = "Lucha Interior", stage = "El escenario final", difficulty = "Dificil", songName = "Song_05_LuchaInterior", bpm = 140f, beats = 96, offbeatEvery = 1, warmupBeats = 0, speed = 1.05f }
         };
 
         // ---------------- Canciones (audio + chart) ----------------
@@ -70,6 +73,7 @@ namespace DiosPunk.Rhythm.Editor
                 so.FindProperty("_testFirstBeatSeconds").floatValue = FirstBeatSeconds;
                 so.FindProperty("_testBeatCount").intValue = spec.beats;
                 so.FindProperty("_testOffbeatEvery").intValue = spec.offbeatEvery;
+                so.FindProperty("_testWarmupBeats").intValue = spec.warmupBeats;
                 so.ApplyModifiedPropertiesWithoutUndo();
 
                 var method = typeof(SongData).GetMethod("GenerateTestChart",
@@ -104,6 +108,7 @@ namespace DiosPunk.Rhythm.Editor
                 so.FindProperty("_difficulty").stringValue = Specs[i].difficulty;
                 so.FindProperty("_songResource").stringValue = Specs[i].songName;
                 so.FindProperty("_dialogue").objectReferenceValue = dialogues[i];
+                so.FindProperty("_noteSpeedMultiplier").floatValue = Specs[i].speed;
                 so.ApplyModifiedPropertiesWithoutUndo();
 
                 EditorUtility.SetDirty(level);

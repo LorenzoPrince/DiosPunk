@@ -13,7 +13,6 @@ namespace DiosPunk.Rhythm
     public sealed class RhythmDebuffVisuals : MonoBehaviour
     {
         private const string DebuffMessage = "DEBUFF!";
-        private const string AbsorbedMessage = "ESCUDO PUNK: DEBUFF ABSORBIDO";
 
         [SerializeField] private RhythmSession _session;
         [Tooltip("Transform que tiembla (la raíz de la pista). Solo es visual: el juicio usa tiempos, no posiciones.")]
@@ -21,7 +20,8 @@ namespace DiosPunk.Rhythm
         [SerializeField] private Image _overlay;
         [SerializeField] private TMP_Text _statusText;
 
-        [SerializeField] private Color _overlayColor = new Color(0.75f, 0.1f, 0.85f, 0.35f);
+        // Velo rojo oscuro y tenue: acompaña a la mancha de tomate sin teñirla ni competir con ella.
+        [SerializeField] private Color _overlayColor = new Color(0.45f, 0.03f, 0.08f, 0.2f);
         [SerializeField, Min(0f)] private float _shakeAmount = 0.12f;
         [SerializeField, Min(0.1f)] private float _pulseHz = 4f;
         [SerializeField, Min(0.1f)] private float _messageSeconds = 1.5f;
@@ -35,7 +35,6 @@ namespace DiosPunk.Rhythm
             _basePosition = _shakeTarget.localPosition;
             _session.Debuffs.Started += OnStarted;
             _session.Debuffs.Ended += OnEnded;
-            _session.Debuffs.Absorbed += OnAbsorbed;
             ClearAll();
         }
 
@@ -43,7 +42,6 @@ namespace DiosPunk.Rhythm
         {
             _session.Debuffs.Started -= OnStarted;
             _session.Debuffs.Ended -= OnEnded;
-            _session.Debuffs.Absorbed -= OnAbsorbed;
             ClearAll();
         }
 
@@ -60,14 +58,7 @@ namespace DiosPunk.Rhythm
             _active = false;
             _overlay.enabled = false;
             _shakeTarget.localPosition = _basePosition;
-            if (_messageRemaining <= 0f) _statusText.enabled = false;
-        }
-
-        private void OnAbsorbed()
-        {
-            _messageRemaining = _messageSeconds;
-            _statusText.text = AbsorbedMessage;
-            _statusText.enabled = true;
+            _statusText.enabled = false;
         }
 
         private void Update()

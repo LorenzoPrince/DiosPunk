@@ -20,6 +20,10 @@ namespace DiosPunk.Flow
         [SerializeField] private string _songResource;
         [SerializeField] private DialogueData _dialogue;
 
+        [Tooltip("Velocidad de caída de las notas de este nivel (1 = base). Permite una curva de dificultad suave.")]
+        [SerializeField, Range(0.5f, 1.5f)] private float _noteSpeedMultiplier = 1f;
+
+        public float NoteSpeedMultiplier => _noteSpeedMultiplier;
         public string Title => _title;
         public string Stage => _stage;
         public string Difficulty => _difficulty;

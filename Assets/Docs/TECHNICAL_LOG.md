@@ -143,7 +143,7 @@ Una entrada por decisión; nunca se borran (si cambian: `Superseded by ADR-XXX`)
 - **Reglas:** todo canvas lleva `GraphicRaycaster`; solo los botones, el box del toggle y el slider tienen `Raycast Target` activo (fondos, paneles y textos lo tienen desactivado). El `EventSystem` se crea con `InputSystemUIInputModule` + `AssignDefaultActions()`.
 
 ### ADR-015 — Modo Punk (Hito 3)
-- **Estado:** Aceptada · **Fecha:** 2026-11-09 · **Resuelve** Q-B.
+- **Estado:** Aceptada (la carga por rachas de 10 fue reemplazada por carga continua en ADR-024) · **Fecha:** 2026-11-09 · **Resuelve** Q-B.
 - **Decisión:** `PunkModeSystem` (clase pura, sin MonoBehaviour) dentro de `RhythmSession`. Carga rápida: cada Miss suma +15 %. Carga lenta: cada racha de 10 aciertos consecutivos suma +5 % (un Miss corta la racha). Al llegar al 100 % se activa solo: otorga 1 escudo, ensancha las ventanas de impacto (Perfect ±30 → ±45 ms, Good ±70 → ±90 ms, `RhythmTrackController._punkWindows`) y la barra se drena en 9 s (`_punkActiveSeconds`, configurable de 1 a 30) hasta apagarse. Mientras está activo no se carga la barra. Si el escudo absorbe un debuff se consume y el modo termina.
 - **Tiempo:** el drenaje avanza con `Tick(SongTime)` (dspTime), no con `deltaTime`: pausa y reinicio lo congelan/reinician solos.
 - **Desacople:** el sistema solo emite eventos (`BarChanged`, `Activated`, `Deactivated`); `RhythmSession` conecta con el controlador (`SetPermissiveWindows`) y `RhythmHudPresenter` pinta la barra y el rótulo ("MODO PUNK" / "MODO PUNK ACTIVO!") por eventos. `UseCount` alimenta "Usos de Modo Punk" en Resultados.
@@ -207,7 +207,33 @@ Una entrada por decisión; nunca se borran (si cambian: `Superseded by ADR-XXX`)
 - **Verificado por script:** Resultados (nivel 5) → EPILOGO → líneas → Créditos; `MarkGameCompleted` deja 5 niveles abiertos; `SetCalibration` y `StartNewGame` se comportan según lo esperado.
 - **Pendiente:** créditos finales definitivos, música del epílogo y un posible desbloqueo de contenido extra tras completar el juego.
 
-<!-- Añadir ADR-024+ debajo -->
+### ADR-024 — Modo Punk: carga continua por acierto (ajuste tras pruebas reales)
+- **Estado:** Aceptada · **Fecha:** 2026-11-09 · **Reemplaza** la carga por rachas de 10 aciertos de ADR-015.
+- **Problema:** la barra solo se movía en bloques tras rachas largas; el jugador no veía respuesta inmediata.
+- **Decisión:** cada acierto suma de inmediato: Perfect +1,0 %, Good +0,5 %; Miss mantiene el rescate rápido de +15 %. `PunkModeSystem.Configure(miss, perfect, good, segundos)` (se eliminan `StreakCharge`/`StreakSize`); `RhythmSession` expone `_punkPerfectCharge` y `_punkGoodCharge`. Con el modo activo la barra no se carga, solo se drena. Se agregó una tolerancia de 0,01 % al llegar a 100 % (100 × 0.01f en float no alcanza 1.0).
+- **Balance resultante:** 100 Perfect, 200 Good o 7 Miss activan el modo; el nivel 1 (56 notas) no lo llena solo con aciertos: sigue siendo recompensa lenta para expertos y rescate rápido para novatos.
+- **Verificado por script:** 1 % por Perfect y 0,5 % por Good con `BarChanged` en cada acierto, activación exacta en el acierto 100/200, y sin carga durante el modo activo.
+
+### ADR-025 — Impacto del debuff: "tomatazo" y cartel de debuff absorbido
+- **Estado:** Aceptada · **Fecha:** 2026-11-09
+- **Sin Modo Punk:** al impactar el proyectil, `NpcSabotageController` muestra una mancha roja irregular (sprite `TomatoSplat_Placeholder`, 512 px, generado por código: cuerpo ruidoso con puntas, salpicaduras y goteos) centrada en la pantalla, con alpha 0,72 (0,2 con "Reducir efectos"). Entra con un breve "estrellarse" (pop de 0,18 s), dura los 5 s del debuff y se desvanece en el último segundo usando el tiempo de canción (se congela en pausa). Los proyectiles ahora son rojos/naranjas. El velo de pantalla de `RhythmDebuffVisuals` pasó a rojo oscuro tenue (alpha 0,2) para no teñir la mancha.
+- **Con Modo Punk:** destello dorado de pantalla completa (0,3 s), el escudo y un cartel estilo fanzine inclinado "¡DEBUFF ABSORBIDO! / El Escudo Punk te salvó" (1,8 s, con pop de entrada y salida rápida). `RhythmDebuffVisuals` ya no muestra su mensaje de texto de absorción.
+- **Sin allocations:** todo por eventos; el Update solo corre mientras hay un efecto activo.
+- **Verificado en Play Mode por script y con capturas:** impacto → mancha visible, marco dentado y proyectil; absorción → cartel, destello y escudo, sin mancha ni debuff.
+
+### ADR-026 — Notas más grandes y carriles más anchos
+- **Estado:** Aceptada · **Fecha:** 2026-11-09
+- **Decisión:** nota de 1,20 × 0,40 u a **1,56 × 0,52 u (+30 %)** con borde de 5 px (antes 4). Para que la nota más ancha no toque el carril vecino la separación de carriles pasa de 1,5 a **1,9 u** (highway de 7,6 u; HitBar de 760 px). Receptáculos y pads usan el mismo sprite, así que crecen en proporción.
+- **Verificado:** nota 1,56 × 0,52 (+30 % ancho y alto) y 1,56 < 1,9.
+
+### ADR-027 — Curva de dificultad: nivel 2 más suave
+- **Estado:** Aceptada · **Fecha:** 2026-11-09
+- **Problema:** el paso del nivel 1 (100 BPM) al nivel 2 (110 BPM, misma velocidad de caída y contratiempos desde el inicio) era un salto abrupto.
+- **Decisión:** `LevelData._noteSpeedMultiplier` (velocidad de caída por nivel, multiplicada por el ajuste de dificultad de la narrativa) y `SongData._testWarmupBeats` (beats iniciales a media densidad, sin contratiempos). Nivel 2: warm-up de 16 beats, contratiempo cada 12 beats (antes 8) y velocidad ×0,90. Para una progresión sin saltos: N1 ×1,00, N2 ×0,90, N3 ×0,95, N4 ×1,00, N5 ×1,05.
+- **Números (notas/s, velocidad u/s):** N1 1,60 / 8,0; N2 1,65 / 7,2; N3 2,40 / 7,6; N4 3,12 / 8,0; N5 4,50 / 8,4. En los primeros 16 beats el N1 tiene 16 notas y el N2 8. El tiempo de lectura sube (lookahead de 1,44 s a 1,60 s en el N2).
+- **Pendiente:** validar el balance con jugadores; los charts siguen siendo generados (Q-P).
+
+<!-- Añadir ADR-028+ debajo -->
 
 ---
 
@@ -288,6 +314,7 @@ Formato: `YYYY-MM-DD · [módulo] · descripción · archivos`
 - 2026-11-04 · [Rhythm/Editor] · Herramienta `DiosPunk/Rhythm/Build Test Setup` (`Assets/_Project/Scripts/Rhythm/Editor/`, asmdef `DiosPunk.Rhythm.Editor`): genera sprites placeholder (`Art/Placeholders`), WAV de metrónomo 120 BPM (`Audio/Placeholders`, PCM mono), `Prefabs/Note.prefab`, `Data/Songs/TestSong_120BPM.asset` (64 notas, 1 por beat) y arma la escena (RhythmTrack, HitBar y=-3.5, cámara ortográfica 5, DebugCanvas + RhythmDebugHUD). Idempotente. Scripts M01/M02 compilan sin errores; en Play Mode inició sin errores, el feel de timing aún no se probó con teclado.
 - 2026-11-04 · [Rhythm/Debug] · Sistema de Debug & Testing: `RhythmHitFeedback` (pads por carril Verde/Amarillo/Rojo), gizmos de ventanas Perfect/Good/Early Miss en `RhythmTrackController`, `RhythmDebugAutoPlayer` (bot: AlwaysPerfect/AlwaysGood/SimulateMisses/HumanRandom gaussiano con semilla), `RhythmDebugTools` (F1 autoplay, F2 reiniciar, F3 pausa, F4 modo bot, +/- latencia ±5 ms; resumen en consola al terminar/pausar; monitor de GC con ProfilerRecorder), `RhythmStats` (media y desvío estándar por Welford). `SongClock` gana `Pause/Resume` y `SongTimeToInputRealtime` (inversa exacta). El builder del escenario agrega todo. Compila sin errores; la prueba end-to-end en Play Mode no se pudo ejecutar con el editor sin foco.
 - 2026-11-04 · [Rhythm] · Validación manual en Play Mode por el equipo: M01/M02 + sistema de debug funcionan según lo esperado (reportado por el usuario; sin cifras de GC/latencia registradas aún).
+- 2026-11-09 · [Rhythm/Balance] · Ajustes tras pruebas reales (ADR-024..027): carga continua del Modo Punk (+1 % Perfect, +0,5 % Good, +15 % Miss), "tomatazo" y cartel "¡DEBUFF ABSORBIDO!" en `NpcSabotageController`, notas +30 % y carriles a 1,9 u, nivel 2 más suave (`LevelData._noteSpeedMultiplier`, `SongData._testWarmupBeats`). Sprite nuevo `TomatoSplat_Placeholder.png`; builder genera splat, cartel y destello. Sin cambios en `progress.json`.
 - 2026-11-09 · [Rhythm/Flow] · Deuda técnica, 5 niveles y cierre del juego (ADR-021, ADR-022, ADR-023): se elimina `DspRealtimeMapper` y `SongClock` pasa a ser la única conversión DSP↔tiempo real (`InputRealtimeToDsp`, `SampleNow`, `ResetTimebase`); "Recalibrar latencia" en Opciones; `ProgressStore.SetCalibration/MarkGameCompleted` y `gameCompleted`; estado `Epilogue`; `GameplayFlowController` deriva el nivel 5 a epílogo → créditos → menú; `ResultsScreen` con botón EPILOGO; 5 `LevelData` + `DialogueData` + `SongData` (charts y audio placeholder por nivel) + epílogo; `SongData._testOffbeatEvery`; builder `RhythmLevelContentBuilder` con validación de niveles.
 - 2026-11-09 · [Rhythm/Flow] · NPCs saboteadores, narrativa formal y primera partida (ADR-018, ADR-019, ADR-020): `NpcSabotageController`, `DebuffSystem.Incoming/Lead`, `DialogueData` + `PreLevelDialoguePresenter` (se elimina `PreLevelScreen`), `CalibrationScreen`, `DspRealtimeMapper`, `LaneStyle`, `GameSettings.LatencyOffsetMs`, `ProgressData.calibrated/latencyOffsetMs`, estado `Calibration`, `MainMenuScreen` con PARTIDA NUEVA y confirmación, `GameSession` con dificultad y variante, `RhythmTrackController.SetSpeedMultiplier`. Builders: `RhythmFxBuilder` (sprites y diálogos), `RhythmCalibrationBuilder`. Assets nuevos: `Art/Placeholders` (NPC, proyectil, escudo, marco, retrato), `Audio/Placeholders/Calibration_Click.wav`, `Data/Dialogues`.
 - 2026-11-09 · [Rhythm/Flow] · Hito 3 y cierre de mecánicas (ADR-015, ADR-016, ADR-017): `PunkModeSystem`, `DebuffSystem`, `RhythmDebuffVisuals`; `RhythmSession` integra Modo Punk y debuffs; `RhythmTrackController` suma ventanas permisivas (`SetPermissiveWindows`), `SongStopped` y `LoadSong` sin reconstruir si es la misma canción; `RhythmHudPresenter` pinta la barra Punk; controles A-S-D-F + flechas con etiquetas bajo los receptáculos; botón OPCIONES en Game Over; `GameSettings` movido a `DiosPunk.Rhythm`; debug F5 (Modo Punk) y F6 (debuff). El builder de escenas genera todo.

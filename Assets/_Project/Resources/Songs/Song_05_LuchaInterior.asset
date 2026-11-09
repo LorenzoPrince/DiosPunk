@@ -595,3 +595,4 @@ MonoBehaviour:
   _testFirstBeatSeconds: 2
   _testBeatCount: 96
   _testOffbeatEvery: 1
+  _testWarmupBeats: 0

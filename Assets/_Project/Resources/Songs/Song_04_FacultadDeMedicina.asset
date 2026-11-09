@@ -379,3 +379,4 @@ MonoBehaviour:
   _testFirstBeatSeconds: 2
   _testBeatCount: 80
   _testOffbeatEvery: 2
+  _testWarmupBeats: 0

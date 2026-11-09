@@ -5,11 +5,14 @@ namespace DiosPunk.Rhythm
 {
     /// <summary>
     /// Justificación visual de los debuffs (GDD): un NPC saboteador a un costado de la pista arroja un proyectil
-    /// saturado hacia la base. Si el Modo Punk está activo, el proyectil choca contra el "Escudo Punk" y se
-    /// desintegra; si no, impacta, empieza el debuff y se despliega el marco inferior dentado con el color del
-    /// proyectil. Todo se dispara por eventos del DebuffSystem; el Update solo mueve lo que está en vuelo o en efecto
-    /// y no genera garbage. Los desplazamientos usan el tiempo de canción (se congelan en pausa); los fundidos
-    /// son puramente cosméticos.
+    /// ("tomatazo") hacia la base.
+    ///  - Modo Punk INACTIVO: el proyectil impacta, deja una mancha roja irregular en el centro de la pantalla que
+    ///    ensucia la pista durante los 5 s del debuff y se desvanece al terminar, y se despliega el marco inferior dentado.
+    ///  - Modo Punk ACTIVO: el proyectil choca contra el "Escudo Punk", hay un flash y aparece un cartel estilo fanzine
+    ///    "¡DEBUFF ABSORBIDO!" para que se entienda por qué el escudo salvó la partida.
+    /// Todo se dispara por eventos del DebuffSystem; el Update solo trabaja mientras hay algo en curso y no genera
+    /// garbage. Los desplazamientos y el desvanecimiento de la mancha usan el tiempo de canción (se congelan en pausa);
+    /// los pops y fundidos cortos son cosméticos (unscaledDeltaTime).
     /// </summary>
     public sealed class NpcSabotageController : MonoBehaviour
     {
@@ -25,8 +28,14 @@ namespace DiosPunk.Rhythm
         [SerializeField] private SpriteRenderer _projectile;
         [SerializeField] private SpriteRenderer _shield;
 
-        [Header("Marco inferior dentado (UI)")]
+        [Header("Impacto (UI)")]
         [SerializeField] private Image _frame;
+        [Tooltip("Mancha roja de tomate/tinta, centrada en la pantalla.")]
+        [SerializeField] private Image _splat;
+        [Tooltip("Cartel '¡DEBUFF ABSORBIDO!' (se activa y desactiva por script).")]
+        [SerializeField] private RectTransform _absorbedBanner;
+        [Tooltip("Capa de pantalla completa para el destello del escudo.")]
+        [SerializeField] private Image _shieldFlash;
 
         [Header("Parámetros")]
         [Tooltip("Punto de impacto en espacio local de la pista.")]
@@ -37,12 +46,19 @@ namespace DiosPunk.Rhythm
         [SerializeField] private float _throwDistance = 0.8f;
         [SerializeField, Min(0.1f)] private float _effectSeconds = 0.5f;
         [SerializeField] private Color _shieldColor = new Color(1f, 0.85f, 0.1f, 1f);
+        [SerializeField] private Color _splatColor = new Color(1f, 1f, 1f, 1f);
+        [Tooltip("Opacidad de la mancha (calibrada para ensuciar la vista sin tapar del todo la pista).")]
+        [SerializeField, Range(0.1f, 1f)] private float _splatAlpha = 0.72f;
+        [Tooltip("Opacidad de la mancha con 'Reducir efectos'.")]
+        [SerializeField, Range(0.05f, 1f)] private float _splatAlphaReduced = 0.2f;
+        [SerializeField, Min(0.1f)] private float _splatFadeSeconds = 1f;
+        [SerializeField, Min(0.1f)] private float _bannerSeconds = 1.8f;
         [SerializeField] private Color[] _palette =
         {
-            new Color(1f, 0.1f, 0.65f, 1f),
-            new Color(0.25f, 1f, 0.2f, 1f),
-            new Color(1f, 0.5f, 0.05f, 1f),
-            new Color(0.15f, 0.85f, 1f, 1f)
+            new Color(0.92f, 0.12f, 0.10f, 1f),
+            new Color(1.00f, 0.30f, 0.05f, 1f),
+            new Color(0.85f, 0.05f, 0.25f, 1f),
+            new Color(1.00f, 0.15f, 0.15f, 1f)
         };
 
         private Phase _phase;
@@ -60,6 +76,15 @@ namespace DiosPunk.Rhythm
         private bool _absorbed;
         private bool _frameActive;
         private Vector3 _projectileBaseScale = Vector3.one;
+
+        private bool _splatActive;
+        private double _splatEndSongTime;
+        private float _splatPop;
+        private float _bannerRemaining;
+        private float _flashRemaining;
+
+        private const float SplatPopSeconds = 0.18f;
+        private const float FlashSeconds = 0.3f;
 
         private void Awake()
         {
@@ -112,6 +137,7 @@ namespace DiosPunk.Rhythm
             _phase = Phase.Flying;
         }
 
+        /// <summary>Con Modo Punk activo: el proyectil choca contra el escudo, destello y cartel de "debuff absorbido".</summary>
         private void OnAbsorbed()
         {
             PlaceAtImpact();
@@ -120,8 +146,17 @@ namespace DiosPunk.Rhythm
             _shield.enabled = true;
             _phase = Phase.Resolving;
             _effectRemaining = _effectSeconds;
+
+            _flashRemaining = FlashSeconds;
+            _shieldFlash.color = new Color(_shieldColor.r, _shieldColor.g, _shieldColor.b, 0.55f);
+            _shieldFlash.enabled = true;
+
+            _bannerRemaining = _bannerSeconds;
+            _absorbedBanner.localScale = Vector3.zero;
+            _absorbedBanner.gameObject.SetActive(true);
         }
 
+        /// <summary>Sin Modo Punk: el "tomatazo" impacta, ensucia la pantalla y empieza el debuff.</summary>
         private void OnStarted(float duration)
         {
             PlaceAtImpact();
@@ -129,17 +164,25 @@ namespace DiosPunk.Rhythm
             _phase = Phase.Resolving;
             _effectRemaining = _effectSeconds;
 
-            Color c = _current;
-            c.a = GameSettings.ReduceVisualEffects ? 0.35f : 0.9f;
-            _frame.color = c;
+            _frame.color = WithAlpha(_current, GameSettings.ReduceVisualEffects ? 0.35f : 0.9f);
             _frame.enabled = true;
             _frameActive = true;
+
+            // La mancha dura lo que dura el debuff y se desvanece en el último tramo.
+            _splatEndSongTime = _session.Track.Clock.SongTime + duration;
+            _splatPop = GameSettings.ReduceVisualEffects ? 0f : SplatPopSeconds;
+            _splat.color = WithAlpha(_splatColor, SplatBaseAlpha());
+            _splat.rectTransform.localScale = Vector3.one;
+            _splat.enabled = true;
+            _splatActive = true;
         }
 
         private void OnEnded()
         {
             _frameActive = false;
             _frame.enabled = false;
+            _splatActive = false;
+            _splat.enabled = false;
         }
 
         /// <summary>Sin aviso previo (p. ej. debuff forzado con F6) el proyectil aparece ya en el punto de impacto.</summary>
@@ -160,10 +203,24 @@ namespace DiosPunk.Rhythm
 
         private void Update()
         {
-            if (_phase == Phase.Idle && !_frameActive) return;
+            if (_phase == Phase.Idle && !_frameActive && !_splatActive && _bannerRemaining <= 0f && _flashRemaining <= 0f) return;
 
             float dt = Time.unscaledDeltaTime;
 
+            UpdateProjectile(dt);
+            UpdateSplat(dt);
+            UpdateAbsorbFeedback(dt);
+
+            if (_frameActive && !GameSettings.ReduceVisualEffects)
+            {
+                Color c = _current;
+                c.a = 0.75f + 0.2f * Mathf.Sin(Time.unscaledTime * 12f);
+                _frame.color = c;
+            }
+        }
+
+        private void UpdateProjectile(float dt)
+        {
             if (_phase == Phase.Flying)
             {
                 if (_session.IsPaused) return;
@@ -185,18 +242,11 @@ namespace DiosPunk.Rhythm
                 _effectRemaining -= dt;
                 float f = Mathf.Clamp01(_effectRemaining / _effectSeconds);
 
-                // Se desintegra (escudo) o estalla (impacto): se achica y se desvanece.
+                // Se desintegra (escudo) o estalla (impacto): se achica o crece y se desvanece.
                 _projectile.transform.localScale = _projectileBaseScale * (_absorbed ? f : 1f + (1f - f) * 0.8f);
-                Color pc = _current;
-                pc.a = f;
-                _projectile.color = pc;
+                _projectile.color = WithAlpha(_current, f);
 
-                if (_absorbed)
-                {
-                    Color sc = _shieldColor;
-                    sc.a = f;
-                    _shield.color = sc;
-                }
+                if (_absorbed) _shield.color = WithAlpha(_shieldColor, f);
 
                 if (_effectRemaining <= 0f)
                 {
@@ -206,13 +256,61 @@ namespace DiosPunk.Rhythm
                     _phase = Phase.Idle;
                 }
             }
+        }
 
-            if (_frameActive && !GameSettings.ReduceVisualEffects)
+        private void UpdateSplat(float dt)
+        {
+            if (!_splatActive) return;
+
+            float alpha = SplatBaseAlpha();
+
+            // Desvanecimiento en el último tramo del debuff (con el tiempo de canción: en pausa se congela).
+            double remaining = _splatEndSongTime - _session.Track.Clock.SongTime;
+            if (remaining < _splatFadeSeconds) alpha *= Mathf.Clamp01((float)(remaining / _splatFadeSeconds));
+            _splat.color = WithAlpha(_splatColor, alpha);
+
+            // "Estrellarse": la mancha entra grande y se asienta en una fracción de segundo.
+            if (_splatPop > 0f)
             {
-                Color c = _current;
-                c.a = 0.75f + 0.2f * Mathf.Sin(Time.unscaledTime * 12f);
-                _frame.color = c;
+                _splatPop -= dt;
+                float k = Mathf.Clamp01(_splatPop / SplatPopSeconds);
+                float s = 1f + 0.35f * k;
+                _splat.rectTransform.localScale = new Vector3(s, s, 1f);
             }
+        }
+
+        private void UpdateAbsorbFeedback(float dt)
+        {
+            if (_flashRemaining > 0f)
+            {
+                _flashRemaining -= dt;
+                float f = Mathf.Clamp01(_flashRemaining / FlashSeconds);
+                _shieldFlash.color = new Color(_shieldColor.r, _shieldColor.g, _shieldColor.b, 0.55f * f);
+                if (_flashRemaining <= 0f) _shieldFlash.enabled = false;
+            }
+
+            if (_bannerRemaining > 0f)
+            {
+                _bannerRemaining -= dt;
+                float elapsed = _bannerSeconds - _bannerRemaining;
+
+                // Pop de entrada (0.6 -> 1.12 -> 1) y salida rápida al final.
+                float scale = elapsed < 0.2f ? Mathf.Lerp(0.6f, 1.12f, elapsed / 0.2f)
+                    : elapsed < 0.3f ? Mathf.Lerp(1.12f, 1f, (elapsed - 0.2f) / 0.1f)
+                    : 1f;
+                if (_bannerRemaining < 0.25f) scale *= Mathf.Clamp01(_bannerRemaining / 0.25f);
+                _absorbedBanner.localScale = new Vector3(scale, scale, 1f);
+
+                if (_bannerRemaining <= 0f) _absorbedBanner.gameObject.SetActive(false);
+            }
+        }
+
+        private float SplatBaseAlpha() => GameSettings.ReduceVisualEffects ? _splatAlphaReduced : _splatAlpha;
+
+        private static Color WithAlpha(Color c, float alpha)
+        {
+            c.a = alpha;
+            return c;
         }
 
         private void ResetThrowerPose()
@@ -225,6 +323,10 @@ namespace DiosPunk.Rhythm
         {
             _phase = Phase.Idle;
             _frameActive = false;
+            _splatActive = false;
+            _bannerRemaining = 0f;
+            _flashRemaining = 0f;
+
             if (_projectile != null)
             {
                 _projectile.enabled = false;
@@ -232,6 +334,9 @@ namespace DiosPunk.Rhythm
             }
             if (_shield != null) _shield.enabled = false;
             if (_frame != null) _frame.enabled = false;
+            if (_splat != null) _splat.enabled = false;
+            if (_shieldFlash != null) _shieldFlash.enabled = false;
+            if (_absorbedBanner != null) _absorbedBanner.gameObject.SetActive(false);
             if (_leftNpc != null && _rightNpc != null) ResetThrowerPose();
         }
     }

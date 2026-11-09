@@ -18,12 +18,13 @@ namespace DiosPunk.Rhythm.Editor
         private const string ShieldPngPath = ArtDir + "/PunkShield_Placeholder.png";
         private const string FramePngPath = ArtDir + "/DebuffFrame_Placeholder.png";
         private const string PortraitPngPath = ArtDir + "/Portrait_Placeholder.png";
+        private const string SplatPngPath = ArtDir + "/TomatoSplat_Placeholder.png";
         private const string CalibrationClickPath = AudioDir + "/Calibration_Click.wav";
         private const string DialogueDir = "Assets/_Project/Data/Dialogues";
 
         internal sealed class FxAssets
         {
-            public Sprite Npc1, Npc2, Projectile, Shield, Frame, Portrait;
+            public Sprite Npc1, Npc2, Projectile, Shield, Frame, Portrait, Splat;
             public AudioClip Click;
         }
 
@@ -42,6 +43,8 @@ namespace DiosPunk.Rhythm.Editor
                 if (d >= 62f && d <= 72f) return Color.white;
                 return d < 62f ? new Color(1f, 1f, 1f, 0.18f) : Color.clear;
             });
+
+            SaveSplat(SplatPngPath);
 
             // Dientes hacia arriba: blanco con borde negro en la línea del diente (se tiñe con el color del proyectil).
             SavePixels(FramePngPath, 512, 96, (x, y) =>
@@ -76,6 +79,7 @@ namespace DiosPunk.Rhythm.Editor
                 Shield = AssetDatabase.LoadAssetAtPath<Sprite>(ShieldPngPath),
                 Frame = AssetDatabase.LoadAssetAtPath<Sprite>(FramePngPath),
                 Portrait = AssetDatabase.LoadAssetAtPath<Sprite>(PortraitPngPath),
+                Splat = AssetDatabase.LoadAssetAtPath<Sprite>(SplatPngPath),
                 Click = AssetDatabase.LoadAssetAtPath<AudioClip>(CalibrationClickPath)
             };
         }
@@ -124,6 +128,82 @@ namespace DiosPunk.Rhythm.Editor
             float ex = (x - 96f) / 86f;
             float ey = (y - 0f) / 76f;
             return y <= 76 && ex * ex + ey * ey <= 1f;                                                  // hombros
+        }
+
+        // ---------------- Mancha de tomate ----------------
+
+        /// <summary>
+        /// Mancha roja irregular tipo "tomatazo" / tinta estrellada: cuerpo con contorno ruidoso y puntas, salpicaduras
+        /// alrededor y goteos hacia abajo. Rojo saturado con el centro más oscuro y brillos de textura.
+        /// </summary>
+        private static void SaveSplat(string path)
+        {
+            const int size = 512;
+            const float center = size * 0.5f;
+            var rng = new System.Random(7);
+
+            var dots = new Vector3[26];   // x, y, radio
+            for (int i = 0; i < dots.Length; i++)
+            {
+                double angle = rng.NextDouble() * Mathf.PI * 2.0;
+                float dist = 170f + (float)rng.NextDouble() * 78f;
+                dots[i] = new Vector3(center + Mathf.Cos((float)angle) * dist, center + Mathf.Sin((float)angle) * dist,
+                    5f + (float)rng.NextDouble() * 17f);
+            }
+
+            var drips = new Vector3[6];   // x, largo, ancho
+            for (int i = 0; i < drips.Length; i++)
+            {
+                drips[i] = new Vector3(center - 110f + i * 44f + (float)rng.NextDouble() * 18f,
+                    55f + (float)rng.NextDouble() * 85f, 10f + (float)rng.NextDouble() * 9f);
+            }
+
+            var baseColor = new Color(0.86f, 0.07f, 0.05f, 1f);
+            var darkColor = new Color(0.5f, 0.02f, 0.03f, 1f);
+            var lightColor = new Color(1f, 0.32f, 0.26f, 1f);
+
+            SavePixels(path, size, size, (x, y) =>
+            {
+                float dx = x - center, dy = y - center;
+                float dist = Mathf.Sqrt(dx * dx + dy * dy);
+                float theta = Mathf.Atan2(dy, dx);
+
+                // Cuerpo: radio con ruido y puntas (salpicadura radial).
+                float noise = Mathf.PerlinNoise(Mathf.Cos(theta) * 1.8f + 9f, Mathf.Sin(theta) * 1.8f + 4f);
+                float spikes = Mathf.Max(0f, Mathf.Sin(theta * 9f + noise * 4f)) * 38f;
+                float bodyRadius = 118f + noise * 62f + spikes;
+                bool inside = dist <= bodyRadius;
+
+                if (!inside)
+                {
+                    for (int i = 0; i < dots.Length && !inside; i++)
+                    {
+                        float ddx = x - dots[i].x, ddy = y - dots[i].y;
+                        inside = ddx * ddx + ddy * ddy <= dots[i].z * dots[i].z;
+                    }
+                }
+
+                if (!inside)
+                {
+                    // Goteos: cápsulas verticales que salen por debajo del cuerpo.
+                    for (int i = 0; i < drips.Length && !inside; i++)
+                    {
+                        float top = center - 100f;
+                        float bottom = top - drips[i].y;
+                        if (y <= top && y >= bottom && Mathf.Abs(x - drips[i].x) <= drips[i].z * 0.5f) inside = true;
+                        else if (Vector2.Distance(new Vector2(x, y), new Vector2(drips[i].x, bottom)) <= drips[i].z * 0.5f) inside = true;
+                    }
+                }
+
+                if (!inside) return Color.clear;
+
+                // Centro más oscuro y manchas de brillo para que parezca húmedo.
+                float depth = Mathf.Clamp01(1f - dist / 200f);
+                Color c = Color.Lerp(baseColor, darkColor, depth * depth);
+                float gloss = Mathf.PerlinNoise(x * 0.045f, y * 0.045f);
+                if (gloss > 0.72f) c = Color.Lerp(c, lightColor, (gloss - 0.72f) * 2.5f);
+                return c;
+            });
         }
 
         // ---------------- Generación ----------------

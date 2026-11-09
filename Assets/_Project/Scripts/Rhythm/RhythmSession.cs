@@ -27,11 +27,12 @@ namespace DiosPunk.Rhythm
         [SerializeField, Min(0f)] private float _goodHeal = 1f;
 
         [Header("Modo Punk")]
-        [Tooltip("Cuánto suma a la barra cada Miss (0.15 = 15 %).")]
+        [Tooltip("Cuánto suma a la barra cada Miss (0.15 = 15 %): carga rápida de rescate.")]
         [SerializeField, Range(0f, 1f)] private float _punkMissCharge = 0.15f;
-        [Tooltip("Cuánto suma cada racha de aciertos consecutivos (0.05 = 5 %).")]
-        [SerializeField, Range(0f, 1f)] private float _punkStreakCharge = 0.05f;
-        [SerializeField, Min(1)] private int _punkStreakSize = 10;
+        [Tooltip("Cuánto suma cada Perfect (0.01 = 1 %): carga lenta y continua.")]
+        [SerializeField, Range(0f, 1f)] private float _punkPerfectCharge = 0.01f;
+        [Tooltip("Cuánto suma cada Good (0.005 = 0,5 %).")]
+        [SerializeField, Range(0f, 1f)] private float _punkGoodCharge = 0.005f;
         [Tooltip("Segundos que tarda en vaciarse la barra una vez activo (8 a 10).")]
         [SerializeField, Range(1f, 30f)] private float _punkActiveSeconds = 9f;
 
@@ -56,7 +57,7 @@ namespace DiosPunk.Rhythm
         {
             Score.Configure(_perfectPoints, _goodPoints, _comboPerMultiplierStep, _maxMultiplier);
             Health.Configure(_maxHealth, _missDamage, _perfectHeal, _goodHeal);
-            Punk.Configure(_punkMissCharge, _punkStreakCharge, _punkStreakSize, _punkActiveSeconds);
+            Punk.Configure(_punkMissCharge, _punkPerfectCharge, _punkGoodCharge, _punkActiveSeconds);
             Debuffs.Configure(_debuffInterval, _debuffDuration, _debuffLead);
             Debuffs.SetAbsorber(Punk.TryAbsorbDebuff);
             ResetAll();

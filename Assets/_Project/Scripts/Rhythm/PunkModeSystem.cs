@@ -3,22 +3,31 @@ using System;
 namespace DiosPunk.Rhythm
 {
     /// <summary>
-    /// Modo Punk: barra dual. Carga rápida (salvavidas) con cada Miss y lenta (recompensa) con cada racha de
-    /// N aciertos consecutivos. Al llegar al 100 % se activa solo: otorga 1 escudo (absorbe el próximo debuff),
-    /// las ventanas de impacto se vuelven más permisivas (lo aplica quien escuche Activated/Deactivated) y la
-    /// barra se drena con el tiempo de canción hasta apagarse. Lógica pura, testeable en EditMode.
+    /// Modo Punk: barra dual de carga continua. Cada acierto suma una porción pequeña pero visible
+    /// (Perfect +1 %, Good +0,5 %) y cada Miss suma una porción grande de rescate (+15 %), así la barra
+    /// responde de inmediato tanto si el jugador toca bien como si se equivoca. Al llegar al 100 % se activa
+    /// solo: otorga 1 escudo (absorbe el próximo debuff), las ventanas de impacto se vuelven más permisivas
+    /// (lo aplica quien escuche Activated/Deactivated) y la barra se drena con el tiempo de canción hasta
+    /// apagarse. Lógica pura, testeable en EditMode.
     /// Mientras está activo no se carga la barra. El tiempo avanza con Tick(songTime): al pausar la canción el
     /// tiempo se congela y el drenaje también.
     /// </summary>
     public sealed class PunkModeSystem
     {
-        private int _hitStreak;
+        private const float FullTolerance = 0.0001f;
+
         private double _lastTime;
         private bool _hasLastTime;
 
+        /// <summary>Carga de rescate por Miss (fracción: 0.15 = 15 %).</summary>
         public float MissCharge { get; private set; } = 0.15f;
-        public float StreakCharge { get; private set; } = 0.05f;
-        public int StreakSize { get; private set; } = 10;
+
+        /// <summary>Carga por Perfect (0.01 = 1 %).</summary>
+        public float PerfectCharge { get; private set; } = 0.01f;
+
+        /// <summary>Carga por Good (0.005 = 0,5 %).</summary>
+        public float GoodCharge { get; private set; } = 0.005f;
+
         public float ActiveSeconds { get; private set; } = 9f;
 
         /// <summary>Barra normalizada 0..1.</summary>
@@ -37,11 +46,11 @@ namespace DiosPunk.Rhythm
         /// <summary>true si terminó porque el escudo absorbió un debuff; false si se agotó el tiempo o se reinició.</summary>
         public event Action<bool> Deactivated;
 
-        public void Configure(float missCharge, float streakCharge, int streakSize, float activeSeconds)
+        public void Configure(float missCharge, float perfectCharge, float goodCharge, float activeSeconds)
         {
             MissCharge = missCharge;
-            StreakCharge = streakCharge;
-            StreakSize = Math.Max(1, streakSize);
+            PerfectCharge = perfectCharge;
+            GoodCharge = goodCharge;
             ActiveSeconds = Math.Max(0.1f, activeSeconds);
         }
 
@@ -52,24 +61,19 @@ namespace DiosPunk.Rhythm
             Bar = 0f;
             ShieldCharges = 0;
             UseCount = 0;
-            _hitStreak = 0;
             _hasLastTime = false;
             BarChanged?.Invoke(Bar, false);
         }
 
         public void RegisterHit(HitType type)
         {
+            if (IsActive) return; // activo: la barra solo se drena
+
             switch (type)
             {
-                case HitType.Miss:
-                    _hitStreak = 0;
-                    if (!IsActive) AddCharge(MissCharge);
-                    break;
-                case HitType.Perfect:
-                case HitType.Good:
-                    _hitStreak++;
-                    if (!IsActive && _hitStreak % StreakSize == 0) AddCharge(StreakCharge);
-                    break;
+                case HitType.Miss: AddCharge(MissCharge); break;
+                case HitType.Perfect: AddCharge(PerfectCharge); break;
+                case HitType.Good: AddCharge(GoodCharge); break;
             }
         }
 
@@ -112,8 +116,12 @@ namespace DiosPunk.Rhythm
 
         private void AddCharge(float amount)
         {
-            Bar = Bar + amount > 1f ? 1f : Bar + amount;
-            if (Bar >= 1f) Activate();
+            if (amount <= 0f) return;
+
+            Bar += amount;
+
+            // Tolerancia: 100 x 0.01f en float queda en 0.99999x y la barra no llegaría nunca al 100 %.
+            if (Bar >= 1f - FullTolerance) Activate();
             else BarChanged?.Invoke(Bar, false);
         }
 
@@ -133,7 +141,7 @@ namespace DiosPunk.Rhythm
             ShieldCharges = 0;
             Bar = 0f;
             Deactivated?.Invoke(shieldConsumed);
-            BarChanged?.Invoke(Bar, false);
+            BarChanged?.Invoke(0f, false);
         }
     }
 }

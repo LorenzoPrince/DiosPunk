@@ -19,6 +19,8 @@ namespace DiosPunk.Rhythm
         [SerializeField, Min(1)] private int _testBeatCount = 64;
         [Tooltip("Cada N beats se agrega una nota extra a contratiempo (0 = ninguna, 1 = una por beat). Sube la densidad.")]
         [SerializeField, Min(0)] private int _testOffbeatEvery;
+        [Tooltip("Beats iniciales a media densidad (una nota cada dos beats, sin contratiempos): entrada suave al nivel.")]
+        [SerializeField, Min(0)] private int _testWarmupBeats;
 
         public string Title => _title;
         public AudioClip AudioClip => _audioClip;
@@ -40,6 +42,9 @@ namespace DiosPunk.Rhythm
             var notes = new System.Collections.Generic.List<NoteData>(_testBeatCount * 2);
             for (int i = 0; i < _testBeatCount; i++)
             {
+                bool warmup = i < _testWarmupBeats;
+                if (warmup && (i & 1) == 1) continue; // media densidad al inicio
+
                 int lane = s_testLanePattern[i % s_testLanePattern.Length];
                 notes.Add(new NoteData
                 {
@@ -49,7 +54,7 @@ namespace DiosPunk.Rhythm
                 });
 
                 // Nota extra a contratiempo en otro carril: más densidad en los niveles avanzados.
-                if (_testOffbeatEvery > 0 && i % _testOffbeatEvery == 0)
+                if (!warmup && _testOffbeatEvery > 0 && i % _testOffbeatEvery == 0)
                 {
                     notes.Add(new NoteData
                     {

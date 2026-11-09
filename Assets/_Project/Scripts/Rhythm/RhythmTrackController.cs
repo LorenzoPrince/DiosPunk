@@ -25,7 +25,7 @@ namespace DiosPunk.Rhythm
         [Header("Geometría de pista (espacio local)")]
         [SerializeField] private float _hitLineY = -3.5f;
         [SerializeField] private float _spawnY = 6f;
-        [SerializeField] private float _laneSpacing = 1.5f;
+        [SerializeField] private float _laneSpacing = 1.9f;
         [Tooltip("Velocidad de caída en unidades por segundo.")]
         [SerializeField, Min(0.1f)] private float _noteSpeed = 8f;
 

@@ -17,3 +17,4 @@ MonoBehaviour:
   _difficulty: Media
   _songResource: Song_03_PeatonalCordoba
   _dialogue: {fileID: 11400000, guid: f11597c6de61d054a9ca663e17668dfc, type: 2}
+  _noteSpeedMultiplier: 0.95

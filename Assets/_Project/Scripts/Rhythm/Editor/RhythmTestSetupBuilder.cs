@@ -38,17 +38,17 @@ namespace DiosPunk.Rhythm.Editor
         private const int BeatCount = 64;
 
         // Geometría: 4 carriles a 1.5 u => highway de 6 u de ancho. PPU 100 (1 u en White = 16 px a PPU 16).
-        private const int NotePxW = 120, NotePxH = 40;
-        private const int HitBarPxW = 600, HitBarPxH = 12;
+        private const int NotePxW = 156, NotePxH = 52;   // 1.56 x 0.52 u (+30 % sobre 1.2 x 0.4)
+        private const int HitBarPxW = 760, HitBarPxH = 12;   // 4 carriles x 1.9 u
         private const float HitLineY = -3.5f;
-        private const float LaneSpacing = 1.5f;
+        private const float LaneSpacing = 1.9f;
 
         internal static BuiltAssets BuildAssets()
         {
             EnsureFolders();
 
             // Texturas blancas con borde negro: el color de carril se aplica por tinte (multiplicación).
-            Sprite noteSprite = CreateSprite(NotePngPath, NotePxW, NotePxH, 4, Color.white, Color.black, 100f, 0);
+            Sprite noteSprite = CreateSprite(NotePngPath, NotePxW, NotePxH, 5, Color.white, Color.black, 100f, 0);
             Sprite hitBarSprite = CreateSprite(HitBarPngPath, HitBarPxW, HitBarPxH, 2, Color.white, Color.black, 100f, 0);
             Sprite panelSprite = CreateSprite(PanelPngPath, 64, 64, 6, Color.white, Color.black, 100f, 6);
             Sprite whiteSprite = CreateSprite(WhitePngPath, 16, 16, 0, Color.white, Color.white, 16f, 0);

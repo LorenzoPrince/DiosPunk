@@ -143,7 +143,7 @@ namespace DiosPunk.Rhythm.Editor
 
             Transform ui = GameObject.Find("HudCanvas").transform;
             EnsureEventSystem();
-            BuildSabotage(track, session, ui, ReloadFx());
+            BuildSabotage(track, session, ui, ReloadFx(), a.Panel, a.White);
 
             RectTransform preRoot = CreateScreenRoot(ui, "PreLevelScreen", Dark, a.White);
             var preLevel = BuildPreLevel(preRoot, a.Panel);
@@ -492,7 +492,8 @@ namespace DiosPunk.Rhythm.Editor
         }
 
         /// <summary>NPC saboteadores, proyectil, escudo Punk y marco inferior dentado (parte visual de los debuffs).</summary>
-        private static void BuildSabotage(GameObject track, RhythmSession session, Transform ui, FxAssets fx)
+        private static void BuildSabotage(GameObject track, RhythmSession session, Transform ui, FxAssets fx,
+            Sprite panel, Sprite white)
         {
             SpriteRenderer left = FindOrCreateSprite(track.transform, "NpcLeft", fx.Npc1, Color.white,
                 new Vector3(-6.4f, -0.4f, 0f), new Vector3(1.9f, 1.9f, 1f), 4);
@@ -515,9 +516,42 @@ namespace DiosPunk.Rhythm.Editor
             frame.raycastTarget = false;
             frame.enabled = false;
 
+            // Mancha de tomate en el centro de la pantalla (detrás del HUD, delante del mundo de juego).
+            Image splat = FindOrCreateImage(ui, "DebuffSplat", fx.Splat, Color.white, Center, Center,
+                Vector2.zero, new Vector2(980f, 980f), Image.Type.Simple);
+            splat.raycastTarget = false;
+            splat.enabled = false;
+            splat.transform.SetSiblingIndex(1);
+
+            // Destello de pantalla completa cuando el escudo absorbe el debuff.
+            Image flash = FindOrCreateImage(ui, "ShieldFlash", white, new Color(1f, 0.85f, 0.1f, 0.55f),
+                Vector2.zero, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Image.Type.Simple);
+            flash.rectTransform.anchorMin = Vector2.zero;
+            flash.rectTransform.anchorMax = Vector2.one;
+            flash.rectTransform.offsetMin = Vector2.zero;
+            flash.rectTransform.offsetMax = Vector2.zero;
+            flash.raycastTarget = false;
+            flash.enabled = false;
+            flash.transform.SetSiblingIndex(2);
+
+            // Cartel estilo fanzine: papel amarillo torcido con "¡DEBUFF ABSORBIDO!".
+            Image bannerPaper = FindOrCreateImage(ui, "AbsorbedBanner", panel, new Color(1f, 0.92f, 0.25f, 1f),
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 160f), new Vector2(1180f, 250f), Image.Type.Sliced);
+            bannerPaper.raycastTarget = false;
+            bannerPaper.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -4f);
+            TMP_Text bannerTitle = FindOrCreateText(bannerPaper.rectTransform, "Title", "¡DEBUFF ABSORBIDO!", 80f,
+                TextAlignmentOptions.Center, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 25f),
+                new Vector2(1100f, 130f), Color.black);
+            bannerTitle.fontStyle = FontStyles.Bold;
+            bannerTitle.textWrappingMode = TextWrappingModes.NoWrap;
+            FindOrCreateText(bannerPaper.rectTransform, "Subtitle", "El Escudo Punk te salvó", 42f, TextAlignmentOptions.Center,
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -72f), new Vector2(1000f, 60f), Red);
+            bannerPaper.gameObject.SetActive(false);
+
             var sabotage = GetOrAdd<NpcSabotageController>(track);
             SetRefs(sabotage, ("_session", session), ("_leftNpc", left.transform), ("_rightNpc", right.transform),
-                ("_projectile", projectile), ("_shield", shield), ("_frame", frame));
+                ("_projectile", projectile), ("_shield", shield), ("_frame", frame), ("_splat", splat),
+                ("_absorbedBanner", bannerPaper.rectTransform), ("_shieldFlash", flash));
         }
 
         private static SongPreparationScreen BuildPreparation(RectTransform root, Sprite panel)

@@ -151,7 +151,8 @@ namespace DiosPunk.Flow
             if (!Machine.TryGoTo(GameState.Gameplay)) return;
 
             // El cambio de estado ya activó el mundo de juego: cargar la canción y arrancar.
-            _track.SetSpeedMultiplier(GameSession.NoteSpeedMultiplier); // dificultad elegida en la narrativa
+            // Velocidad del nivel x ajuste de dificultad elegido en la narrativa.
+            _track.SetSpeedMultiplier(CurrentLevel.NoteSpeedMultiplier * GameSession.NoteSpeedMultiplier);
             _track.LoadSong(_song);
             _track.StartSong();
         }
