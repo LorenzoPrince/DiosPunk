@@ -187,7 +187,7 @@ namespace DiosPunk.Rhythm.Editor
             // Mundo de juego y HUD: visibles en Gameplay / Pausa / Game Over (y en Opciones abierta desde la pausa).
             var gameplayStates = new[] { GameState.Gameplay, GameState.PauseMenu, GameState.GameOver };
             panels.Add(MakePanel(track, true, gameplayStates));
-            foreach (string hudName in new[] { "PunkPanel", "ScorePanel", "HealthBar", "JudgementText", "StatsText",
+            foreach (string hudName in new[] { "PunkPanel", "ScorePanel", "HealthBar", "SongProgressPanel", "JudgementText", "StatsText",
                          "MetricsText", "GcText", "StatusText" })
             {
                 Transform t = ui.Find(hudName);
@@ -491,14 +491,45 @@ namespace DiosPunk.Rhythm.Editor
             return screen;
         }
 
+        private const string NpcPlaceholderText = "PLACEHOLDER\n/\nREEMPLAZAR\nPOR\nDIBUJO\nREAL";
+
+        private static void FindOrCreateNpcLabel(Transform npc)
+        {
+            Transform t = npc.Find("PlaceholderLabel");
+            GameObject go = t != null ? t.gameObject : new GameObject("PlaceholderLabel");
+            go.transform.SetParent(npc, false);
+            go.transform.localPosition = new Vector3(0f, 0.08f, 0f); // centro del torso en el espacio del sprite
+            go.transform.localRotation = Quaternion.identity;
+            go.transform.localScale = Vector3.one;
+
+            var label = GetOrAdd<TextMeshPro>(go);
+            label.text = NpcPlaceholderText;
+            label.fontStyle = FontStyles.Bold;
+            label.alignment = TextAlignmentOptions.Center;
+            label.color = Color.white;
+            label.textWrappingMode = TextWrappingModes.NoWrap;
+            label.enableAutoSizing = true;
+            label.fontSizeMin = 0.3f;
+            label.fontSizeMax = 1f;
+            label.rectTransform.sizeDelta = new Vector2(0.66f, 0.95f); // ancho del torso (0.7 u de sprite)
+            label.sortingOrder = 6;
+        }
+
         /// <summary>NPC saboteadores, proyectil, escudo Punk y marco inferior dentado (parte visual de los debuffs).</summary>
         private static void BuildSabotage(GameObject track, RhythmSession session, Transform ui, FxAssets fx,
             Sprite panel, Sprite white)
         {
             SpriteRenderer left = FindOrCreateSprite(track.transform, "NpcLeft", fx.Npc1, Color.white,
                 new Vector3(-6.4f, -0.4f, 0f), new Vector3(1.9f, 1.9f, 1f), 4);
+            // El NPC derecho se espeja con flipX (no con escala negativa) para que su rótulo no salga invertido.
             SpriteRenderer right = FindOrCreateSprite(track.transform, "NpcRight", fx.Npc2, Color.white,
-                new Vector3(6.4f, -0.4f, 0f), new Vector3(-1.9f, 1.9f, 1f), 4);
+                new Vector3(6.4f, -0.4f, 0f), new Vector3(1.9f, 1.9f, 1f), 4);
+            right.flipX = true;
+
+            // Rótulo de aclaración sobre el torso. Es hijo del NPC: acompaña el desplazamiento del lanzamiento y,
+            // como el movimiento es solo traslación (sin rotación), mantiene siempre su orientación legible.
+            FindOrCreateNpcLabel(left.transform);
+            FindOrCreateNpcLabel(right.transform);
 
             SpriteRenderer projectile = FindOrCreateSprite(track.transform, "SabotageProjectile", fx.Projectile, Color.white,
                 Vector3.zero, new Vector3(1.3f, 1.3f, 1f), 15);

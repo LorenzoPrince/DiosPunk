@@ -80,6 +80,12 @@ namespace DiosPunk.Rhythm
         public HitWindows Windows => _permissive ? _punkWindows : _windows;
         public RhythmStats Stats { get; } = new RhythmStats();
         public int TotalNotes => _notes.Length;
+
+        /// <summary>
+        /// Duración de la pista en segundos desde el primer sample del audio: instante de la última nota más un
+        /// pequeño margen (el nivel termina al resolverse la última nota). 0 si no hay canción cargada.
+        /// </summary>
+        public float DurationSeconds { get; private set; }
         public int ActiveNoteCount => _active.Count;
         public NoteView GetActiveNote(int index) => _active[index];
 
@@ -311,6 +317,9 @@ namespace DiosPunk.Rhythm
             _notes = valid.ToArray();
             Array.Sort(_notes, s_byTime);
             _notesBuiltFor = _song;
+
+            // _notes está ordenada por tiempo: la última es la más tardía.
+            DurationSeconds = _notes.Length > 0 ? (float)_notes[_notes.Length - 1].targetTimeDSP + 0.1f : 0f;
         }
 
         private void RecomputeDerived()

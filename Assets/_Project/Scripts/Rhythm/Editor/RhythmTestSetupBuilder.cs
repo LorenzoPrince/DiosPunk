@@ -357,11 +357,31 @@ namespace DiosPunk.Rhythm.Editor
                 new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(6f, 0f), new Vector2(508f, 30f), Image.Type.Filled);
             ConfigureFill(healthFill, 1f);
 
+            // Progreso de la pista (arriba centro, bajo la vida): cinta con aguja + contador "mm:ss / mm:ss"
+            Image progressPanel = FindOrCreateImage(ui, "SongProgressPanel", panelSprite, Color.white,
+                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -84f), new Vector2(540f, 84f), Image.Type.Sliced);
+            RectTransform barArea = FindOrCreateImage(progressPanel.rectTransform, "BarArea", whiteSprite, new Color(0.82f, 0.8f, 0.74f, 1f),
+                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -12f), new Vector2(500f, 22f), Image.Type.Simple).rectTransform;
+            Image progressFill = FindOrCreateImage(barArea, "Fill", whiteSprite, new Color(0.1f, 0.1f, 0.1f, 1f),
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Image.Type.Filled);
+            progressFill.rectTransform.anchorMin = Vector2.zero;
+            progressFill.rectTransform.anchorMax = Vector2.one;
+            progressFill.rectTransform.offsetMin = Vector2.zero;
+            progressFill.rectTransform.offsetMax = Vector2.zero;
+            ConfigureFill(progressFill, 0f);
+            RectTransform needle = FindOrCreateImage(barArea, "Needle", whiteSprite, new Color(0.85f, 0.1f, 0.1f, 1f),
+                new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(8f, 36f), Image.Type.Simple).rectTransform;
+            TMP_Text timeText = FindOrCreateText(progressPanel.rectTransform, "TimeText", "00:00 / 00:00", 32f, TextAlignmentOptions.Center,
+                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -40f), new Vector2(500f, 38f), Color.black);
+            var progressPresenter = GetOrAdd<SongProgressPresenter>(progressPanel.gameObject);
+            SetRefs(progressPresenter, ("_track", controller), ("_fill", progressFill), ("_needle", needle),
+                ("_barArea", barArea), ("_timeText", timeText));
+
             // Debug (abajo / centro): no compiten con el HUD de juego
             TMP_Text judgement = FindOrCreateText(ui, "JudgementText", "-", 56f, TextAlignmentOptions.Center,
-                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -110f), new Vector2(900f, 80f), Color.white);
+                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -185f), new Vector2(900f, 80f), Color.white);
             TMP_Text debuffText = FindOrCreateText(ui, "DebuffText", "DEBUFF!", 64f, TextAlignmentOptions.Center,
-                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -190f), new Vector2(1100f, 90f),
+                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -260f), new Vector2(1100f, 90f),
                 new Color(0.85f, 0.2f, 0.95f, 1f));
             debuffText.enabled = false;
             TMP_Text stats = FindOrCreateText(ui, "StatsText", null, 30f, TextAlignmentOptions.BottomLeft,
