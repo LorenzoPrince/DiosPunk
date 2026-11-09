@@ -271,6 +271,10 @@ namespace DiosPunk.Rhythm.Editor
 
                 pads[lane] = FindOrCreateSprite(track.transform, "LanePad_" + lane, noteSprite, Color.clear,
                     new Vector3(x, HitLineY, 0f), new Vector3(1.15f, 1.3f, 1f), 6);
+
+                // Indicación de las teclas bajo el receptáculo (teclado A S D F / flechas)
+                FindOrCreateWorldLabel(track.transform, "KeyLabel_" + lane, KeyLabels[lane],
+                    new Vector3(x, HitLineY - 0.62f, 0f));
             }
 
             var feedback = GetOrAdd<RhythmHitFeedback>(track);
@@ -315,10 +319,20 @@ namespace DiosPunk.Rhythm.Editor
             GetOrAdd<GraphicRaycaster>(canvasGo); // sin esto los botones no reciben clics
             Transform ui = canvasGo.transform;
 
-            // Modo Punk (arriba izquierda): panel + rótulo + barra (aún sin lógica: Hito 3)
+            // Capa del debuff (detrás del HUD): se activa por script mientras dura un debuff
+            Image debuffOverlay = FindOrCreateImage(ui, "DebuffOverlay", whiteSprite, new Color(0.75f, 0.1f, 0.85f, 0.35f),
+                Vector2.zero, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Image.Type.Simple);
+            debuffOverlay.rectTransform.anchorMin = Vector2.zero;
+            debuffOverlay.rectTransform.anchorMax = Vector2.one;
+            debuffOverlay.rectTransform.offsetMin = Vector2.zero;
+            debuffOverlay.rectTransform.offsetMax = Vector2.zero;
+            debuffOverlay.raycastTarget = false;
+            debuffOverlay.enabled = false;
+
+            // Modo Punk (arriba izquierda): panel + rótulo + barra (la actualiza RhythmHudPresenter por eventos)
             RectTransform punkPanel = FindOrCreateImage(ui, "PunkPanel", panelSprite, Color.white,
                 new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(30f, -30f), new Vector2(520f, 140f), Image.Type.Sliced).rectTransform;
-            FindOrCreateText(punkPanel, "PunkLabel", "MODO PUNK", 54f, TextAlignmentOptions.TopLeft,
+            TMP_Text punkLabel = FindOrCreateText(punkPanel, "PunkLabel", "MODO PUNK", 54f, TextAlignmentOptions.TopLeft,
                 new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -10f), new Vector2(460f, 70f), new Color(0.85f, 0.1f, 0.1f, 1f));
             FindOrCreateImage(punkPanel, "PunkBarBackground", panelSprite, Color.white,
                 new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(24f, 18f), new Vector2(472f, 36f), Image.Type.Sliced);
@@ -346,6 +360,10 @@ namespace DiosPunk.Rhythm.Editor
             // Debug (abajo / centro): no compiten con el HUD de juego
             TMP_Text judgement = FindOrCreateText(ui, "JudgementText", "-", 56f, TextAlignmentOptions.Center,
                 new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -110f), new Vector2(900f, 80f), Color.white);
+            TMP_Text debuffText = FindOrCreateText(ui, "DebuffText", "DEBUFF!", 64f, TextAlignmentOptions.Center,
+                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -190f), new Vector2(1100f, 90f),
+                new Color(0.85f, 0.2f, 0.95f, 1f));
+            debuffText.enabled = false;
             TMP_Text stats = FindOrCreateText(ui, "StatsText", null, 30f, TextAlignmentOptions.BottomLeft,
                 new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(30f, 100f), new Vector2(700f, 90f), Color.white);
             TMP_Text metrics = FindOrCreateText(ui, "MetricsText", null, 26f, TextAlignmentOptions.BottomLeft,
@@ -359,7 +377,12 @@ namespace DiosPunk.Rhythm.Editor
             GameObject presenterGo = FindOrCreate("RhythmHudPresenter");
             var presenter = GetOrAdd<RhythmHudPresenter>(presenterGo);
             SetRefs(presenter, ("_session", session), ("_scoreText", scoreText), ("_multiplierText", multiplierText),
-                ("_healthFill", healthFill), ("_accuracyText", accuracyText));
+                ("_healthFill", healthFill), ("_accuracyText", accuracyText),
+                ("_punkFill", punkFill), ("_punkLabel", punkLabel));
+
+            var debuffVisuals = GetOrAdd<RhythmDebuffVisuals>(track);
+            SetRefs(debuffVisuals, ("_session", session), ("_shakeTarget", track.transform),
+                ("_overlay", debuffOverlay), ("_statusText", debuffText));
 
             GameObject hudGo = FindOrCreate("RhythmDebugHUD");
             var hud = GetOrAdd<RhythmDebugHUD>(hudGo);
@@ -389,6 +412,28 @@ namespace DiosPunk.Rhythm.Editor
         {
             T c = go.GetComponent<T>();
             return c != null ? c : go.AddComponent<T>();
+        }
+
+        // Teclas por carril: 0 rojo, 1 amarillo, 2 verde, 3 azul (letra / flecha)
+        private static readonly string[] KeyLabels = { "A / ←", "S / ↓", "D / ↑", "F / →" };
+
+        private static TextMeshPro FindOrCreateWorldLabel(Transform parent, string name, string text, Vector3 localPosition)
+        {
+            Transform t = parent.Find(name);
+            GameObject go = t != null ? t.gameObject : new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = localPosition;
+
+            var tmp = GetOrAdd<TextMeshPro>(go);
+            tmp.text = text;
+            tmp.fontSize = 4f;
+            tmp.fontStyle = FontStyles.Bold;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.color = Color.black;
+            tmp.textWrappingMode = TextWrappingModes.NoWrap;
+            tmp.rectTransform.sizeDelta = new Vector2(1.4f, 0.5f);
+            tmp.sortingOrder = 12;
+            return tmp;
         }
 
         private static SpriteRenderer FindOrCreateSprite(Transform parent, string name, Sprite sprite, Color color,

@@ -47,6 +47,8 @@ namespace DiosPunk.Rhythm
                 CreateAction("<Keyboard>/f4", null, CycleMode),
                 CreateAction("<Keyboard>/numpadPlus", "<Keyboard>/equals", () => AdjustLatency(_latencyStepMs)),
                 CreateAction("<Keyboard>/numpadMinus", "<Keyboard>/minus", () => AdjustLatency(-_latencyStepMs)),
+                CreateAction("<Keyboard>/f5", null, ForcePunk),
+                CreateAction("<Keyboard>/f6", null, ForceDebuff),
             };
         }
 
@@ -113,6 +115,18 @@ namespace DiosPunk.Rhythm
             _autoPlayer.Mode = (AutoPlayMode)(((int)_autoPlayer.Mode + 1) % count);
         }
 
+        /// <summary>F5: llena la barra y activa el Modo Punk.</summary>
+        private void ForcePunk()
+        {
+            if (_session != null && _track.IsRunning) _session.Punk.ForceActivate();
+        }
+
+        /// <summary>F6: dispara un debuff ahora (lo absorbe el escudo si el Modo Punk está activo).</summary>
+        private void ForceDebuff()
+        {
+            if (_session != null && _track.IsRunning) _session.Debuffs.TriggerNow(_track.Clock.SongTime);
+        }
+
         private void AdjustLatency(float deltaMs)
         {
             _track.Clock.LatencyOffsetMs += deltaMs;
@@ -155,7 +169,7 @@ namespace DiosPunk.Rhythm
             _statusText.text =
                 "AutoPlay: " + auto + "  [F1 on/off, F4 modo]\n" +
                 "Latency offset: " + _track.Clock.LatencyOffsetMs.ToString("0") + " ms  [+/-]" + paused + "\n" +
-                "[F2 reiniciar, F3 pausa]";
+                "[F2 reiniciar, F3 pausa, F5 Modo Punk, F6 debuff]";
             _skipFrames = 2;
         }
 

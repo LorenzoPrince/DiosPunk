@@ -58,6 +58,7 @@ namespace DiosPunk.Flow
             _pause.ExitRequested += ExitToLevelSelect;
 
             _gameOver.RetryRequested += BeginSong;
+            _gameOver.OptionsRequested += OpenOptions;
             _gameOver.LevelSelectRequested += ExitToLevelSelect;
             _gameOver.MainMenuRequested += ExitToMainMenu;
 
@@ -87,6 +88,7 @@ namespace DiosPunk.Flow
             _pause.ExitRequested -= ExitToLevelSelect;
 
             _gameOver.RetryRequested -= BeginSong;
+            _gameOver.OptionsRequested -= OpenOptions;
             _gameOver.LevelSelectRequested -= ExitToLevelSelect;
             _gameOver.MainMenuRequested -= ExitToMainMenu;
 
@@ -154,7 +156,7 @@ namespace DiosPunk.Flow
                     ResumeGameplay();
                     break;
                 case GameState.Options:
-                    CloseOptions();
+                    CloseOptions(); // vuelve a Pausa o a Game Over según desde dónde se abrió
                     break;
             }
         }
@@ -192,7 +194,7 @@ namespace DiosPunk.Flow
                 perfect = stats.Perfect,
                 good = stats.Good,
                 miss = stats.Miss,
-                punkUses = 0, // Modo Punk: Hito 3
+                punkUses = _session.Punk.UseCount,
                 newBest = newBest,
                 nextUnlocked = nextUnlocked,
                 hasNextLevel = _levelIndex + 1 < _catalog.Count && _progress.UnlockedLevels > _levelIndex + 1

@@ -18,13 +18,25 @@ namespace DiosPunk.Rhythm
         [Tooltip("Opcional.")]
         [SerializeField] private TMP_Text _accuracyText;
 
+        [Header("Modo Punk (esquina superior izquierda)")]
+        [Tooltip("Imagen con Image Type = Filled (Horizontal).")]
+        [SerializeField] private Image _punkFill;
+        [SerializeField] private TMP_Text _punkLabel;
+        [SerializeField] private Color _punkChargingColor = new Color(0.85f, 0.1f, 0.1f, 1f);
+        [SerializeField] private Color _punkActiveColor = new Color(1f, 0.85f, 0.1f, 1f);
+
+        private const string PunkLabelIdle = "MODO PUNK";
+        private const string PunkLabelActive = "MODO PUNK ACTIVO!";
+
         private readonly char[] _scoreBuffer = new char[ScoreFormatter.BufferSize];
 
         private void OnEnable()
         {
             _session.Score.Changed += OnScoreChanged;
             _session.Health.Changed += OnHealthChanged;
+            _session.Punk.BarChanged += OnPunkBarChanged;
 
+            OnPunkBarChanged(_session.Punk.Bar, _session.Punk.IsActive);
             OnScoreChanged(_session.Score.Score, _session.Score.Multiplier, _session.Score.Combo);
             OnHealthChanged(_session.Health.Current, _session.Health.Max);
         }
@@ -33,6 +45,14 @@ namespace DiosPunk.Rhythm
         {
             _session.Score.Changed -= OnScoreChanged;
             _session.Health.Changed -= OnHealthChanged;
+            _session.Punk.BarChanged -= OnPunkBarChanged;
+        }
+
+        private void OnPunkBarChanged(float bar, bool active)
+        {
+            _punkFill.fillAmount = bar;
+            _punkFill.color = active ? _punkActiveColor : _punkChargingColor;
+            if (_punkLabel != null) _punkLabel.text = active ? PunkLabelActive : PunkLabelIdle;
         }
 
         private void OnScoreChanged(int score, int multiplier, int combo)

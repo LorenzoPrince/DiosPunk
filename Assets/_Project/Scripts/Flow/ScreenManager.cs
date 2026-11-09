@@ -26,7 +26,7 @@ namespace DiosPunk.Flow
             GameStateMachine machine = _flow.Machine;
             for (int i = 0; i < _panels.Length; i++)
             {
-                if (_panels[i] != null) _panels[i].Apply(machine.Current, machine.OptionsOpenedFromPause);
+                if (_panels[i] != null) _panels[i].Apply(machine.Current, machine.OptionsOpenedOverGameplay);
             }
         }
     }

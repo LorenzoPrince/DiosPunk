@@ -34,7 +34,9 @@ namespace DiosPunk.Flow
         /// <summary>Estado desde el que se abrió Options.</summary>
         public GameState ReturnState { get; private set; } = GameState.MainMenu;
 
-        public bool OptionsOpenedFromPause => Current == GameState.Options && ReturnState == GameState.PauseMenu;
+        /// <summary>Options abierta sobre el juego (desde la pausa o el Game Over): el mundo de juego sigue visible detrás.</summary>
+        public bool OptionsOpenedOverGameplay =>
+            Current == GameState.Options && (ReturnState == GameState.PauseMenu || ReturnState == GameState.GameOver);
 
         /// <summary>previo, nuevo.</summary>
         public event Action<GameState, GameState> Changed;
@@ -50,7 +52,7 @@ namespace DiosPunk.Flow
                 case GameState.Credits:
                     return to == GameState.MainMenu;
                 case GameState.Options:
-                    return to == GameState.MainMenu || to == GameState.PauseMenu;
+                    return to == GameState.MainMenu || to == GameState.PauseMenu || to == GameState.GameOver;
                 case GameState.PreLevel:
                     return to == GameState.SongPreparation;
                 case GameState.SongPreparation:
@@ -60,7 +62,7 @@ namespace DiosPunk.Flow
                 case GameState.PauseMenu:
                     return to == GameState.Gameplay || to == GameState.Options;
                 case GameState.GameOver:
-                    return to == GameState.Gameplay;
+                    return to == GameState.Gameplay || to == GameState.Options;
                 case GameState.ResultsScreen:
                     return to == GameState.PreLevel;
                 default:

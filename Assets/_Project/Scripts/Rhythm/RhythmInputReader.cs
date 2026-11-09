@@ -5,7 +5,7 @@ using UnityEngine.InputSystem;
 namespace DiosPunk.Rhythm
 {
     /// <summary>
-    /// Mapea 4 carriles a D-F-J-K y Flechas en simultáneo usando el New Input System y emite
+    /// Mapea 4 carriles en simultáneo a A-S-D-F y a las Flechas (Izq, Abajo, Arriba, Der) con el New Input System y emite
     /// (lane, timestamp de hardware). El timestamp es CallbackContext.time: el momento real del
     /// evento, independiente de en qué frame se procesó (línea de tiempo de Time.realtimeSinceStartup).
     /// Las InputActions se crean por código para no depender de editar el .inputactions del proyecto.
@@ -15,7 +15,7 @@ namespace DiosPunk.Rhythm
         public const int LaneCount = 4;
 
         private static readonly string[] s_primaryKeys =
-            { "<Keyboard>/d", "<Keyboard>/f", "<Keyboard>/j", "<Keyboard>/k" };
+            { "<Keyboard>/a", "<Keyboard>/s", "<Keyboard>/d", "<Keyboard>/f" };
 
         private static readonly string[] s_arrowKeys =
             { "<Keyboard>/leftArrow", "<Keyboard>/downArrow", "<Keyboard>/upArrow", "<Keyboard>/rightArrow" };

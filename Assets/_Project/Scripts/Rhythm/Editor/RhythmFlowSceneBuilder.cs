@@ -179,6 +179,8 @@ namespace DiosPunk.Rhythm.Editor
             // El flujo decide cuándo arranca la canción (no al darle Play).
             var so = new SerializedObject(controller);
             so.FindProperty("_playOnStart").boolValue = false;
+            // La canción se carga por LoadSong desde Resources: la escena no debe referenciar el audio.
+            so.FindProperty("_song").objectReferenceValue = null;
             so.ApplyModifiedPropertiesWithoutUndo();
 
             Transform ui = GameObject.Find("HudCanvas").transform;
@@ -429,7 +431,7 @@ namespace DiosPunk.Rhythm.Editor
                 new Vector2(0f, 40f), panel, white);
 
             FindOrCreateText(pages[2].transform, "ControlsText",
-                "Carriles: D  F  J  K  o  Flechas\nPausa: Escape\nDebug: F1 Auto-Play, F2 reiniciar, F3 pausa, F4 modo, +/- latencia",
+                "Carriles: A  S  D  F  o  Flechas (Izq, Abajo, Arriba, Der)\nPausa: Escape\nDebug: F1 Auto-Play, F2 reiniciar, F3 pausa, F4 modo, F5 Modo Punk, F6 debuff, +/- latencia",
                 38f, TextAlignmentOptions.Center, Center, Center, Vector2.zero, new Vector2(1000f, 300f), Color.black);
 
             Toggle reduce = FindOrCreateToggle(pages[3].transform, "ReduceEffectsToggle",
@@ -508,12 +510,13 @@ namespace DiosPunk.Rhythm.Editor
         {
             FindOrCreateText(root, "Title", "GAME OVER", 150f, TextAlignmentOptions.Center, Center, Center,
                 new Vector2(0f, 240f), new Vector2(1400f, 200f), Color.white);
-            Button retry = CreateButton(root, "RetryButton", "REINTENTAR", new Vector2(0f, 40f), new Vector2(460f, 100f), panel);
-            Button select = CreateButton(root, "LevelSelectButton", "SELECTOR", new Vector2(0f, -90f), new Vector2(460f, 100f), panel);
-            Button menu = CreateButton(root, "MainMenuButton", "MENU", new Vector2(0f, -220f), new Vector2(460f, 100f), panel);
+            Button retry = CreateButton(root, "RetryButton", "REINTENTAR", new Vector2(0f, 90f), new Vector2(460f, 100f), panel);
+            Button options = CreateButton(root, "OptionsButton", "OPCIONES", new Vector2(0f, -30f), new Vector2(460f, 100f), panel);
+            Button select = CreateButton(root, "LevelSelectButton", "SELECTOR", new Vector2(0f, -150f), new Vector2(460f, 100f), panel);
+            Button menu = CreateButton(root, "MainMenuButton", "MENU", new Vector2(0f, -270f), new Vector2(460f, 100f), panel);
 
             var screen = GetOrAdd<GameOverScreen>(root.gameObject);
-            SetRefs(screen, ("_retry", retry), ("_levelSelect", select), ("_mainMenu", menu));
+            SetRefs(screen, ("_retry", retry), ("_options", options), ("_levelSelect", select), ("_mainMenu", menu));
             return screen;
         }
 

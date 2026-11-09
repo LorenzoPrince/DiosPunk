@@ -10,7 +10,7 @@ namespace DiosPunk.Flow
     {
         [SerializeField] private GameState[] _visibleIn = System.Array.Empty<GameState>();
 
-        [Tooltip("Si es true, sigue visible cuando Options se abrió desde la pausa (para ver el juego detrás).")]
+        [Tooltip("Si es true, sigue visible cuando Options se abrió sobre el juego (desde la pausa o el Game Over).")]
         [SerializeField] private bool _keepWhenOptionsFromPause;
 
         public void Apply(GameState state, bool optionsOpenedFromPause)

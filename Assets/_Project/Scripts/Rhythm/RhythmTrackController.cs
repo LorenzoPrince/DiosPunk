@@ -41,6 +41,9 @@ namespace DiosPunk.Rhythm
         [Header("Juicio")]
         [SerializeField] private HitWindows _windows = HitWindows.Default;
 
+        [Tooltip("Ventanas más permisivas mientras el Modo Punk está activo.")]
+        [SerializeField] private HitWindows _punkWindows = new HitWindows { perfectMs = 45f, goodMs = 90f, earlyMissMs = 130f };
+
         [Header("Pool")]
         [SerializeField, Min(1)] private int _poolPrewarm = 32;
         [SerializeField, Min(1)] private int _poolMaxSize = 128;
@@ -57,6 +60,8 @@ namespace DiosPunk.Rhythm
         private double _lookaheadSeconds;
         private double _goodWindowSeconds;
         private bool _running;
+        private bool _permissive;
+        private SongData _notesBuiltFor;
 
         /// <summary>Resultado de un juicio: tipo, carril y delta en ms (negativo = temprano, positivo = tarde).</summary>
         public event Action<HitType, int, float> NoteJudged;
@@ -70,10 +75,14 @@ namespace DiosPunk.Rhythm
         /// <summary>Se dispara al pausar.</summary>
         public event Action SongPaused;
 
+        /// <summary>Se dispara al detener la canción (salida, Game Over o resultados).</summary>
+        public event Action SongStopped;
+
         public bool IsRunning => _running;
         public bool IsPaused => _clock.IsPaused;
         public SongClock Clock => _clock;
-        public HitWindows Windows => _windows;
+        /// <summary>Ventanas vigentes (las permisivas mientras el Modo Punk está activo).</summary>
+        public HitWindows Windows => _permissive ? _punkWindows : _windows;
         public RhythmStats Stats { get; } = new RhythmStats();
         public int TotalNotes => _notes.Length;
         public int ActiveNoteCount => _active.Count;
@@ -128,8 +137,19 @@ namespace DiosPunk.Rhythm
         /// <summary>Cambia la canción (recalcula la lista de notas). Llamar antes de StartSong.</summary>
         public void LoadSong(SongData song)
         {
+            // Reintentar la misma canción no reconstruye la lista (evita basura en cada reinicio).
+            if (song == _notesBuiltFor && song != null) return;
+
             _song = song;
             BuildNoteList();
+        }
+
+        /// <summary>Activa o desactiva las ventanas de impacto permisivas (Modo Punk).</summary>
+        public void SetPermissiveWindows(bool permissive)
+        {
+            if (_permissive == permissive) return;
+            _permissive = permissive;
+            RecomputeDerived();
         }
 
         public void StartSong()
@@ -150,6 +170,7 @@ namespace DiosPunk.Rhythm
             _running = false;
             _clock.Stop();
             ReleaseAllActive();
+            SongStopped?.Invoke();
         }
 
         public void PauseSong()
@@ -254,7 +275,7 @@ namespace DiosPunk.Rhythm
             NoteView view = _active[index];
             double deltaMs = (_clock.InputRealtimeToSongTime(inputRealtime) - view.TargetTime) * 1000.0;
 
-            HitType result = _windows.Judge(deltaMs);
+            HitType result = Windows.Judge(deltaMs);
             if (result == HitType.None) return;
 
             _active.RemoveAt(index);
@@ -287,12 +308,13 @@ namespace DiosPunk.Rhythm
 
             _notes = valid.ToArray();
             Array.Sort(_notes, s_byTime);
+            _notesBuiltFor = _song;
         }
 
         private void RecomputeDerived()
         {
             _lookaheadSeconds = (_spawnY - _hitLineY) / Mathf.Max(0.01f, _noteSpeed);
-            _goodWindowSeconds = _windows.goodMs * 0.001;
+            _goodWindowSeconds = Windows.goodMs * 0.001;
         }
 
         private void ReleaseAllActive()

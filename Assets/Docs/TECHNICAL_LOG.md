@@ -142,7 +142,29 @@ Una entrada por decisión; nunca se borran (si cambian: `Superseded by ADR-XXX`)
 - **Causa del bug:** los canvases generados tenían `Canvas` y `CanvasScaler` pero **no `GraphicRaycaster`**, así que ningún botón recibía clics. El `EventSystem` ya usaba `InputSystemUIInputModule` (sin `StandaloneInputModule`).
 - **Reglas:** todo canvas lleva `GraphicRaycaster`; solo los botones, el box del toggle y el slider tienen `Raycast Target` activo (fondos, paneles y textos lo tienen desactivado). El `EventSystem` se crea con `InputSystemUIInputModule` + `AssignDefaultActions()`.
 
-<!-- Añadir ADR-015+ debajo -->
+### ADR-015 — Modo Punk (Hito 3)
+- **Estado:** Aceptada · **Fecha:** 2026-11-09 · **Resuelve** Q-B.
+- **Decisión:** `PunkModeSystem` (clase pura, sin MonoBehaviour) dentro de `RhythmSession`. Carga rápida: cada Miss suma +15 %. Carga lenta: cada racha de 10 aciertos consecutivos suma +5 % (un Miss corta la racha). Al llegar al 100 % se activa solo: otorga 1 escudo, ensancha las ventanas de impacto (Perfect ±30 → ±45 ms, Good ±70 → ±90 ms, `RhythmTrackController._punkWindows`) y la barra se drena en 9 s (`_punkActiveSeconds`, configurable de 1 a 30) hasta apagarse. Mientras está activo no se carga la barra. Si el escudo absorbe un debuff se consume y el modo termina.
+- **Tiempo:** el drenaje avanza con `Tick(SongTime)` (dspTime), no con `deltaTime`: pausa y reinicio lo congelan/reinician solos.
+- **Desacople:** el sistema solo emite eventos (`BarChanged`, `Activated`, `Deactivated`); `RhythmSession` conecta con el controlador (`SetPermissiveWindows`) y `RhythmHudPresenter` pinta la barra y el rótulo ("MODO PUNK" / "MODO PUNK ACTIVO!") por eventos. `UseCount` alimenta "Usos de Modo Punk" en Resultados.
+- **Pendiente:** la distorsión audiovisual del modo activo (saturación fanzine y filtro de audio) no está implementada; el proceso de audio "modo punk" de la guitarra depende del equipo de Audio.
+
+### ADR-016 — Debuffs periódicos (Hito 3)
+- **Estado:** Aceptada · **Fecha:** 2026-11-09
+- **Decisión:** `DebuffSystem` (clase pura): cada 25 s de canción se dispara un debuff (el primero a los 25 s). Un absorbedor (`PunkModeSystem.TryAbsorbDebuff`) decide: si el Modo Punk está activo, el escudo lo absorbe (evento `Absorbed`, la pista no se penaliza); si no, el debuff dura 5 s (`Started` / `Ended`). Intervalo y duración configurables en `RhythmSession`.
+- **Efecto placeholder** (`RhythmDebuffVisuals`): capa de color pulsante sobre la pantalla, temblor de la pista y rótulo "DEBUFF!" / "ESCUDO PUNK: DEBUFF ABSORBIDO". Es solo visual: el juicio usa tiempos, no posiciones.
+- **Accesibilidad:** `GameSettings.ReduceVisualEffects` (movido a `DiosPunk.Rhythm`; lo escribe el toggle de Opciones) anula el temblor y deja la capa tenue y fija.
+- **Pendiente:** la alteración del chart ("notas injustas" por debuff) requiere patrones autorados por canción (Q-A); aún no se aplica.
+- **Pruebas:** F5 fuerza el Modo Punk y F6 dispara un debuff en Play Mode (`RhythmDebugTools`).
+
+### ADR-017 — Controles A-S-D-F y reintento limpio
+- **Estado:** Aceptada · **Fecha:** 2026-11-09 · **Reemplaza** el mapeo D-F-J-K de ADR previos.
+- **Controles:** carril 0 rojo = A / Flecha Izq; 1 amarillo = S / Flecha Abajo; 2 verde = D / Flecha Arriba; 3 azul = F / Flecha Der (ambos mapeos activos a la vez). Cada receptáculo muestra su indicación ("A / ←", …) en texto de mundo bajo la HitBar.
+- **Game Over:** botón OPCIONES entre Reintentar y Selector. `GameState` permite GameOver ↔ Options; `OptionsOpenedOverGameplay` mantiene visible el juego detrás tanto desde la pausa como desde el Game Over, y cerrar Opciones (botón o Escape) vuelve al estado de origen.
+- **Reintento:** Pausa y Game Over llaman a `BeginSong`: `LoadSong` no reconstruye la lista de notas si la canción es la misma (sin basura por reintento), `StartSong` libera notas activas, resetea estadísticas y llama a `SongClock.Play` (corta el audio, limpia la pausa, vuelve a muestrear el offset y reprograma desde t = 0). `SongStarted` reinicia puntaje, vida, Modo Punk y debuffs. Al detener la canción (`SongStopped`) se apagan los efectos pero puntaje y vida quedan visibles.
+- **Pruebas lógicas:** 22 verificaciones de `PunkModeSystem`, `DebuffSystem`, `HitWindows` y `ScoreFormatter` ejecutadas en el Editor (todas OK). Pendiente: prueba en Play Mode con el editor en foco.
+
+<!-- Añadir ADR-018+ debajo -->
 
 ---
 
@@ -193,6 +215,8 @@ Assets/
 | Input (M02) | Acciones D-F-J-K / flechas, timestamp | 🟩 Validado en Play Mode (2026-11-04) |
 | Judgement (M02) | Ventanas Perfect/Good/Miss | 🟩 Validado en Play Mode |
 | Puntaje / Combo / Vida (Hito 2) | `ScoreSystem`, `HealthSystem`, `RhythmSession`, `RhythmHudPresenter` | 🟨 Compila; falta validar en Play Mode |
+| Modo Punk (Hito 3) | `PunkModeSystem`, ventanas permisivas, barra en HUD | 🟨 Lógica verificada en Editor (22 pruebas); falta Play Mode |
+| Debuffs (Hito 3) | `DebuffSystem`, `RhythmDebuffVisuals`, opción de accesibilidad | 🟨 Lógica verificada en Editor; efecto visual sin ver en Play Mode; alteración del chart pendiente |
 | Navegación / Flujo de pantallas (Hito 4) | `GameStateMachine`, `MenuFlowController`, `GameplayFlowController`, `ScreenManager`, 9 pantallas, `LevelCatalog`, `LevelData`, `ProgressStore`, `GameSession` | 🟨 Compila; verificado por script: Jugar → selector (nivel 2 bloqueado) y Nivel 1 → carga asíncrona de Gameplay. Falta recorrer Gameplay completo con clics reales |
 | Escenas / SceneLoader | `MainMenu.unity`, `Gameplay.unity`, `SceneLoader` | 🟨 Generadas y en Build Settings; transición menú → Gameplay verificada |
 | Debuffs | Scheduler 25 s/5 s, efecto visual + chart | ⬜ |
@@ -218,6 +242,7 @@ Formato: `YYYY-MM-DD · [módulo] · descripción · archivos`
 - 2026-11-04 · [Rhythm/Editor] · Herramienta `DiosPunk/Rhythm/Build Test Setup` (`Assets/_Project/Scripts/Rhythm/Editor/`, asmdef `DiosPunk.Rhythm.Editor`): genera sprites placeholder (`Art/Placeholders`), WAV de metrónomo 120 BPM (`Audio/Placeholders`, PCM mono), `Prefabs/Note.prefab`, `Data/Songs/TestSong_120BPM.asset` (64 notas, 1 por beat) y arma la escena (RhythmTrack, HitBar y=-3.5, cámara ortográfica 5, DebugCanvas + RhythmDebugHUD). Idempotente. Scripts M01/M02 compilan sin errores; en Play Mode inició sin errores, el feel de timing aún no se probó con teclado.
 - 2026-11-04 · [Rhythm/Debug] · Sistema de Debug & Testing: `RhythmHitFeedback` (pads por carril Verde/Amarillo/Rojo), gizmos de ventanas Perfect/Good/Early Miss en `RhythmTrackController`, `RhythmDebugAutoPlayer` (bot: AlwaysPerfect/AlwaysGood/SimulateMisses/HumanRandom gaussiano con semilla), `RhythmDebugTools` (F1 autoplay, F2 reiniciar, F3 pausa, F4 modo bot, +/- latencia ±5 ms; resumen en consola al terminar/pausar; monitor de GC con ProfilerRecorder), `RhythmStats` (media y desvío estándar por Welford). `SongClock` gana `Pause/Resume` y `SongTimeToInputRealtime` (inversa exacta). El builder del escenario agrega todo. Compila sin errores; la prueba end-to-end en Play Mode no se pudo ejecutar con el editor sin foco.
 - 2026-11-04 · [Rhythm] · Validación manual en Play Mode por el equipo: M01/M02 + sistema de debug funcionan según lo esperado (reportado por el usuario; sin cifras de GC/latencia registradas aún).
+- 2026-11-09 · [Rhythm/Flow] · Hito 3 y cierre de mecánicas (ADR-015, ADR-016, ADR-017): `PunkModeSystem`, `DebuffSystem`, `RhythmDebuffVisuals`; `RhythmSession` integra Modo Punk y debuffs; `RhythmTrackController` suma ventanas permisivas (`SetPermissiveWindows`), `SongStopped` y `LoadSong` sin reconstruir si es la misma canción; `RhythmHudPresenter` pinta la barra Punk; controles A-S-D-F + flechas con etiquetas bajo los receptáculos; botón OPCIONES en Game Over; `GameSettings` movido a `DiosPunk.Rhythm`; debug F5 (Modo Punk) y F6 (debuff). El builder de escenas genera todo.
 - 2026-11-09 · [Flow/Scenes] · Arquitectura multiescena (ADR-013) y fix de clics de UI (ADR-014): escenas `MainMenu` y `Gameplay` en `Assets/_Project/Scenes/` (SampleScene renombrada a Gameplay), `SceneLoader`, `GameSession`, `LevelCatalog`, `MenuFlowController`, `GameplayFlowController`, `FlowControllerBase`, `CreditsScreen`. `GameFlowController` eliminado. `LevelData` carga la canción por `Resources/Songs`; `TestSong_120BPM.asset` movido a `Assets/_Project/Resources/Songs/`. Builder: `DiosPunk/Scenes/Build MainMenu + Gameplay` (reemplaza `DiosPunk/Flow/Build Screens`). El objeto vacío "prueba claude" se eliminó al regenerar la escena.
 - 2026-11-08 · [Flow] · Userflow y gestión de pantallas (ADR-011, ADR-012): assembly `DiosPunk.Flow` (`GameStateMachine`, `GameFlowController`, `ScreenManager`, `ScreenPanel`, `LevelData`, `ProgressStore`, `GameSettings` y 8 pantallas), `ScoreFormatter`, `RhythmTrackController.LoadSong`. Builder `DiosPunk/Flow/Build Screens` (crea 5 `LevelData` placeholder, pantallas, EventSystem con Input System UI y `GameFlow`). Compila sin errores; Play Mode arranca en el menú sin errores.
 - 2026-11-08 · [Rhythm] · Hito 2: `ScoreSystem`, `HealthSystem`, `RhythmSession`, `RhythmHudPresenter` (ADR-009). `NoteView.Init` recibe el color del carril; `RhythmTrackController` expone `GetLaneColor`. `RhythmDebugTools` agrega puntaje/precisión/vida al resumen. `DiosPunk.Rhythm.asmdef` referencia `UnityEngine.UI`.
@@ -232,7 +257,7 @@ Formato: `YYYY-MM-DD · [módulo] · descripción · archivos`
 | # | Pregunta o riesgo | Estado |
 |---|---|---|
 | Q-A | Notas "injustas" del debuff | **Resuelta:** patrones densos definidos a mano por canción en `SongData` |
-| Q-B | Modo Punk: umbrales, tasas de carga, duración, ampliación de ventana | Abierta → se implementa con **valores provisionales** en un SO de config (ajustables en testeo) |
+| Q-B | Modo Punk: umbrales, tasas de carga, duración, ampliación de ventana | **Resuelta (2026-11-09):** +15 % por Miss, +5 % por racha de 10, 100 % activa, drena en 9 s, ventanas ±45/±90 ms (ADR-015) |
 | Q-C | Juicio | **Resuelta (actualizada, ver ADR-007):** Perfect ±30 / Good ±70 / Miss. Puntaje/precisión: pendiente |
 | Q-D | Vida: máximo, daño por fallo, recuperación | Abierta → provisional en SO de config (100 HP, −10 por Miss, +1 por acierto) |
 | Q-E | Notas hold | **Resuelta:** solo notas simples en MVP; hold queda para ampliación |
