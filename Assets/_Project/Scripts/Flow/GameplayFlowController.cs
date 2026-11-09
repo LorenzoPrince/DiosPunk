@@ -5,40 +5,37 @@ using UnityEngine.InputSystem;
 namespace DiosPunk.Flow
 {
     /// <summary>
-    /// Orquesta el flujo de pantallas: dueño de la máquina de estados, conecta las pantallas con el motor
-    /// de ritmo (pausa, Game Over, victoria) y el progreso guardado. No manipula la UI directamente: eso
-    /// lo hace el ScreenManager reaccionando a los cambios de estado.
+    /// Orquestador de la escena Gameplay: narrativa pre-nivel, preparación, canción, pausa, Game Over y
+    /// resultados. El nivel a jugar viene de GameSession. Para salir al menú o cambiar de nivel carga otra
+    /// escena con el SceneLoader (lo que libera la canción actual).
     /// </summary>
-    public sealed class GameFlowController : MonoBehaviour
+    public sealed class GameplayFlowController : FlowControllerBase
     {
         [Header("Ritmo")]
         [SerializeField] private RhythmTrackController _track;
         [SerializeField] private RhythmSession _session;
 
-        [Header("Niveles (1 a 5)")]
-        [SerializeField] private LevelData[] _levels = System.Array.Empty<LevelData>();
+        [SerializeField] private LevelCatalog _catalog;
 
         [Header("Pantallas")]
-        [SerializeField] private MainMenuScreen _mainMenu;
-        [SerializeField] private LevelSelectScreen _levelSelect;
-        [SerializeField] private OptionsScreen _options;
         [SerializeField] private PreLevelScreen _preLevel;
         [SerializeField] private SongPreparationScreen _preparation;
+        [SerializeField] private OptionsScreen _options;
         [SerializeField] private PauseMenuScreen _pause;
         [SerializeField] private GameOverScreen _gameOver;
         [SerializeField] private ResultsScreen _results;
 
         private ProgressStore _progress;
         private int _levelIndex;
+        private SongData _song;
         private InputAction _escape;
 
-        public GameStateMachine Machine { get; } = new GameStateMachine();
-
-        private LevelData CurrentLevel => _levels[_levelIndex];
+        private LevelData CurrentLevel => _catalog.Levels[_levelIndex];
 
         private void Awake()
         {
-            _progress = ProgressStore.Load(_levels.Length);
+            _progress = GameSession.GetProgress(_catalog.Count);
+            _levelIndex = Mathf.Clamp(GameSession.SelectedLevelIndex, 0, _catalog.Count - 1);
 
             _escape = new InputAction("Escape", InputActionType.Button, "<Keyboard>/escape");
             _escape.performed += _ => OnEscape();
@@ -48,19 +45,12 @@ namespace DiosPunk.Flow
         {
             _escape.Enable();
 
-            _mainMenu.PlayRequested += GoToLevelSelect;
-            _mainMenu.OptionsRequested += OpenOptions;
-            _mainMenu.QuitRequested += QuitApplication;
-
-            _levelSelect.LevelChosen += OnLevelChosen;
-            _levelSelect.BackRequested += GoToMainMenu;
-
-            _options.BackRequested += CloseOptions;
-
             _preLevel.Finished += OnPreLevelFinished;
 
             _preparation.StartRequested += BeginSong;
-            _preparation.BackRequested += GoToLevelSelect;
+            _preparation.BackRequested += ExitToLevelSelect;
+
+            _options.BackRequested += CloseOptions;
 
             _pause.ResumeRequested += ResumeGameplay;
             _pause.RestartRequested += BeginSong;
@@ -84,19 +74,12 @@ namespace DiosPunk.Flow
         {
             _escape.Disable();
 
-            _mainMenu.PlayRequested -= GoToLevelSelect;
-            _mainMenu.OptionsRequested -= OpenOptions;
-            _mainMenu.QuitRequested -= QuitApplication;
-
-            _levelSelect.LevelChosen -= OnLevelChosen;
-            _levelSelect.BackRequested -= GoToMainMenu;
-
-            _options.BackRequested -= CloseOptions;
-
             _preLevel.Finished -= OnPreLevelFinished;
 
             _preparation.StartRequested -= BeginSong;
-            _preparation.BackRequested -= GoToLevelSelect;
+            _preparation.BackRequested -= ExitToLevelSelect;
+
+            _options.BackRequested -= CloseOptions;
 
             _pause.ResumeRequested -= ResumeGameplay;
             _pause.RestartRequested -= BeginSong;
@@ -119,63 +102,43 @@ namespace DiosPunk.Flow
         private void OnDestroy()
         {
             _escape?.Dispose();
+            _song = null; // suelta la referencia: el SceneLoader liberará el AudioClip
         }
 
         private void Start()
         {
-            Machine.Force(GameState.MainMenu);
+            // La canción se carga solo en esta escena (Resources) y se libera al salir de ella.
+            _song = CurrentLevel.LoadSong();
+            _preLevel.Begin(CurrentLevel);
+            Machine.Force(GameState.PreLevel);
         }
 
-        // ---------- Navegación de menús ----------
+        // ---------- Narrativa y preparación ----------
 
-        private void GoToMainMenu() => Machine.TryGoTo(GameState.MainMenu);
-
-        private void GoToLevelSelect()
+        private void OnPreLevelFinished()
         {
-            _levelSelect.Refresh(_levels, _progress.UnlockedLevels);
-            Machine.TryGoTo(GameState.LevelSelect);
+            _preparation.Begin(CurrentLevel, _song);
+            Machine.TryGoTo(GameState.SongPreparation);
         }
 
         private void OpenOptions() => Machine.TryGoTo(GameState.Options);
 
         private void CloseOptions() => Machine.TryGoTo(Machine.ReturnState);
 
-        private void OnLevelChosen(int index)
-        {
-            _levelIndex = index;
-            EnterPreLevel();
-        }
-
-        private void EnterPreLevel()
-        {
-            _preLevel.Begin(CurrentLevel);
-            Machine.TryGoTo(GameState.PreLevel);
-        }
-
-        private void OnPreLevelFinished()
-        {
-            _preparation.Begin(CurrentLevel);
-            Machine.TryGoTo(GameState.SongPreparation);
-        }
-
-        private void QuitApplication()
-        {
-#if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false;
-#else
-            Application.Quit();
-#endif
-        }
-
         // ---------- Gameplay ----------
 
         /// <summary>Inicia o reinicia la canción del nivel actual (desde preparación, pausa o Game Over).</summary>
         private void BeginSong()
         {
+            if (_song == null)
+            {
+                Debug.LogError("[Flow] El nivel no tiene una canción en Resources/Songs.");
+                return;
+            }
             if (!Machine.TryGoTo(GameState.Gameplay)) return;
 
             // El cambio de estado ya activó el mundo de juego: cargar la canción y arrancar.
-            _track.LoadSong(CurrentLevel.Song);
+            _track.LoadSong(_song);
             _track.StartSong();
         }
 
@@ -192,9 +155,6 @@ namespace DiosPunk.Flow
                     break;
                 case GameState.Options:
                     CloseOptions();
-                    break;
-                case GameState.LevelSelect:
-                    GoToMainMenu();
                     break;
             }
         }
@@ -235,7 +195,7 @@ namespace DiosPunk.Flow
                 punkUses = 0, // Modo Punk: Hito 3
                 newBest = newBest,
                 nextUnlocked = nextUnlocked,
-                hasNextLevel = _levelIndex + 1 < _levels.Length && _progress.UnlockedLevels > _levelIndex + 1
+                hasNextLevel = _levelIndex + 1 < _catalog.Count && _progress.UnlockedLevels > _levelIndex + 1
             };
 
             _track.StopSong();
@@ -243,35 +203,36 @@ namespace DiosPunk.Flow
             Machine.TryGoTo(GameState.ResultsScreen);
         }
 
-        // ---------- Salidas (limpian la sesión de ritmo) ----------
+        // ---------- Resultados y salidas ----------
+
+        private void RetryFromResults()
+        {
+            _preLevel.Begin(CurrentLevel);
+            Machine.TryGoTo(GameState.PreLevel);
+        }
+
+        /// <summary>Recarga la escena Gameplay con el nivel siguiente: así se descarta el audio del anterior.</summary>
+        private void NextLevel()
+        {
+            if (SceneLoader.IsLoading || _levelIndex + 1 >= _catalog.Count) return;
+            GameSession.SelectedLevelIndex = _levelIndex + 1;
+            _track.StopSong();
+            SceneLoader.Load(SceneLoader.GameplayScene);
+        }
 
         private void ExitToLevelSelect()
         {
+            if (SceneLoader.IsLoading) return;
             _track.StopSong();
-            GoToLevelSelect();
+            GameSession.OpenLevelSelectOnMenu = true;
+            SceneLoader.Load(SceneLoader.MainMenuScene);
         }
 
         private void ExitToMainMenu()
         {
+            if (SceneLoader.IsLoading) return;
             _track.StopSong();
-            GoToMainMenu();
+            SceneLoader.Load(SceneLoader.MainMenuScene);
         }
-
-        private void RetryFromResults() => EnterPreLevel();
-
-        private void NextLevel()
-        {
-            if (_levelIndex + 1 >= _levels.Length) return;
-            _levelIndex++;
-            EnterPreLevel();
-        }
-
-        // ---------- Utilidades de prueba ----------
-
-        [ContextMenu("Reset Progress")]
-        private void ResetProgress() => _progress?.Reset();
-
-        [ContextMenu("Unlock All Levels")]
-        private void UnlockAllLevels() => _progress?.UnlockAll();
     }
 }

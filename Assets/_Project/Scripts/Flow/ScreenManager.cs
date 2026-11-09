@@ -2,10 +2,10 @@ using UnityEngine;
 
 namespace DiosPunk.Flow
 {
-    /// <summary>Muestra y oculta los ScreenPanel según el estado de la máquina de navegación (solo ante cambios de estado).</summary>
+    /// <summary>Muestra y oculta los ScreenPanel de la escena según el estado de su orquestador (solo ante cambios de estado).</summary>
     public sealed class ScreenManager : MonoBehaviour
     {
-        [SerializeField] private GameFlowController _flow;
+        [SerializeField] private FlowControllerBase _flow;
         [SerializeField] private ScreenPanel[] _panels = System.Array.Empty<ScreenPanel>();
 
         private void OnEnable()

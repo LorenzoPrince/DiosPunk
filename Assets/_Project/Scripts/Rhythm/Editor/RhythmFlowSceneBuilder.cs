@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using DiosPunk.Flow;
 using TMPro;
 using UnityEditor;
@@ -12,120 +13,74 @@ using UnityEngine.UI;
 namespace DiosPunk.Rhythm.Editor
 {
     /// <summary>
-    /// Segunda parte del builder: crea los niveles placeholder y todas las pantallas del flujo de navegación
-    /// (menú, selector, opciones, pre-nivel, preparación, pausa, game over y resultados) en el HudCanvas.
-    /// Menú: DiosPunk/Flow/Build Screens (ejecuta antes el builder de ritmo/HUD). Idempotente.
+    /// Genera la arquitectura multiescena: MainMenu.unity (menú, selector, opciones y créditos) y
+    /// Gameplay.unity (pista, HUD, narrativa pre-nivel, preparación, pausa, Game Over y resultados),
+    /// más los assets de datos (niveles, catálogo, canción en Resources) y los Build Settings.
+    /// Menú: DiosPunk/Scenes/Build MainMenu + Gameplay. Idempotente: regenera el contenido de ambas escenas.
     /// </summary>
     public static partial class RhythmTestSetupBuilder
     {
         private const string LevelDir = "Assets/_Project/Data/Levels";
+        private const string SceneDir = "Assets/_Project/Scenes";
+        private const string MainMenuScenePath = SceneDir + "/MainMenu.unity";
+        private const string GameplayScenePath = SceneDir + "/Gameplay.unity";
+        private const string LegacyScenePath = "Assets/Scenes/SampleScene.unity";
+        private const string CatalogPath = LevelDir + "/LevelCatalog.asset";
+        private const string LegacySongPath = "Assets/_Project/Data/Songs/TestSong_120BPM.asset";
 
         private static readonly Vector2 Center = new Vector2(0.5f, 0.5f);
         private static readonly Color Red = new Color(0.85f, 0.1f, 0.1f, 1f);
+        private static readonly Color Dark = new Color(0.12f, 0.12f, 0.12f, 1f);
 
-        [MenuItem("DiosPunk/Flow/Build Screens")]
-        public static void BuildFlow()
+        internal sealed class BuiltAssets
         {
-            Build(); // ritmo + HUD + placeholders (guarda la escena)
-
-            System.IO.Directory.CreateDirectory(LevelDir);
-            AssetDatabase.Refresh();
-
-            var song = AssetDatabase.LoadAssetAtPath<SongData>(SongPath);
-            LevelData[] levels = CreateLevels(song);
-
-            Sprite panel = AssetDatabase.LoadAssetAtPath<Sprite>(PanelPngPath);
-            Sprite white = AssetDatabase.LoadAssetAtPath<Sprite>(WhitePngPath);
-
-            GameObject canvasGo = GameObject.Find("HudCanvas");
-            Transform ui = canvasGo.transform;
-
-            EnsureEventSystem();
-
-            // El juego ahora arranca desde el flujo, no solo con darle Play.
-            GameObject track = GameObject.Find("RhythmTrack");
-            var controller = track.GetComponent<RhythmTrackController>();
-            var session = track.GetComponent<RhythmSession>();
-            var so = new SerializedObject(controller);
-            so.FindProperty("_playOnStart").boolValue = false;
-            so.ApplyModifiedPropertiesWithoutUndo();
-
-            // --- Pantallas ---
-            RectTransform mainRoot = CreateScreenRoot(ui, "MainMenuScreen", new Color(0.12f, 0.12f, 0.12f, 1f), white);
-            var mainMenu = BuildMainMenu(mainRoot, panel);
-
-            RectTransform selectRoot = CreateScreenRoot(ui, "LevelSelectScreen", new Color(0.12f, 0.12f, 0.12f, 1f), white);
-            var levelSelect = BuildLevelSelect(selectRoot, panel);
-
-            RectTransform optionsRoot = CreateScreenRoot(ui, "OptionsScreen", new Color(0.12f, 0.12f, 0.12f, 0.92f), white);
-            var options = BuildOptions(optionsRoot, panel, white);
-
-            RectTransform preRoot = CreateScreenRoot(ui, "PreLevelScreen", new Color(0.12f, 0.12f, 0.12f, 1f), white);
-            var preLevel = BuildPreLevel(preRoot, panel);
-
-            RectTransform prepRoot = CreateScreenRoot(ui, "SongPreparationScreen", new Color(0.12f, 0.12f, 0.12f, 1f), white);
-            var preparation = BuildPreparation(prepRoot, panel);
-
-            RectTransform pauseRoot = CreateScreenRoot(ui, "PauseMenuScreen", new Color(0f, 0f, 0f, 0.55f), white);
-            var pause = BuildPause(pauseRoot, panel);
-
-            RectTransform overRoot = CreateScreenRoot(ui, "GameOverScreen", new Color(0.35f, 0f, 0f, 0.7f), white);
-            var gameOver = BuildGameOver(overRoot, panel);
-
-            RectTransform resultsRoot = CreateScreenRoot(ui, "ResultsScreenPanel", new Color(0.12f, 0.12f, 0.12f, 1f), white);
-            var results = BuildResults(resultsRoot, panel);
-
-            // --- Flow + ScreenManager ---
-            GameObject flowGo = FindOrCreate("GameFlow");
-            var flow = GetOrAdd<GameFlowController>(flowGo);
-            var screenManager = GetOrAdd<ScreenManager>(flowGo);
-
-            SetRefs(flow, ("_track", controller), ("_session", session), ("_mainMenu", mainMenu),
-                ("_levelSelect", levelSelect), ("_options", options), ("_preLevel", preLevel),
-                ("_preparation", preparation), ("_pause", pause), ("_gameOver", gameOver), ("_results", results));
-            SetRefArray(flow, "_levels", levels);
-
-            // --- Visibilidad por estado ---
-            var panels = new List<ScreenPanel>();
-            var gameplayStates = new[] { GameState.Gameplay, GameState.PauseMenu, GameState.GameOver };
-
-            panels.Add(MakePanel(mainRoot.gameObject, false, GameState.MainMenu));
-            panels.Add(MakePanel(selectRoot.gameObject, false, GameState.LevelSelect));
-            panels.Add(MakePanel(optionsRoot.gameObject, false, GameState.Options));
-            panels.Add(MakePanel(preRoot.gameObject, false, GameState.PreLevel));
-            panels.Add(MakePanel(prepRoot.gameObject, false, GameState.SongPreparation));
-            panels.Add(MakePanel(pauseRoot.gameObject, false, GameState.PauseMenu));
-            panels.Add(MakePanel(overRoot.gameObject, false, GameState.GameOver));
-            panels.Add(MakePanel(resultsRoot.gameObject, false, GameState.ResultsScreen));
-
-            // Mundo de juego y HUD: visibles en Gameplay / Pausa / Game Over (y en Opciones abierta desde la pausa).
-            panels.Add(MakePanel(track, true, gameplayStates));
-            foreach (string hudName in new[] { "PunkPanel", "ScorePanel", "HealthBar", "JudgementText", "StatsText",
-                         "MetricsText", "GcText", "StatusText" })
-            {
-                Transform t = ui.Find(hudName);
-                if (t != null) panels.Add(MakePanel(t.gameObject, true, gameplayStates));
-            }
-
-            SetRefs(screenManager, ("_flow", flow));
-            SetRefArray(screenManager, "_panels", panels.ToArray());
-
-            // Las pantallas quedan desactivadas en la escena: el ScreenManager activa la que corresponda.
-            foreach (RectTransform r in new[] { mainRoot, selectRoot, optionsRoot, preRoot, prepRoot, pauseRoot, overRoot, resultsRoot })
-            {
-                r.gameObject.SetActive(false);
-            }
-
-            Scene scene = SceneManager.GetActiveScene();
-            EditorSceneManager.MarkSceneDirty(scene);
-            EditorSceneManager.SaveScene(scene);
-            AssetDatabase.SaveAssets();
-            Debug.Log("[Flow] Pantallas listas. Dale Play: el juego arranca en el menu principal.");
+            public Sprite Note, HitBar, Panel, White;
+            public SongData Song;
+            public NoteView NotePrefab;
         }
 
-        // ---------------- Niveles ----------------
+        [MenuItem("DiosPunk/Scenes/Build MainMenu + Gameplay")]
+        public static void BuildAllScenes()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                Debug.LogWarning("[Scenes] Sali de Play Mode antes de generar las escenas.");
+                return;
+            }
 
-        private static LevelData[] CreateLevels(SongData song)
+            EditorSceneManager.SaveOpenScenes();
+            Directory.CreateDirectory(LevelDir);
+            Directory.CreateDirectory(SceneDir);
+            AssetDatabase.Refresh();
+
+            MigrateSongAsset();
+            BuiltAssets assets = BuildAssets();
+            LevelData[] levels = CreateLevels();
+            LevelCatalog catalog = CreateCatalog(levels);
+
+            BuildGameplayScene(assets, catalog);
+            BuildMainMenuScene(assets, catalog);
+            SetBuildSettings();
+
+            AssetDatabase.SaveAssets();
+            EditorSceneManager.OpenScene(MainMenuScenePath, OpenSceneMode.Single);
+            Debug.Log("[Scenes] MainMenu.unity y Gameplay.unity listas. Dale Play desde MainMenu.");
+        }
+
+        // ---------------- Datos ----------------
+
+        private static void MigrateSongAsset()
+        {
+            if (File.Exists(LegacySongPath) && !File.Exists(SongPath))
+            {
+                Directory.CreateDirectory(SongDir);
+                AssetDatabase.Refresh();
+                string error = AssetDatabase.MoveAsset(LegacySongPath, SongPath);
+                if (!string.IsNullOrEmpty(error)) Debug.LogWarning("[Scenes] No se pudo mover el SongData: " + error);
+            }
+        }
+
+        private static LevelData[] CreateLevels()
         {
             string[] titles =
             {
@@ -150,7 +105,7 @@ namespace DiosPunk.Rhythm.Editor
                 so.FindProperty("_title").stringValue = titles[i];
                 so.FindProperty("_stage").stringValue = stages[i];
                 so.FindProperty("_difficulty").stringValue = difficulties[i];
-                so.FindProperty("_song").objectReferenceValue = song;
+                so.FindProperty("_songResource").stringValue = Path.GetFileNameWithoutExtension(SongPath);
 
                 SerializedProperty dialogue = so.FindProperty("_dialogue");
                 dialogue.arraySize = 3;
@@ -165,6 +120,19 @@ namespace DiosPunk.Rhythm.Editor
             return levels;
         }
 
+        private static LevelCatalog CreateCatalog(LevelData[] levels)
+        {
+            var catalog = AssetDatabase.LoadAssetAtPath<LevelCatalog>(CatalogPath);
+            if (catalog == null)
+            {
+                catalog = ScriptableObject.CreateInstance<LevelCatalog>();
+                AssetDatabase.CreateAsset(catalog, CatalogPath);
+            }
+            SetRefArray(catalog, "_levels", levels);
+            EditorUtility.SetDirty(catalog);
+            return catalog;
+        }
+
         private static void SetLine(SerializedProperty array, int index, string speaker, string text)
         {
             SerializedProperty line = array.GetArrayElementAtIndex(index);
@@ -172,18 +140,239 @@ namespace DiosPunk.Rhythm.Editor
             line.FindPropertyRelative("text").stringValue = text;
         }
 
+        // ---------------- Escena Gameplay ----------------
+
+        private static void BuildGameplayScene(BuiltAssets a, LevelCatalog catalog)
+        {
+            // La escena por defecto se renombra a Gameplay (conserva su GUID y su cámara/luz de la plantilla URP 2D).
+            if (!File.Exists(GameplayScenePath) && File.Exists(LegacyScenePath))
+            {
+                string error = AssetDatabase.MoveAsset(LegacyScenePath, GameplayScenePath);
+                if (!string.IsNullOrEmpty(error)) Debug.LogWarning("[Scenes] No se pudo renombrar SampleScene: " + error);
+            }
+
+            Scene scene;
+            if (File.Exists(GameplayScenePath))
+            {
+                scene = EditorSceneManager.OpenScene(GameplayScenePath, OpenSceneMode.Single);
+            }
+            else
+            {
+                scene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
+                EditorSceneManager.SaveScene(scene, GameplayScenePath);
+            }
+
+            // Abrir/crear una escena descarga assets sin referencias: se vuelven a cargar para no asignar objetos destruidos.
+            a = ReloadAssets(a);
+            catalog = AssetDatabase.LoadAssetAtPath<LevelCatalog>(CatalogPath);
+
+            // Regenerar: se borra lo generado por versiones anteriores (incluido el objeto de prueba vacío).
+            RemoveRoots(scene, "RhythmTrack", "HudCanvas", "DebugCanvas", "RhythmHudPresenter", "RhythmDebugHUD",
+                "GameFlow", "GameplayFlow", "EventSystem", "prueba claude");
+
+            BuildTrackAndHud(a.Song, a.NotePrefab, a.HitBar, a.Note, a.Panel, a.White);
+
+            GameObject track = GameObject.Find("RhythmTrack");
+            var controller = track.GetComponent<RhythmTrackController>();
+            var session = track.GetComponent<RhythmSession>();
+
+            // El flujo decide cuándo arranca la canción (no al darle Play).
+            var so = new SerializedObject(controller);
+            so.FindProperty("_playOnStart").boolValue = false;
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            Transform ui = GameObject.Find("HudCanvas").transform;
+            EnsureEventSystem();
+
+            RectTransform preRoot = CreateScreenRoot(ui, "PreLevelScreen", Dark, a.White);
+            var preLevel = BuildPreLevel(preRoot, a.Panel);
+            RectTransform prepRoot = CreateScreenRoot(ui, "SongPreparationScreen", Dark, a.White);
+            var preparation = BuildPreparation(prepRoot, a.Panel);
+            RectTransform optionsRoot = CreateScreenRoot(ui, "OptionsScreen", new Color(0.12f, 0.12f, 0.12f, 0.92f), a.White);
+            var options = BuildOptions(optionsRoot, a.Panel, a.White);
+            RectTransform pauseRoot = CreateScreenRoot(ui, "PauseMenuScreen", new Color(0f, 0f, 0f, 0.55f), a.White);
+            var pause = BuildPause(pauseRoot, a.Panel);
+            RectTransform overRoot = CreateScreenRoot(ui, "GameOverScreen", new Color(0.35f, 0f, 0f, 0.7f), a.White);
+            var gameOver = BuildGameOver(overRoot, a.Panel);
+            RectTransform resultsRoot = CreateScreenRoot(ui, "ResultsScreenPanel", Dark, a.White);
+            var results = BuildResults(resultsRoot, a.Panel);
+
+            GameObject flowGo = new GameObject("GameplayFlow");
+            var flow = flowGo.AddComponent<GameplayFlowController>();
+            var screenManager = flowGo.AddComponent<ScreenManager>();
+            SetRefs(flow, ("_track", controller), ("_session", session), ("_catalog", catalog), ("_preLevel", preLevel),
+                ("_preparation", preparation), ("_options", options), ("_pause", pause), ("_gameOver", gameOver),
+                ("_results", results));
+
+            var panels = new List<ScreenPanel>
+            {
+                MakePanel(preRoot.gameObject, false, GameState.PreLevel),
+                MakePanel(prepRoot.gameObject, false, GameState.SongPreparation),
+                MakePanel(optionsRoot.gameObject, false, GameState.Options),
+                MakePanel(pauseRoot.gameObject, false, GameState.PauseMenu),
+                MakePanel(overRoot.gameObject, false, GameState.GameOver),
+                MakePanel(resultsRoot.gameObject, false, GameState.ResultsScreen)
+            };
+
+            // Mundo de juego y HUD: visibles en Gameplay / Pausa / Game Over (y en Opciones abierta desde la pausa).
+            var gameplayStates = new[] { GameState.Gameplay, GameState.PauseMenu, GameState.GameOver };
+            panels.Add(MakePanel(track, true, gameplayStates));
+            foreach (string hudName in new[] { "PunkPanel", "ScorePanel", "HealthBar", "JudgementText", "StatsText",
+                         "MetricsText", "GcText", "StatusText" })
+            {
+                Transform t = ui.Find(hudName);
+                if (t != null) panels.Add(MakePanel(t.gameObject, true, gameplayStates));
+            }
+
+            SetRefs(screenManager, ("_flow", flow));
+            SetRefArray(screenManager, "_panels", panels.ToArray());
+
+            foreach (RectTransform r in new[] { preRoot, prepRoot, optionsRoot, pauseRoot, overRoot, resultsRoot })
+            {
+                r.gameObject.SetActive(false);
+            }
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene, GameplayScenePath);
+        }
+
+        // ---------------- Escena MainMenu ----------------
+
+        private static void BuildMainMenuScene(BuiltAssets a, LevelCatalog catalog)
+        {
+            Scene scene;
+            if (File.Exists(MainMenuScenePath))
+            {
+                scene = EditorSceneManager.OpenScene(MainMenuScenePath, OpenSceneMode.Single);
+            }
+            else
+            {
+                scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+                EditorSceneManager.SaveScene(scene, MainMenuScenePath);
+            }
+
+            a = ReloadAssets(a);
+            catalog = AssetDatabase.LoadAssetAtPath<LevelCatalog>(CatalogPath);
+
+            RemoveRoots(scene, "Main Camera", "MenuCanvas", "MenuFlow", "EventSystem");
+
+            var camGo = new GameObject("Main Camera") { tag = "MainCamera" };
+            var cam = camGo.AddComponent<Camera>();
+            camGo.AddComponent<AudioListener>();
+            cam.orthographic = true;
+            cam.orthographicSize = 5f;
+            cam.transform.position = new Vector3(0f, 0f, -10f);
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = Dark;
+
+            var canvasGo = new GameObject("MenuCanvas");
+            var canvas = canvasGo.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            var scaler = canvasGo.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.matchWidthOrHeight = 0.5f;
+            canvasGo.AddComponent<GraphicRaycaster>();
+            Transform ui = canvasGo.transform;
+
+            EnsureEventSystem();
+
+            RectTransform mainRoot = CreateScreenRoot(ui, "MainMenuScreen", Dark, a.White);
+            var mainMenu = BuildMainMenu(mainRoot, a.Panel);
+            RectTransform selectRoot = CreateScreenRoot(ui, "LevelSelectScreen", Dark, a.White);
+            var levelSelect = BuildLevelSelect(selectRoot, a.Panel);
+            RectTransform optionsRoot = CreateScreenRoot(ui, "OptionsScreen", Dark, a.White);
+            var options = BuildOptions(optionsRoot, a.Panel, a.White);
+            RectTransform creditsRoot = CreateScreenRoot(ui, "CreditsScreen", Dark, a.White);
+            var credits = BuildCredits(creditsRoot, a.Panel);
+
+            var flowGo = new GameObject("MenuFlow");
+            var flow = flowGo.AddComponent<MenuFlowController>();
+            var screenManager = flowGo.AddComponent<ScreenManager>();
+            SetRefs(flow, ("_catalog", catalog), ("_mainMenu", mainMenu), ("_levelSelect", levelSelect),
+                ("_options", options), ("_credits", credits));
+
+            var panels = new[]
+            {
+                MakePanel(mainRoot.gameObject, false, GameState.MainMenu),
+                MakePanel(selectRoot.gameObject, false, GameState.LevelSelect),
+                MakePanel(optionsRoot.gameObject, false, GameState.Options),
+                MakePanel(creditsRoot.gameObject, false, GameState.Credits)
+            };
+            SetRefs(screenManager, ("_flow", flow));
+            SetRefArray(screenManager, "_panels", panels);
+
+            foreach (RectTransform r in new[] { mainRoot, selectRoot, optionsRoot, creditsRoot })
+            {
+                r.gameObject.SetActive(false);
+            }
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene, MainMenuScenePath);
+        }
+
+        private static BuiltAssets ReloadAssets(BuiltAssets old)
+        {
+            return new BuiltAssets
+            {
+                Note = AssetDatabase.LoadAssetAtPath<Sprite>(NotePngPath),
+                HitBar = AssetDatabase.LoadAssetAtPath<Sprite>(HitBarPngPath),
+                Panel = AssetDatabase.LoadAssetAtPath<Sprite>(PanelPngPath),
+                White = AssetDatabase.LoadAssetAtPath<Sprite>(WhitePngPath),
+                Song = AssetDatabase.LoadAssetAtPath<SongData>(SongPath),
+                NotePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(NotePrefabPath).GetComponent<NoteView>()
+            };
+        }
+
+        private static void SetBuildSettings()
+        {
+            EditorBuildSettings.scenes = new[]
+            {
+                new EditorBuildSettingsScene(MainMenuScenePath, true),
+                new EditorBuildSettingsScene(GameplayScenePath, true)
+            };
+        }
+
+        private static void RemoveRoots(Scene scene, params string[] names)
+        {
+            var set = new HashSet<string>(names);
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                if (set.Contains(root.name)) Object.DestroyImmediate(root);
+            }
+        }
+
         // ---------------- Pantallas ----------------
 
         private static MainMenuScreen BuildMainMenu(RectTransform root, Sprite panel)
         {
             FindOrCreateText(root, "Title", "DIOS PUNK", 160f, TextAlignmentOptions.Center, Center, Center,
-                new Vector2(0f, 260f), new Vector2(1400f, 220f), Red);
-            Button play = CreateButton(root, "PlayButton", "JUGAR", new Vector2(0f, 40f), new Vector2(460f, 100f), panel);
-            Button options = CreateButton(root, "OptionsButton", "OPCIONES", new Vector2(0f, -90f), new Vector2(460f, 100f), panel);
-            Button quit = CreateButton(root, "QuitButton", "SALIR", new Vector2(0f, -220f), new Vector2(460f, 100f), panel);
+                new Vector2(0f, 270f), new Vector2(1400f, 220f), Red);
+            Button play = CreateButton(root, "PlayButton", "JUGAR", new Vector2(0f, 70f), new Vector2(460f, 100f), panel);
+            Button options = CreateButton(root, "OptionsButton", "OPCIONES", new Vector2(0f, -50f), new Vector2(460f, 100f), panel);
+            Button credits = CreateButton(root, "CreditsButton", "CREDITOS", new Vector2(0f, -170f), new Vector2(460f, 100f), panel);
+            Button quit = CreateButton(root, "QuitButton", "SALIR", new Vector2(0f, -290f), new Vector2(460f, 100f), panel);
 
             var screen = GetOrAdd<MainMenuScreen>(root.gameObject);
-            SetRefs(screen, ("_play", play), ("_options", options), ("_quit", quit));
+            SetRefs(screen, ("_play", play), ("_options", options), ("_credits", credits), ("_quit", quit));
+            return screen;
+        }
+
+        private static CreditsScreen BuildCredits(RectTransform root, Sprite panel)
+        {
+            Image paper = FindOrCreateImage(root, "Paper", panel, Color.white, Center, Center,
+                Vector2.zero, new Vector2(1200f, 760f), Image.Type.Sliced);
+            RectTransform p = paper.rectTransform;
+
+            FindOrCreateText(p, "Title", "CREDITOS", 90f, TextAlignmentOptions.Center, Center, Center,
+                new Vector2(0f, 300f), new Vector2(1000f, 120f), Red);
+            FindOrCreateText(p, "Body",
+                "Dios Punk - UNR GameLab 2026\n\nGame Design: Elias\nArte: Lourdes\nAudio: Fede, Cristian\nProgramacion: Lolo\n\nHomenaje a Javier Messina, el Dios Punk de Rosario.",
+                42f, TextAlignmentOptions.Center, Center, Center, new Vector2(0f, 20f), new Vector2(1000f, 500f), Color.black);
+            Button back = CreateButton(p, "BackButton", "VOLVER", new Vector2(0f, -320f), new Vector2(380f, 80f), panel);
+
+            var screen = GetOrAdd<CreditsScreen>(root.gameObject);
+            SetRefs(screen, ("_back", back));
             return screen;
         }
 
@@ -232,21 +421,17 @@ namespace DiosPunk.Rhythm.Editor
             string[] pageNames = { "Page_Audio", "Page_Video", "Page_Controles", "Page_Accesibilidad" };
             for (int i = 0; i < 4; i++) pages[i] = FindOrCreateRect(paperRt, pageNames[i], new Vector2(0f, -30f), new Vector2(1100f, 480f));
 
-            // Audio
             FindOrCreateText(pages[0].transform, "VolumeLabel", "Volumen general", 44f, TextAlignmentOptions.Left,
                 Center, Center, new Vector2(-300f, 60f), new Vector2(500f, 70f), Color.black);
             Slider volume = FindOrCreateSlider(pages[0].transform, "VolumeSlider", new Vector2(0f, -40f), new Vector2(700f, 36f));
 
-            // Video
             Toggle fullscreen = FindOrCreateToggle(pages[1].transform, "FullscreenToggle", "Pantalla completa",
                 new Vector2(0f, 40f), panel, white);
 
-            // Controles
             FindOrCreateText(pages[2].transform, "ControlsText",
                 "Carriles: D  F  J  K  o  Flechas\nPausa: Escape\nDebug: F1 Auto-Play, F2 reiniciar, F3 pausa, F4 modo, +/- latencia",
                 38f, TextAlignmentOptions.Center, Center, Center, Vector2.zero, new Vector2(1000f, 300f), Color.black);
 
-            // Accesibilidad
             Toggle reduce = FindOrCreateToggle(pages[3].transform, "ReduceEffectsToggle",
                 "Reducir intensidad de efectos visuales", new Vector2(0f, 40f), panel, white);
 
@@ -373,9 +558,8 @@ namespace DiosPunk.Rhythm.Editor
 
             var go = new GameObject("EventSystem");
             go.AddComponent<EventSystem>();
-            var module = go.AddComponent<InputSystemUIInputModule>();
+            var module = go.AddComponent<InputSystemUIInputModule>(); // New Input System, nunca StandaloneInputModule
             module.AssignDefaultActions();
-            Undo.RegisterCreatedObjectUndo(go, "Create EventSystem");
         }
 
         private static RectTransform CreateScreenRoot(Transform parent, string name, Color background, Sprite white)
@@ -398,7 +582,7 @@ namespace DiosPunk.Rhythm.Editor
             var image = GetOrAdd<Image>(go);
             image.sprite = white;
             image.color = background;
-            image.raycastTarget = true; // bloquea clics hacia lo que haya detrás
+            image.raycastTarget = false; // el fondo no es interactivo: no debe bloquear ni capturar clics
             return rt;
         }
 
@@ -425,7 +609,7 @@ namespace DiosPunk.Rhythm.Editor
         private static Button CreateButton(Transform parent, string name, string label, Vector2 pos, Vector2 size, Sprite panel)
         {
             Image image = FindOrCreateImage(parent, name, panel, Color.white, Center, Center, pos, size, Image.Type.Sliced);
-            image.raycastTarget = true;
+            image.raycastTarget = true; // los botones sí reciben clics
 
             var button = GetOrAdd<Button>(image.gameObject);
             button.targetGraphic = image;

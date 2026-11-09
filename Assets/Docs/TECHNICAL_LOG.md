@@ -125,7 +125,24 @@ Una entrada por decisión; nunca se borran (si cambian: `Superseded by ADR-XXX`)
 - **Progreso:** `ProgressStore` en JSON (`persistentDataPath/progress.json`): niveles desbloqueados y mejor puntaje por nivel; I/O solo en eventos.
 - **Puntaje en HUD:** `ScoreFormatter` escribe "293.000" en un `char[]` preasignado y `TMP.SetCharArray` (sin GC) — resuelve Q-K.
 
-<!-- Añadir ADR-013+ debajo -->
+### ADR-013 — Arquitectura multiescena (MainMenu + Gameplay) y carga asíncrona
+- **Estado:** Aceptada · **Fecha:** 2026-11-09 · **Reemplaza** la parte "una sola escena con todas las pantallas" de ADR-011.
+- **Escenas** (`Assets/_Project/Scenes/`, ambas en Build Settings):
+  - `MainMenu.unity`: menú principal, selector de niveles (1 a 5), opciones y créditos. Orquestador: `MenuFlowController`. No carga audio.
+  - `Gameplay.unity` (antes `SampleScene`): pista de ritmo, HUD, narrativa pre-nivel, preparación, pausa, Game Over y resultados. Orquestador: `GameplayFlowController`. Opciones también existe aquí (se abre desde la pausa).
+- **Base común:** `FlowControllerBase` expone la `GameStateMachine` a `ScreenManager`. `GameState` suma `Credits`; las transiciones se validan por escena (los cambios entre escenas los hace el `SceneLoader`).
+- **`SceneLoader`** (singleton DontDestroyOnLoad creado bajo demanda): `LoadSceneAsync` en modo Single, luego `Resources.UnloadUnusedAssets()` + `GC.Collect()` solo en la transición; expone `IsLoading`, `ProgressChanged` y `Loaded`, y bloquea dobles clics.
+- **`GameSession`** (estático): nivel elegido y bandera "abrir selector al volver"; mantiene el `ProgressStore` en memoria. `progress.json` (`persistentDataPath`) persiste entre escenas y ejecuciones; se guarda ante cada victoria. Resetea sus estáticos con `RuntimeInitializeOnLoadMethod` porque el proyecto usa "Enter Play Mode" sin recarga de dominio.
+- **Audio bajo demanda:** `LevelData` ya no referencia el `SongData`; guarda su nombre y lo carga con `Resources.Load` desde `Resources/Songs/` solo en Gameplay. El menú nunca carga el audio. Al salir, `GameplayFlowController` suelta su referencia y el `SceneLoader` libera el `AudioClip`. "Continuar" recarga la escena Gameplay con el nivel siguiente para descartar el audio anterior.
+- **Datos compartidos:** `LevelCatalog` (ScriptableObject con los 5 `LevelData`) lo referencian ambas escenas.
+- **Builder:** `DiosPunk/Scenes/Build MainMenu + Gameplay` regenera ambas escenas y los Build Settings. Recarga los assets tras abrir cada escena (abrir/crear una escena descarga los objetos sin referencias y asignarlos produce referencias nulas).
+
+### ADR-014 — Clics de UI: causa y reglas
+- **Estado:** Aceptada · **Fecha:** 2026-11-09
+- **Causa del bug:** los canvases generados tenían `Canvas` y `CanvasScaler` pero **no `GraphicRaycaster`**, así que ningún botón recibía clics. El `EventSystem` ya usaba `InputSystemUIInputModule` (sin `StandaloneInputModule`).
+- **Reglas:** todo canvas lleva `GraphicRaycaster`; solo los botones, el box del toggle y el slider tienen `Raycast Target` activo (fondos, paneles y textos lo tienen desactivado). El `EventSystem` se crea con `InputSystemUIInputModule` + `AssignDefaultActions()`.
+
+<!-- Añadir ADR-015+ debajo -->
 
 ---
 
@@ -146,7 +163,7 @@ Una entrada por decisión; nunca se borran (si cambian: `Superseded by ADR-XXX`)
 ```
 Assets/
 ├── Docs/                 # Este log
-├── Scenes/               # Boot, MainMenu, Narrative, SongPrep, Gameplay, Results
+├── Scenes/               # (vacía; ver _Project/Scenes)
 ├── Settings/             # URP, InputActions, Volume Profiles
 ├── _Project/
 │   ├── Scripts/{Core,Rhythm,Narrative,UI,Persistence}
@@ -176,7 +193,8 @@ Assets/
 | Input (M02) | Acciones D-F-J-K / flechas, timestamp | 🟩 Validado en Play Mode (2026-11-04) |
 | Judgement (M02) | Ventanas Perfect/Good/Miss | 🟩 Validado en Play Mode |
 | Puntaje / Combo / Vida (Hito 2) | `ScoreSystem`, `HealthSystem`, `RhythmSession`, `RhythmHudPresenter` | 🟨 Compila; falta validar en Play Mode |
-| Navegación / Flujo de pantallas (Hito 4) | `GameStateMachine`, `GameFlowController`, `ScreenManager`, 8 pantallas, `LevelData`, `ProgressStore` | 🟨 Compila; arranque verificado (menú visible, sin errores); falta recorrer el ciclo con clics |
+| Navegación / Flujo de pantallas (Hito 4) | `GameStateMachine`, `MenuFlowController`, `GameplayFlowController`, `ScreenManager`, 9 pantallas, `LevelCatalog`, `LevelData`, `ProgressStore`, `GameSession` | 🟨 Compila; verificado por script: Jugar → selector (nivel 2 bloqueado) y Nivel 1 → carga asíncrona de Gameplay. Falta recorrer Gameplay completo con clics reales |
+| Escenas / SceneLoader | `MainMenu.unity`, `Gameplay.unity`, `SceneLoader` | 🟨 Generadas y en Build Settings; transición menú → Gameplay verificada |
 | Debuffs | Scheduler 25 s/5 s, efecto visual + chart | ⬜ |
 | Modo Punk | Barra dual, escudo, ventana ampliada, efecto | ⬜ |
 | Narrativa | Diálogos SO, respuestas cortas | ⬜ |
@@ -200,6 +218,7 @@ Formato: `YYYY-MM-DD · [módulo] · descripción · archivos`
 - 2026-11-04 · [Rhythm/Editor] · Herramienta `DiosPunk/Rhythm/Build Test Setup` (`Assets/_Project/Scripts/Rhythm/Editor/`, asmdef `DiosPunk.Rhythm.Editor`): genera sprites placeholder (`Art/Placeholders`), WAV de metrónomo 120 BPM (`Audio/Placeholders`, PCM mono), `Prefabs/Note.prefab`, `Data/Songs/TestSong_120BPM.asset` (64 notas, 1 por beat) y arma la escena (RhythmTrack, HitBar y=-3.5, cámara ortográfica 5, DebugCanvas + RhythmDebugHUD). Idempotente. Scripts M01/M02 compilan sin errores; en Play Mode inició sin errores, el feel de timing aún no se probó con teclado.
 - 2026-11-04 · [Rhythm/Debug] · Sistema de Debug & Testing: `RhythmHitFeedback` (pads por carril Verde/Amarillo/Rojo), gizmos de ventanas Perfect/Good/Early Miss en `RhythmTrackController`, `RhythmDebugAutoPlayer` (bot: AlwaysPerfect/AlwaysGood/SimulateMisses/HumanRandom gaussiano con semilla), `RhythmDebugTools` (F1 autoplay, F2 reiniciar, F3 pausa, F4 modo bot, +/- latencia ±5 ms; resumen en consola al terminar/pausar; monitor de GC con ProfilerRecorder), `RhythmStats` (media y desvío estándar por Welford). `SongClock` gana `Pause/Resume` y `SongTimeToInputRealtime` (inversa exacta). El builder del escenario agrega todo. Compila sin errores; la prueba end-to-end en Play Mode no se pudo ejecutar con el editor sin foco.
 - 2026-11-04 · [Rhythm] · Validación manual en Play Mode por el equipo: M01/M02 + sistema de debug funcionan según lo esperado (reportado por el usuario; sin cifras de GC/latencia registradas aún).
+- 2026-11-09 · [Flow/Scenes] · Arquitectura multiescena (ADR-013) y fix de clics de UI (ADR-014): escenas `MainMenu` y `Gameplay` en `Assets/_Project/Scenes/` (SampleScene renombrada a Gameplay), `SceneLoader`, `GameSession`, `LevelCatalog`, `MenuFlowController`, `GameplayFlowController`, `FlowControllerBase`, `CreditsScreen`. `GameFlowController` eliminado. `LevelData` carga la canción por `Resources/Songs`; `TestSong_120BPM.asset` movido a `Assets/_Project/Resources/Songs/`. Builder: `DiosPunk/Scenes/Build MainMenu + Gameplay` (reemplaza `DiosPunk/Flow/Build Screens`). El objeto vacío "prueba claude" se eliminó al regenerar la escena.
 - 2026-11-08 · [Flow] · Userflow y gestión de pantallas (ADR-011, ADR-012): assembly `DiosPunk.Flow` (`GameStateMachine`, `GameFlowController`, `ScreenManager`, `ScreenPanel`, `LevelData`, `ProgressStore`, `GameSettings` y 8 pantallas), `ScoreFormatter`, `RhythmTrackController.LoadSong`. Builder `DiosPunk/Flow/Build Screens` (crea 5 `LevelData` placeholder, pantallas, EventSystem con Input System UI y `GameFlow`). Compila sin errores; Play Mode arranca en el menú sin errores.
 - 2026-11-08 · [Rhythm] · Hito 2: `ScoreSystem`, `HealthSystem`, `RhythmSession`, `RhythmHudPresenter` (ADR-009). `NoteView.Init` recibe el color del carril; `RhythmTrackController` expone `GetLaneColor`. `RhythmDebugTools` agrega puntaje/precisión/vida al resumen. `DiosPunk.Rhythm.asmdef` referencia `UnityEngine.UI`.
 - 2026-11-08 · [Art/Scene] · Placeholders alineados al GDD (ADR-010): highway, carriles de color, receptáculos translúcidos y HUD (paneles 9-slice, barra de vida, medidor de Modo Punk vacío). El builder pasa a crear `HudCanvas` (renombra el `DebugCanvas` anterior) y `RhythmHudPresenter`. Compila sin errores; el HUD en Play Mode no se validó.
@@ -227,6 +246,7 @@ Formato: `YYYY-MM-DD · [módulo] · descripción · archivos`
 | Q-K | Escalones del multiplicador y formato del puntaje | **Resuelta (2026-11-08):** +1 cada 10 aciertos hasta x4; separador de miles con punto |
 | Q-L | Diagrama de Figma del userflow no disponible: el flujo se implementó según el texto del GDD. Pendiente validar ramas no descritas, la calibración de latencia + tutorial de primera partida y el epílogo/créditos | Abierta |
 | Q-M | Botón "Jugar" va directo al selector (sin "partida nueva"/calibración/tutorial) y "Salir" de la pausa vuelve al selector; ajustes de Opciones sin persistir y `ReduceVisualEffects` aún sin efecto | Abierta |
+| Q-N | La preparación de canción (título, escenario, dificultad, Comenzar) quedó en la escena Gameplay, junto a la narrativa pre-nivel. Sin pantalla de carga visual ni fundido entre escenas (solo `SceneLoader.ProgressChanged`). Las canciones definitivas deberán vivir en `Resources/Songs` (o migrar a Addressables) | Abierta |
 
 ---
 

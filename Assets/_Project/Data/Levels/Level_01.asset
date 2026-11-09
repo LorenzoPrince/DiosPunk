@@ -15,7 +15,7 @@ MonoBehaviour:
   _title: Los comienzos en la musica
   _stage: El cuarto
   _difficulty: Facil
-  _song: {fileID: 11400000, guid: e96ec598aaf64684fa9fd46fdbf26be3, type: 2}
+  _songResource: TestSong_120BPM
   _dialogue:
   - speaker: Narrador
     text: Escena de prueba del nivel 1. El guion todavia no esta definido.

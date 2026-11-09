@@ -21,7 +21,8 @@ namespace DiosPunk.Rhythm.Editor
         private const string ArtDir = "Assets/_Project/Art/Placeholders";
         private const string AudioDir = "Assets/_Project/Audio/Placeholders";
         private const string PrefabDir = "Assets/_Project/Prefabs";
-        private const string SongDir = "Assets/_Project/Data/Songs";
+        // La canción vive en Resources/Songs para cargarse bajo demanda (el menú no debe cargar el audio).
+        private const string SongDir = "Assets/_Project/Resources/Songs";
 
         private const string NotePngPath = ArtDir + "/Note_Placeholder.png";
         private const string HitBarPngPath = ArtDir + "/HitBar_Placeholder.png";
@@ -42,8 +43,7 @@ namespace DiosPunk.Rhythm.Editor
         private const float HitLineY = -3.5f;
         private const float LaneSpacing = 1.5f;
 
-        [MenuItem("DiosPunk/Rhythm/Build Test Setup")]
-        public static void Build()
+        internal static BuiltAssets BuildAssets()
         {
             EnsureFolders();
 
@@ -57,11 +57,17 @@ namespace DiosPunk.Rhythm.Editor
             SongData song = CreateSongData(clip);
             NoteView notePrefab = CreateNotePrefab(noteSprite);
 
-            BuildScene(song, notePrefab, hitBarSprite, noteSprite, panelSprite, whiteSprite);
-
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log("[Rhythm] Test setup listo. Dale Play en SampleScene.");
+            return new BuiltAssets
+            {
+                Note = noteSprite,
+                HitBar = hitBarSprite,
+                Panel = panelSprite,
+                White = whiteSprite,
+                Song = song,
+                NotePrefab = notePrefab
+            };
         }
 
         // ---------------- Assets ----------------
@@ -215,7 +221,8 @@ namespace DiosPunk.Rhythm.Editor
 
         // ---------------- Escena ----------------
 
-        private static void BuildScene(SongData song, NoteView notePrefab, Sprite hitBarSprite, Sprite noteSprite,
+        /// <summary>Crea en la escena activa la pista (RhythmTrack), la cámara, el HudCanvas con el HUD y las herramientas de debug.</summary>
+        private static void BuildTrackAndHud(SongData song, NoteView notePrefab, Sprite hitBarSprite, Sprite noteSprite,
             Sprite panelSprite, Sprite whiteSprite)
         {
             // --- Track ---
@@ -305,6 +312,7 @@ namespace DiosPunk.Rhythm.Editor
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.matchWidthOrHeight = 0.5f;
+            GetOrAdd<GraphicRaycaster>(canvasGo); // sin esto los botones no reciben clics
             Transform ui = canvasGo.transform;
 
             // Modo Punk (arriba izquierda): panel + rótulo + barra (aún sin lógica: Hito 3)
@@ -362,9 +370,6 @@ namespace DiosPunk.Rhythm.Editor
             SetRefs(tools, ("_track", controller), ("_autoPlayer", autoPlayer), ("_session", session),
                 ("_statusText", status), ("_gcText", gc));
 
-            Scene scene = SceneManager.GetActiveScene();
-            EditorSceneManager.MarkSceneDirty(scene);
-            EditorSceneManager.SaveScene(scene);
         }
 
         // ---------------- Helpers ----------------

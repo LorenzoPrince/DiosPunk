@@ -22,9 +22,9 @@ namespace DiosPunk.Flow
             _back.onClick.AddListener(() => BackRequested?.Invoke());
         }
 
-        public void Begin(LevelData level)
+        public void Begin(LevelData level, DiosPunk.Rhythm.SongData song)
         {
-            _titleText.text = level.Song != null ? level.Title + " - " + level.Song.Title : level.Title;
+            _titleText.text = song != null ? level.Title + " - " + song.Title : level.Title;
             _stageText.text = "Escenario: " + level.Stage;
             _difficultyText.text = "Dificultad: " + level.Difficulty;
         }

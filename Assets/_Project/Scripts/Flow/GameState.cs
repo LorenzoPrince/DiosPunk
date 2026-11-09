@@ -3,6 +3,11 @@ using UnityEngine;
 
 namespace DiosPunk.Flow
 {
+    /// <summary>
+    /// Estados de navegación. MainMenu, LevelSelect, Options y Credits viven en la escena MainMenu;
+    /// PreLevel, SongPreparation, Gameplay, PauseMenu, GameOver y ResultsScreen en la escena Gameplay
+    /// (Options también aparece en Gameplay, abierta desde la pausa).
+    /// </summary>
     public enum GameState
     {
         MainMenu = 0,
@@ -13,12 +18,14 @@ namespace DiosPunk.Flow
         Gameplay = 5,
         PauseMenu = 6,
         GameOver = 7,
-        ResultsScreen = 8
+        ResultsScreen = 8,
+        Credits = 9
     }
 
     /// <summary>
     /// Máquina de estados de navegación: lógica pura (sin MonoBehaviour). Valida las transiciones permitidas
-    /// y recuerda desde dónde se abrió Options para poder volver (MainMenu o PauseMenu).
+    /// dentro de una escena y recuerda desde dónde se abrió Options para poder volver (MainMenu o PauseMenu).
+    /// Los cambios de escena (menú ↔ gameplay) los hace el SceneLoader, no esta máquina.
     /// </summary>
     public sealed class GameStateMachine
     {
@@ -37,24 +44,25 @@ namespace DiosPunk.Flow
             switch (from)
             {
                 case GameState.MainMenu:
-                    return to == GameState.LevelSelect || to == GameState.Options;
+                    return to == GameState.LevelSelect || to == GameState.Options || to == GameState.Credits;
                 case GameState.LevelSelect:
-                    return to == GameState.MainMenu || to == GameState.PreLevel;
+                    return to == GameState.MainMenu;
+                case GameState.Credits:
+                    return to == GameState.MainMenu;
                 case GameState.Options:
                     return to == GameState.MainMenu || to == GameState.PauseMenu;
                 case GameState.PreLevel:
-                    return to == GameState.SongPreparation || to == GameState.LevelSelect;
+                    return to == GameState.SongPreparation;
                 case GameState.SongPreparation:
-                    return to == GameState.Gameplay || to == GameState.LevelSelect;
+                    return to == GameState.Gameplay;
                 case GameState.Gameplay:
                     return to == GameState.PauseMenu || to == GameState.GameOver || to == GameState.ResultsScreen;
                 case GameState.PauseMenu:
-                    return to == GameState.Gameplay || to == GameState.Options
-                        || to == GameState.LevelSelect || to == GameState.MainMenu;
+                    return to == GameState.Gameplay || to == GameState.Options;
                 case GameState.GameOver:
-                    return to == GameState.Gameplay || to == GameState.LevelSelect || to == GameState.MainMenu;
+                    return to == GameState.Gameplay;
                 case GameState.ResultsScreen:
-                    return to == GameState.PreLevel || to == GameState.LevelSelect || to == GameState.MainMenu;
+                    return to == GameState.PreLevel;
                 default:
                     return false;
             }
@@ -73,7 +81,7 @@ namespace DiosPunk.Flow
             return true;
         }
 
-        /// <summary>Fuerza un estado sin validar (arranque / reset).</summary>
+        /// <summary>Fuerza un estado sin validar (arranque de escena).</summary>
         public void Force(GameState state) => Apply(state);
 
         private void Apply(GameState next)

@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94e2e1f04b6770e478879d24290a57e7, type: 3}
+  m_Name: LevelCatalog
+  m_EditorClassIdentifier: DiosPunk.Flow::DiosPunk.Flow.LevelCatalog
+  _levels:
+  - {fileID: 11400000, guid: 45d4e812b1869684aa8d50905e61ffb4, type: 2}
+  - {fileID: 11400000, guid: c565eaf5067a5e14dbc3b55a8e58ced5, type: 2}
+  - {fileID: 11400000, guid: 6d69c6d995dfa494faa1967630a4b4f5, type: 2}
+  - {fileID: 11400000, guid: a74c3777e4e488142b7a4b75f1cf8473, type: 2}
+  - {fileID: 11400000, guid: dfef60be96b890e42bdb27937a3e8a49, type: 2}
