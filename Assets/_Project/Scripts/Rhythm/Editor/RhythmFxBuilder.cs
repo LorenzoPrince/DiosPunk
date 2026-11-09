@@ -19,12 +19,13 @@ namespace DiosPunk.Rhythm.Editor
         private const string FramePngPath = ArtDir + "/DebuffFrame_Placeholder.png";
         private const string PortraitPngPath = ArtDir + "/Portrait_Placeholder.png";
         private const string SplatPngPath = ArtDir + "/TomatoSplat_Placeholder.png";
+        private const string GlowPngPath = ArtDir + "/ShieldGlow_Placeholder.png";
         private const string CalibrationClickPath = AudioDir + "/Calibration_Click.wav";
         private const string DialogueDir = "Assets/_Project/Data/Dialogues";
 
         internal sealed class FxAssets
         {
-            public Sprite Npc1, Npc2, Projectile, Shield, Frame, Portrait, Splat;
+            public Sprite Npc1, Npc2, Projectile, Shield, Frame, Portrait, Splat, Glow;
             public AudioClip Click;
         }
 
@@ -45,6 +46,14 @@ namespace DiosPunk.Rhythm.Editor
             });
 
             SaveSplat(SplatPngPath);
+
+            // Resplandor radial suave (blanco, se tiñe con el color del escudo): alpha con caída cuadrática.
+            SavePixels(GlowPngPath, 128, 128, (x, y) =>
+            {
+                float d = Vector2.Distance(new Vector2(x, y), new Vector2(63.5f, 63.5f)) / 64f;
+                float a = Mathf.Clamp01(1f - d);
+                return new Color(1f, 1f, 1f, a * a);
+            });
 
             // Dientes hacia arriba: blanco con borde negro en la línea del diente (se tiñe con el color del proyectil).
             SavePixels(FramePngPath, 512, 96, (x, y) =>
@@ -80,6 +89,7 @@ namespace DiosPunk.Rhythm.Editor
                 Frame = AssetDatabase.LoadAssetAtPath<Sprite>(FramePngPath),
                 Portrait = AssetDatabase.LoadAssetAtPath<Sprite>(PortraitPngPath),
                 Splat = AssetDatabase.LoadAssetAtPath<Sprite>(SplatPngPath),
+                Glow = AssetDatabase.LoadAssetAtPath<Sprite>(GlowPngPath),
                 Click = AssetDatabase.LoadAssetAtPath<AudioClip>(CalibrationClickPath)
             };
         }

@@ -32,27 +32,34 @@ namespace DiosPunk.Rhythm
         [SerializeField] private Image _frame;
         [Tooltip("Mancha roja de tomate/tinta, centrada en la pantalla.")]
         [SerializeField] private Image _splat;
-        [Tooltip("Cartel '¡DEBUFF ABSORBIDO!' (se activa y desactiva por script).")]
+        [Tooltip("Sello/cartel compacto '¡DEBUFF ABSORBIDO!' fuera de los carriles (se activa y desactiva por script).")]
         [SerializeField] private RectTransform _absorbedBanner;
-        [Tooltip("Capa de pantalla completa para el destello del escudo.")]
+        [Tooltip("CanvasGroup del cartel, para el desvanecimiento de salida.")]
+        [SerializeField] private CanvasGroup _bannerGroup;
+        [Tooltip("Destello sutil y localizado bajo la HitBar (no ocupa toda la pantalla).")]
         [SerializeField] private Image _shieldFlash;
 
         [Header("Parámetros")]
-        [Tooltip("Punto de impacto en espacio local de la pista.")]
-        [SerializeField] private Vector2 _impactPoint = new Vector2(0f, -4.1f);
+        [Tooltip("Punto de impacto en espacio local de la pista, bajo la HitBar para no cubrir las notas.")]
+        [SerializeField] private Vector2 _impactPoint = new Vector2(0f, -4.35f);
         [Tooltip("Desde dónde sale el proyectil, relativo al NPC.")]
         [SerializeField] private Vector2 _handOffset = new Vector2(0f, 0.8f);
         [SerializeField] private float _arcHeight = 1.6f;
         [SerializeField] private float _throwDistance = 0.8f;
         [SerializeField, Min(0.1f)] private float _effectSeconds = 0.5f;
-        [SerializeField] private Color _shieldColor = new Color(1f, 0.85f, 0.1f, 1f);
+        [Tooltip("Duración del anillo de escudo al absorber (más corta que el estallido del impacto).")]
+        [SerializeField, Min(0.1f)] private float _absorbEffectSeconds = 0.35f;
+        [SerializeField] private Color _shieldColor = new Color(1f, 0.85f, 0.1f, 0.6f);
+        [Tooltip("Opacidad máxima del destello de absorción (sutil).")]
+        [SerializeField, Range(0.05f, 0.6f)] private float _flashAlpha = 0.3f;
         [SerializeField] private Color _splatColor = new Color(1f, 1f, 1f, 1f);
         [Tooltip("Opacidad de la mancha (calibrada para ensuciar la vista sin tapar del todo la pista).")]
         [SerializeField, Range(0.1f, 1f)] private float _splatAlpha = 0.72f;
         [Tooltip("Opacidad de la mancha con 'Reducir efectos'.")]
         [SerializeField, Range(0.05f, 1f)] private float _splatAlphaReduced = 0.2f;
         [SerializeField, Min(0.1f)] private float _splatFadeSeconds = 1f;
-        [SerializeField, Min(0.1f)] private float _bannerSeconds = 1.8f;
+        [Tooltip("Duración total del sello (entrada rápida, salida suave).")]
+        [SerializeField, Min(0.3f)] private float _bannerSeconds = 1.2f;
         [SerializeField] private Color[] _palette =
         {
             new Color(0.92f, 0.12f, 0.10f, 1f),
@@ -73,6 +80,7 @@ namespace DiosPunk.Rhythm
         private Vector3 _leftBase;
         private Vector3 _rightBase;
         private float _effectRemaining;
+        private float _effectDuration = 0.5f;
         private bool _absorbed;
         private bool _frameActive;
         private Vector3 _projectileBaseScale = Vector3.one;
@@ -84,7 +92,10 @@ namespace DiosPunk.Rhythm
         private float _flashRemaining;
 
         private const float SplatPopSeconds = 0.18f;
-        private const float FlashSeconds = 0.3f;
+        private const float FlashSeconds = 0.18f;
+        private const float BannerPopSeconds = 0.1f;
+        private const float BannerSettleSeconds = 0.08f;
+        private const float BannerFadeSeconds = 0.35f;
 
         private void Awake()
         {
@@ -145,14 +156,18 @@ namespace DiosPunk.Rhythm
             _shield.color = _shieldColor;
             _shield.enabled = true;
             _phase = Phase.Resolving;
-            _effectRemaining = _effectSeconds;
+            _effectDuration = _absorbEffectSeconds;
+            _effectRemaining = _effectDuration;
 
+            // Destello sutil y localizado bajo la HitBar (no cubre los carriles).
             _flashRemaining = FlashSeconds;
-            _shieldFlash.color = new Color(_shieldColor.r, _shieldColor.g, _shieldColor.b, 0.55f);
+            _shieldFlash.color = new Color(_shieldColor.r, _shieldColor.g, _shieldColor.b, _flashAlpha);
             _shieldFlash.enabled = true;
 
+            // Sello compacto fuera de los carriles.
             _bannerRemaining = _bannerSeconds;
-            _absorbedBanner.localScale = Vector3.zero;
+            _absorbedBanner.localScale = new Vector3(0.7f, 0.7f, 1f);
+            _bannerGroup.alpha = 1f;
             _absorbedBanner.gameObject.SetActive(true);
         }
 
@@ -162,7 +177,8 @@ namespace DiosPunk.Rhythm
             PlaceAtImpact();
             _absorbed = false;
             _phase = Phase.Resolving;
-            _effectRemaining = _effectSeconds;
+            _effectDuration = _effectSeconds;
+            _effectRemaining = _effectDuration;
 
             _frame.color = WithAlpha(_current, GameSettings.ReduceVisualEffects ? 0.35f : 0.9f);
             _frame.enabled = true;
@@ -240,7 +256,7 @@ namespace DiosPunk.Rhythm
             else if (_phase == Phase.Resolving)
             {
                 _effectRemaining -= dt;
-                float f = Mathf.Clamp01(_effectRemaining / _effectSeconds);
+                float f = Mathf.Clamp01(_effectRemaining / _effectDuration);
 
                 // Se desintegra (escudo) o estalla (impacto): se achica o crece y se desvanece.
                 _projectile.transform.localScale = _projectileBaseScale * (_absorbed ? f : 1f + (1f - f) * 0.8f);
@@ -285,7 +301,7 @@ namespace DiosPunk.Rhythm
             {
                 _flashRemaining -= dt;
                 float f = Mathf.Clamp01(_flashRemaining / FlashSeconds);
-                _shieldFlash.color = new Color(_shieldColor.r, _shieldColor.g, _shieldColor.b, 0.55f * f);
+                _shieldFlash.color = new Color(_shieldColor.r, _shieldColor.g, _shieldColor.b, _flashAlpha * f);
                 if (_flashRemaining <= 0f) _shieldFlash.enabled = false;
             }
 
@@ -294,12 +310,13 @@ namespace DiosPunk.Rhythm
                 _bannerRemaining -= dt;
                 float elapsed = _bannerSeconds - _bannerRemaining;
 
-                // Pop de entrada (0.6 -> 1.12 -> 1) y salida rápida al final.
-                float scale = elapsed < 0.2f ? Mathf.Lerp(0.6f, 1.12f, elapsed / 0.2f)
-                    : elapsed < 0.3f ? Mathf.Lerp(1.12f, 1f, (elapsed - 0.2f) / 0.1f)
-                    : 1f;
-                if (_bannerRemaining < 0.25f) scale *= Mathf.Clamp01(_bannerRemaining / 0.25f);
+                // Entrada rápida (0.7 -> 1.1 -> 1) y salida con desvanecimiento suave.
+                float scale = elapsed < BannerPopSeconds ? Mathf.Lerp(0.7f, 1.1f, elapsed / BannerPopSeconds)
+                    : elapsed < BannerPopSeconds + BannerSettleSeconds
+                        ? Mathf.Lerp(1.1f, 1f, (elapsed - BannerPopSeconds) / BannerSettleSeconds)
+                        : 1f;
                 _absorbedBanner.localScale = new Vector3(scale, scale, 1f);
+                _bannerGroup.alpha = _bannerRemaining < BannerFadeSeconds ? Mathf.Clamp01(_bannerRemaining / BannerFadeSeconds) : 1f;
 
                 if (_bannerRemaining <= 0f) _absorbedBanner.gameObject.SetActive(false);
             }

@@ -535,8 +535,9 @@ namespace DiosPunk.Rhythm.Editor
                 Vector3.zero, new Vector3(1.3f, 1.3f, 1f), 15);
             projectile.enabled = false;
 
-            SpriteRenderer shield = FindOrCreateSprite(track.transform, "PunkShield", fx.Shield, new Color(1f, 0.85f, 0.1f, 1f),
-                new Vector3(0f, -4.0f, 0f), new Vector3(3.6f, 1.6f, 1f), 20);
+            // Anillo del escudo compacto y bajo la HitBar (y -3.5): no cubre las notas ni los receptáculos.
+            SpriteRenderer shield = FindOrCreateSprite(track.transform, "PunkShield", fx.Shield, new Color(1f, 0.85f, 0.1f, 0.6f),
+                new Vector3(0f, -4.35f, 0f), new Vector3(2.4f, 0.55f, 1f), 20);
             shield.enabled = false;
 
             Image frame = FindOrCreateImage(ui, "DebuffFrame", fx.Frame, new Color(1f, 0.1f, 0.65f, 0.9f),
@@ -554,35 +555,36 @@ namespace DiosPunk.Rhythm.Editor
             splat.enabled = false;
             splat.transform.SetSiblingIndex(1);
 
-            // Destello de pantalla completa cuando el escudo absorbe el debuff.
-            Image flash = FindOrCreateImage(ui, "ShieldFlash", white, new Color(1f, 0.85f, 0.1f, 0.55f),
-                Vector2.zero, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Image.Type.Simple);
-            flash.rectTransform.anchorMin = Vector2.zero;
-            flash.rectTransform.anchorMax = Vector2.one;
-            flash.rectTransform.offsetMin = Vector2.zero;
-            flash.rectTransform.offsetMax = Vector2.zero;
+            // Destello sutil de absorción: un resplandor pequeño bajo la HitBar (impacto en y -4.35 ≈ 70 px desde abajo),
+            // en lugar de una capa de pantalla completa que cegaba las notas.
+            Image flash = FindOrCreateImage(ui, "ShieldFlash", fx.Glow, new Color(1f, 0.85f, 0.1f, 0.3f),
+                new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0f, 70f), new Vector2(420f, 110f), Image.Type.Simple);
             flash.raycastTarget = false;
             flash.enabled = false;
             flash.transform.SetSiblingIndex(2);
 
-            // Cartel estilo fanzine: papel amarillo torcido con "¡DEBUFF ABSORBIDO!".
+            // Sello/cartel compacto estilo fanzine, fuera de los carriles: esquina superior izquierda, justo bajo el
+            // marco de MODO PUNK (ocupa x 36..476 px de 1920; los carriles empiezan cerca de x 550).
             Image bannerPaper = FindOrCreateImage(ui, "AbsorbedBanner", panel, new Color(1f, 0.92f, 0.25f, 1f),
-                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 160f), new Vector2(1180f, 250f), Image.Type.Sliced);
+                new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(36f, -188f), new Vector2(440f, 96f), Image.Type.Sliced);
             bannerPaper.raycastTarget = false;
-            bannerPaper.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -4f);
-            TMP_Text bannerTitle = FindOrCreateText(bannerPaper.rectTransform, "Title", "¡DEBUFF ABSORBIDO!", 80f,
-                TextAlignmentOptions.Center, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 25f),
-                new Vector2(1100f, 130f), Color.black);
+            bannerPaper.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -3f);
+            TMP_Text bannerTitle = FindOrCreateText(bannerPaper.rectTransform, "Title", "¡DEBUFF ABSORBIDO!", 32f,
+                TextAlignmentOptions.Center, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 14f),
+                new Vector2(420f, 52f), Color.black);
             bannerTitle.fontStyle = FontStyles.Bold;
             bannerTitle.textWrappingMode = TextWrappingModes.NoWrap;
-            FindOrCreateText(bannerPaper.rectTransform, "Subtitle", "El Escudo Punk te salvó", 42f, TextAlignmentOptions.Center,
-                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -72f), new Vector2(1000f, 60f), Red);
+            FindOrCreateText(bannerPaper.rectTransform, "Subtitle", "El Escudo Punk te salvó", 22f, TextAlignmentOptions.Center,
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -24f), new Vector2(420f, 30f), Red);
+            var bannerGroup = GetOrAdd<CanvasGroup>(bannerPaper.gameObject);
+            bannerGroup.blocksRaycasts = false;
+            bannerGroup.interactable = false;
             bannerPaper.gameObject.SetActive(false);
 
             var sabotage = GetOrAdd<NpcSabotageController>(track);
             SetRefs(sabotage, ("_session", session), ("_leftNpc", left.transform), ("_rightNpc", right.transform),
                 ("_projectile", projectile), ("_shield", shield), ("_frame", frame), ("_splat", splat),
-                ("_absorbedBanner", bannerPaper.rectTransform), ("_shieldFlash", flash));
+                ("_absorbedBanner", bannerPaper.rectTransform), ("_bannerGroup", bannerGroup), ("_shieldFlash", flash));
         }
 
         private static SongPreparationScreen BuildPreparation(RectTransform root, Sprite panel)
