@@ -29,6 +29,15 @@ namespace DiosPunk.Rhythm
         [Tooltip("Velocidad de caída en unidades por segundo.")]
         [SerializeField, Min(0.1f)] private float _noteSpeed = 8f;
 
+        [Header("Colores de carril (0 rojo, 1 amarillo, 2 verde, 3 azul)")]
+        [SerializeField] private Color[] _laneColors =
+        {
+            new Color(0.92f, 0.20f, 0.20f, 1f),
+            new Color(0.97f, 0.82f, 0.15f, 1f),
+            new Color(0.20f, 0.72f, 0.30f, 1f),
+            new Color(0.20f, 0.38f, 0.90f, 1f)
+        };
+
         [Header("Juicio")]
         [SerializeField] private HitWindows _windows = HitWindows.Default;
 
@@ -69,6 +78,11 @@ namespace DiosPunk.Rhythm
         public int TotalNotes => _notes.Length;
         public int ActiveNoteCount => _active.Count;
         public NoteView GetActiveNote(int index) => _active[index];
+
+        public Color GetLaneColor(int lane)
+        {
+            return _laneColors != null && lane >= 0 && lane < _laneColors.Length ? _laneColors[lane] : Color.white;
+        }
 
         private void Awake()
         {
@@ -177,7 +191,7 @@ namespace DiosPunk.Rhythm
             {
                 NoteData data = _notes[_nextSpawn];
                 NoteView view = _pool.Get();
-                view.Init(data.laneIndex, data.targetTimeDSP, data.isDebuffNote);
+                view.Init(data.laneIndex, data.targetTimeDSP, data.isDebuffNote, GetLaneColor(data.laneIndex));
                 PlaceNote(view, songTime);
                 _active.Add(view);
                 _nextSpawn++;

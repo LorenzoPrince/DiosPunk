@@ -10,7 +10,9 @@ using UnityEngine.UI;
 namespace DiosPunk.Rhythm.Editor
 {
     /// <summary>
-    /// Genera placeholders (sprites, WAV de metrónomo, prefab, SongData) y arma la escena de prueba M01/M02.
+    /// Genera placeholders (sprites, WAV de metrónomo, prefab, SongData) y arma la escena de prueba
+    /// siguiendo los bocetos del GDD: highway de 4 carriles de colores, receptáculos translúcidos,
+    /// HUD con medidor de Modo Punk (arriba izquierda) y puntaje + multiplicador (arriba derecha).
     /// Idempotente: se puede ejecutar varias veces; reutiliza lo que ya exista.
     /// Menú: DiosPunk/Rhythm/Build Test Setup.
     /// </summary>
@@ -23,6 +25,8 @@ namespace DiosPunk.Rhythm.Editor
 
         private const string NotePngPath = ArtDir + "/Note_Placeholder.png";
         private const string HitBarPngPath = ArtDir + "/HitBar_Placeholder.png";
+        private const string PanelPngPath = ArtDir + "/Panel_Placeholder.png";
+        private const string WhitePngPath = ArtDir + "/White_Placeholder.png";
         private const string WavPath = AudioDir + "/Metronome_120BPM.wav";
         private const string NotePrefabPath = PrefabDir + "/Note.prefab";
         private const string SongPath = SongDir + "/TestSong_120BPM.asset";
@@ -32,26 +36,28 @@ namespace DiosPunk.Rhythm.Editor
         private const float FirstBeatSeconds = 2f;
         private const int BeatCount = 64;
 
-        // Geometría: 4 carriles a 1.5 u => la barra cubre 6 u de ancho. PPU 100.
+        // Geometría: 4 carriles a 1.5 u => highway de 6 u de ancho. PPU 100 (1 u en White = 16 px a PPU 16).
         private const int NotePxW = 120, NotePxH = 40;
         private const int HitBarPxW = 600, HitBarPxH = 12;
         private const float HitLineY = -3.5f;
+        private const float LaneSpacing = 1.5f;
 
         [MenuItem("DiosPunk/Rhythm/Build Test Setup")]
         public static void Build()
         {
             EnsureFolders();
 
-            Sprite noteSprite = CreateBorderedSprite(NotePngPath, NotePxW, NotePxH, 4,
-                new Color(0.75f, 0.75f, 0.75f, 1f), Color.white);
-            Sprite hitBarSprite = CreateBorderedSprite(HitBarPngPath, HitBarPxW, HitBarPxH, 2,
-                new Color(1f, 0.85f, 0.1f, 1f), new Color(1f, 1f, 0.7f, 1f));
+            // Texturas blancas con borde negro: el color de carril se aplica por tinte (multiplicación).
+            Sprite noteSprite = CreateSprite(NotePngPath, NotePxW, NotePxH, 4, Color.white, Color.black, 100f, 0);
+            Sprite hitBarSprite = CreateSprite(HitBarPngPath, HitBarPxW, HitBarPxH, 2, Color.white, Color.black, 100f, 0);
+            Sprite panelSprite = CreateSprite(PanelPngPath, 64, 64, 6, Color.white, Color.black, 100f, 6);
+            Sprite whiteSprite = CreateSprite(WhitePngPath, 16, 16, 0, Color.white, Color.white, 16f, 0);
 
             AudioClip clip = CreateMetronomeClip();
             SongData song = CreateSongData(clip);
             NoteView notePrefab = CreateNotePrefab(noteSprite);
 
-            BuildScene(song, notePrefab, hitBarSprite, noteSprite);
+            BuildScene(song, notePrefab, hitBarSprite, noteSprite, panelSprite, whiteSprite);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -69,7 +75,8 @@ namespace DiosPunk.Rhythm.Editor
             AssetDatabase.Refresh();
         }
 
-        private static Sprite CreateBorderedSprite(string path, int w, int h, int border, Color fill, Color edge)
+        private static Sprite CreateSprite(string path, int w, int h, int border, Color fill, Color edge,
+            float pixelsPerUnit, int sliceBorder)
         {
             var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
             var pixels = new Color[w * h];
@@ -90,7 +97,8 @@ namespace DiosPunk.Rhythm.Editor
             var importer = (TextureImporter)AssetImporter.GetAtPath(path);
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Single;
-            importer.spritePixelsPerUnit = 100f;
+            importer.spritePixelsPerUnit = pixelsPerUnit;
+            importer.spriteBorder = new Vector4(sliceBorder, sliceBorder, sliceBorder, sliceBorder);
             importer.mipmapEnabled = false;
             importer.filterMode = FilterMode.Point;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
@@ -207,7 +215,8 @@ namespace DiosPunk.Rhythm.Editor
 
         // ---------------- Escena ----------------
 
-        private static void BuildScene(SongData song, NoteView notePrefab, Sprite hitBarSprite, Sprite padSprite)
+        private static void BuildScene(SongData song, NoteView notePrefab, Sprite hitBarSprite, Sprite noteSprite,
+            Sprite panelSprite, Sprite whiteSprite)
         {
             // --- Track ---
             GameObject track = FindOrCreate("RhythmTrack");
@@ -226,30 +235,35 @@ namespace DiosPunk.Rhythm.Editor
                 ("_song", song),
                 ("_notePrefab", notePrefab));
 
-            // --- Hit bar ---
-            Transform existingBar = track.transform.Find("HitBar");
-            GameObject bar = existingBar != null ? existingBar.gameObject : new GameObject("HitBar");
-            bar.transform.SetParent(track.transform, false);
-            bar.transform.localPosition = new Vector3(0f, HitLineY, 0f);
-            var barRenderer = GetOrAdd<SpriteRenderer>(bar);
-            barRenderer.sprite = hitBarSprite;
-            barRenderer.sortingOrder = 5;
+            // --- Highway (fondo blanco + 5 líneas negras) ---
+            float highwayWidth = 4 * LaneSpacing;
+            SpriteRenderer highway = FindOrCreateSprite(track.transform, "Highway", whiteSprite,
+                new Color(0.93f, 0.93f, 0.90f, 1f), new Vector3(0f, 0.5f, 0f), new Vector3(highwayWidth, 11f, 1f), -10);
+            highway.gameObject.name = "Highway";
+            for (int i = 0; i < 5; i++)
+            {
+                FindOrCreateSprite(track.transform, "LaneLine_" + i, whiteSprite, Color.black,
+                    new Vector3((i - 2f) * LaneSpacing, 0.5f, 0f), new Vector3(0.07f, 11f, 1f), -9);
+            }
 
-            // --- Pads de feedback por carril (se tiñen Verde/Amarillo/Rojo al juzgar) ---
+            // --- Barra de impacto (línea translúcida) ---
+            FindOrCreateSprite(track.transform, "HitBar", hitBarSprite, new Color(0f, 0f, 0f, 0.45f),
+                new Vector3(0f, HitLineY, 0f), Vector3.one, 2);
+
+            // --- Receptáculos (forma de la nota, color del carril, translúcidos) y pads de feedback ---
             var pads = new SpriteRenderer[RhythmInputReader.LaneCount];
             for (int lane = 0; lane < pads.Length; lane++)
             {
-                string padName = "LanePad_" + lane;
-                Transform existingPad = track.transform.Find(padName);
-                GameObject pad = existingPad != null ? existingPad.gameObject : new GameObject(padName);
-                pad.transform.SetParent(track.transform, false);
-                pad.transform.localPosition = new Vector3((lane - (pads.Length - 1) * 0.5f) * 1.5f, HitLineY, 0f);
-                pad.transform.localScale = new Vector3(1.15f, 1.3f, 1f);
-                var padRenderer = GetOrAdd<SpriteRenderer>(pad);
-                padRenderer.sprite = padSprite;
-                padRenderer.sortingOrder = 6;
-                padRenderer.color = Color.clear;
-                pads[lane] = padRenderer;
+                float x = (lane - (pads.Length - 1) * 0.5f) * LaneSpacing;
+                Color laneColor = controller.GetLaneColor(lane);
+
+                Color receptacle = laneColor;
+                receptacle.a = 0.45f;
+                FindOrCreateSprite(track.transform, "LaneReceptacle_" + lane, noteSprite, receptacle,
+                    new Vector3(x, HitLineY, 0f), Vector3.one, 3);
+
+                pads[lane] = FindOrCreateSprite(track.transform, "LanePad_" + lane, noteSprite, Color.clear,
+                    new Vector3(x, HitLineY, 0f), new Vector3(1.15f, 1.3f, 1f), 6);
             }
 
             var feedback = GetOrAdd<RhythmHitFeedback>(track);
@@ -258,6 +272,9 @@ namespace DiosPunk.Rhythm.Editor
 
             var autoPlayer = GetOrAdd<RhythmDebugAutoPlayer>(track);
             SetRefs(autoPlayer, ("_track", controller), ("_input", input));
+
+            var session = GetOrAdd<RhythmSession>(track);
+            SetRefs(session, ("_track", controller));
 
             // --- Cámara ---
             Camera cam = Camera.main;
@@ -271,28 +288,70 @@ namespace DiosPunk.Rhythm.Editor
             cam.orthographicSize = 5f;
             cam.transform.position = new Vector3(0f, 0f, -10f);
             cam.clearFlags = CameraClearFlags.SolidColor;
-            cam.backgroundColor = new Color(0.08f, 0.08f, 0.08f, 1f);
+            cam.backgroundColor = new Color(0.22f, 0.22f, 0.22f, 1f);
 
-            // --- HUD ---
-            GameObject canvasGo = FindOrCreate("DebugCanvas");
+            // --- Canvas (HUD de juego + debug) ---
+            GameObject canvasGo = GameObject.Find("HudCanvas");
+            if (canvasGo == null)
+            {
+                canvasGo = GameObject.Find("DebugCanvas"); // nombre de la versión anterior
+                if (canvasGo != null) canvasGo.name = "HudCanvas";
+            }
+            if (canvasGo == null) canvasGo = FindOrCreate("HudCanvas");
+
             var canvas = GetOrAdd<Canvas>(canvasGo);
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             var scaler = GetOrAdd<CanvasScaler>(canvasGo);
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.matchWidthOrHeight = 0.5f;
+            Transform ui = canvasGo.transform;
 
-            TMP_Text judgement = FindOrCreateText(canvasGo.transform, "JudgementText", 64f,
-                TextAlignmentOptions.Center, new Vector2(0.5f, 1f), new Vector2(0f, -40f), new Vector2(900f, 90f));
-            TMP_Text stats = FindOrCreateText(canvasGo.transform, "StatsText", 36f,
-                TextAlignmentOptions.TopLeft, new Vector2(0f, 1f), new Vector2(30f, -30f), new Vector2(700f, 200f));
-            TMP_Text metrics = FindOrCreateText(canvasGo.transform, "MetricsText", 30f,
-                TextAlignmentOptions.TopLeft, new Vector2(0f, 1f), new Vector2(30f, -150f), new Vector2(700f, 50f));
-            TMP_Text status = FindOrCreateText(canvasGo.transform, "StatusText", 28f,
-                TextAlignmentOptions.TopRight, new Vector2(1f, 1f), new Vector2(-30f, -30f), new Vector2(900f, 150f));
-            TMP_Text gc = FindOrCreateText(canvasGo.transform, "GcText", 26f,
-                TextAlignmentOptions.BottomLeft, new Vector2(0f, 0f), new Vector2(30f, 30f), new Vector2(1000f, 50f));
-            judgement.text = "-";
+            // Modo Punk (arriba izquierda): panel + rótulo + barra (aún sin lógica: Hito 3)
+            RectTransform punkPanel = FindOrCreateImage(ui, "PunkPanel", panelSprite, Color.white,
+                new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(30f, -30f), new Vector2(520f, 140f), Image.Type.Sliced).rectTransform;
+            FindOrCreateText(punkPanel, "PunkLabel", "MODO PUNK", 54f, TextAlignmentOptions.TopLeft,
+                new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -10f), new Vector2(460f, 70f), new Color(0.85f, 0.1f, 0.1f, 1f));
+            FindOrCreateImage(punkPanel, "PunkBarBackground", panelSprite, Color.white,
+                new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(24f, 18f), new Vector2(472f, 36f), Image.Type.Sliced);
+            Image punkFill = FindOrCreateImage(punkPanel, "PunkBarFill", whiteSprite, new Color(0.85f, 0.1f, 0.1f, 1f),
+                new Vector2(0f, 0f), new Vector2(0f, 0.5f), new Vector2(30f, 36f), new Vector2(460f, 24f), Image.Type.Filled);
+            ConfigureFill(punkFill, 0f);
+
+            // Puntaje + multiplicador (arriba derecha)
+            RectTransform scorePanel = FindOrCreateImage(ui, "ScorePanel", panelSprite, Color.white,
+                new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-30f, -30f), new Vector2(560f, 150f), Image.Type.Sliced).rectTransform;
+            TMP_Text scoreText = FindOrCreateText(scorePanel, "ScoreText", "0", 80f, TextAlignmentOptions.Center,
+                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -8f), new Vector2(520f, 90f), Color.black);
+            TMP_Text multiplierText = FindOrCreateText(scorePanel, "MultiplierText", "x1", 56f, TextAlignmentOptions.BottomRight,
+                new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-24f, 8f), new Vector2(200f, 60f), Color.black);
+            TMP_Text accuracyText = FindOrCreateText(scorePanel, "AccuracyText", "100.0%", 40f, TextAlignmentOptions.BottomLeft,
+                new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(24f, 12f), new Vector2(260f, 50f), Color.black);
+
+            // Barra de vida (arriba centro)
+            RectTransform healthBar = FindOrCreateImage(ui, "HealthBar", panelSprite, Color.white,
+                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -30f), new Vector2(520f, 44f), Image.Type.Sliced).rectTransform;
+            Image healthFill = FindOrCreateImage(healthBar, "HealthFill", whiteSprite, new Color(0.15f, 0.7f, 0.25f, 1f),
+                new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(6f, 0f), new Vector2(508f, 30f), Image.Type.Filled);
+            ConfigureFill(healthFill, 1f);
+
+            // Debug (abajo / centro): no compiten con el HUD de juego
+            TMP_Text judgement = FindOrCreateText(ui, "JudgementText", "-", 56f, TextAlignmentOptions.Center,
+                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -110f), new Vector2(900f, 80f), Color.white);
+            TMP_Text stats = FindOrCreateText(ui, "StatsText", null, 30f, TextAlignmentOptions.BottomLeft,
+                new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(30f, 100f), new Vector2(700f, 90f), Color.white);
+            TMP_Text metrics = FindOrCreateText(ui, "MetricsText", null, 26f, TextAlignmentOptions.BottomLeft,
+                new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(30f, 60f), new Vector2(700f, 40f), Color.white);
+            TMP_Text gc = FindOrCreateText(ui, "GcText", null, 22f, TextAlignmentOptions.BottomLeft,
+                new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(30f, 20f), new Vector2(1000f, 36f), Color.white);
+            TMP_Text status = FindOrCreateText(ui, "StatusText", null, 24f, TextAlignmentOptions.BottomRight,
+                new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-30f, 20f), new Vector2(900f, 120f), Color.white);
+
+            // --- Presenter + debug ---
+            GameObject presenterGo = FindOrCreate("RhythmHudPresenter");
+            var presenter = GetOrAdd<RhythmHudPresenter>(presenterGo);
+            SetRefs(presenter, ("_session", session), ("_scoreText", scoreText), ("_multiplierText", multiplierText),
+                ("_healthFill", healthFill), ("_accuracyText", accuracyText));
 
             GameObject hudGo = FindOrCreate("RhythmDebugHUD");
             var hud = GetOrAdd<RhythmDebugHUD>(hudGo);
@@ -300,13 +359,15 @@ namespace DiosPunk.Rhythm.Editor
                 ("_metricsText", metrics));
 
             var tools = GetOrAdd<RhythmDebugTools>(hudGo);
-            SetRefs(tools, ("_track", controller), ("_autoPlayer", autoPlayer), ("_statusText", status),
-                ("_gcText", gc));
+            SetRefs(tools, ("_track", controller), ("_autoPlayer", autoPlayer), ("_session", session),
+                ("_statusText", status), ("_gcText", gc));
 
             Scene scene = SceneManager.GetActiveScene();
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
         }
+
+        // ---------------- Helpers ----------------
 
         private static GameObject FindOrCreate(string name)
         {
@@ -325,8 +386,59 @@ namespace DiosPunk.Rhythm.Editor
             return c != null ? c : go.AddComponent<T>();
         }
 
-        private static TMP_Text FindOrCreateText(Transform parent, string name, float size,
-            TextAlignmentOptions align, Vector2 anchor, Vector2 anchoredPos, Vector2 sizeDelta)
+        private static SpriteRenderer FindOrCreateSprite(Transform parent, string name, Sprite sprite, Color color,
+            Vector3 localPosition, Vector3 localScale, int sortingOrder)
+        {
+            Transform t = parent.Find(name);
+            GameObject go = t != null ? t.gameObject : new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = localPosition;
+            go.transform.localScale = localScale;
+
+            var sr = GetOrAdd<SpriteRenderer>(go);
+            sr.sprite = sprite;
+            sr.color = color;
+            sr.sortingOrder = sortingOrder;
+            return sr;
+        }
+
+        private static Image FindOrCreateImage(Transform parent, string name, Sprite sprite, Color color,
+            Vector2 anchor, Vector2 pivot, Vector2 anchoredPos, Vector2 size, Image.Type type)
+        {
+            Transform t = parent.Find(name);
+            GameObject go;
+            if (t != null) go = t.gameObject;
+            else
+            {
+                go = new GameObject(name, typeof(RectTransform));
+                go.transform.SetParent(parent, false);
+            }
+
+            var image = GetOrAdd<Image>(go);
+            image.sprite = sprite;
+            image.color = color;
+            image.type = type;
+            image.raycastTarget = false;
+
+            var rt = (RectTransform)go.transform;
+            rt.anchorMin = anchor;
+            rt.anchorMax = anchor;
+            rt.pivot = pivot;
+            rt.anchoredPosition = anchoredPos;
+            rt.sizeDelta = size;
+            return image;
+        }
+
+        private static void ConfigureFill(Image image, float amount)
+        {
+            image.type = Image.Type.Filled;
+            image.fillMethod = Image.FillMethod.Horizontal;
+            image.fillOrigin = (int)Image.OriginHorizontal.Left;
+            image.fillAmount = amount;
+        }
+
+        private static TMP_Text FindOrCreateText(Transform parent, string name, string initialText, float size,
+            TextAlignmentOptions align, Vector2 anchor, Vector2 pivot, Vector2 anchoredPos, Vector2 sizeDelta, Color color)
         {
             Transform t = parent.Find(name);
             GameObject go;
@@ -340,13 +452,14 @@ namespace DiosPunk.Rhythm.Editor
             var text = GetOrAdd<TextMeshProUGUI>(go);
             text.fontSize = size;
             text.alignment = align;
-            text.color = Color.white;
+            text.color = color;
             text.raycastTarget = false;
+            if (initialText != null) text.text = initialText;
 
             var rt = (RectTransform)go.transform;
             rt.anchorMin = anchor;
             rt.anchorMax = anchor;
-            rt.pivot = anchor;
+            rt.pivot = pivot;
             rt.anchoredPosition = anchoredPos;
             rt.sizeDelta = sizeDelta;
             return text;

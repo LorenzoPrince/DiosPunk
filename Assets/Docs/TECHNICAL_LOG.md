@@ -98,7 +98,18 @@ Una entrada por decisión; nunca se borran (si cambian: `Superseded by ADR-XXX`)
 - **Consecuencias:** valida spawn, `HitWindows`, eventos y estadísticas sin error humano; **no** valida el offset `dspTime↔realtime` (usa el mismo) ni la latencia real del dispositivo, que se calibran a mano con el HUD.
 - **Pausa:** `SongClock.Pause` congela `SongTime` y detiene el audio; `Resume` reprograma con `PlayScheduled` (+150 ms) y mantiene `SongTime` congelado hasta alcanzar esa posición.
 
-<!-- Añadir ADR-009+ debajo -->
+### ADR-009 — Puntaje, multiplicador y vida como lógica pura + sesión + presenter (Hito 2)
+- **Estado:** Aceptada · **Fecha:** 2026-11-08
+- **Decisión:** `ScoreSystem` y `HealthSystem` son clases C# puras (testeables en EditMode) con eventos `Action`. `RhythmSession` (MonoBehaviour) las alimenta desde `RhythmTrackController.NoteJudged`/`SongStarted`. `RhythmHudPresenter` solo se suscribe a eventos (sin `Update`, sin polling) y escribe en TMP con `SetText` numérico (sin GC).
+- **Reglas:** Perfect 100 pts, Good 50 pts, Miss 0 y combo a 0. Puntos × multiplicador vigente **antes** de sumar el combo del propio acierto. Multiplicador x1→x4: +1 cada 10 aciertos seguidos (provisional, configurable). Precisión ponderada = (Perfect×1 + Good×0.5) / juzgadas × 100. Vida 100: Miss −15, Perfect +2, Good +1, tope 100. A 0 HP se emite `HealthDepleted` una vez por pasada (el Game Over aún no está conectado; la pista no se detiene).
+- **Consecuencias:** `ScoreSystem` repite el combo que ya lleva `RhythmStats` (este último es solo métrica de debug). Las dos clases comparten el `HitType` del evento de juicio, sin conocer la UI.
+
+### ADR-010 — Estética de pista según bocetos del GDD
+- **Estado:** Aceptada · **Fecha:** 2026-11-08 · **Resuelve** Q-I y Q-J.
+- **Decisión:** carriles con color: 0 rojo, 1 amarillo, 2 verde, 3 azul (`RhythmTrackController._laneColors`). Notas blancas con borde negro, teñidas por carril; las notas de debuff oscurecen el color del carril (50 %). Receptáculos translúcidos (α 0.45) con la forma de la nota, más una línea de HitBar. Highway blanco con 5 líneas negras. Paneles HUD con 9-slice: Modo Punk arriba izquierda (barra aún sin lógica, Hito 3), puntaje + multiplicador + precisión arriba derecha, vida arriba al centro. Textos de debug movidos a la zona inferior.
+- **Notas sostenidas (Q-I):** quedan fuera del MVP; la arquitectura queda abierta (`NoteData` es un struct extensible, el juicio vive en `HitWindows`).
+
+<!-- Añadir ADR-011+ debajo -->
 
 ---
 
@@ -147,7 +158,8 @@ Assets/
 | SongClock / Audio (M01) | Reloj `dspTime`, offset, calibración de latencia, pausa | 🟩 Validado en Play Mode (2026-11-04) |
 | Chart / Notas (M01) | `SongData`, `NoteData`, spawner, pooling, 4 lanes | 🟩 Validado en Play Mode (2026-11-04) |
 | Input (M02) | Acciones D-F-J-K / flechas, timestamp | 🟩 Validado en Play Mode (2026-11-04) |
-| Judgement (M02) | Ventanas Perfect/Good/Miss (puntaje y vida pendientes) | 🟩 Ventanas validadas; puntaje/vida ⬜ |
+| Judgement (M02) | Ventanas Perfect/Good/Miss | 🟩 Validado en Play Mode |
+| Puntaje / Combo / Vida (Hito 2) | `ScoreSystem`, `HealthSystem`, `RhythmSession`, `RhythmHudPresenter` | 🟨 Compila; falta validar en Play Mode |
 | Debuffs | Scheduler 25 s/5 s, efecto visual + chart | ⬜ |
 | Modo Punk | Barra dual, escudo, ventana ampliada, efecto | ⬜ |
 | Narrativa | Diálogos SO, respuestas cortas | ⬜ |
@@ -171,6 +183,9 @@ Formato: `YYYY-MM-DD · [módulo] · descripción · archivos`
 - 2026-11-04 · [Rhythm/Editor] · Herramienta `DiosPunk/Rhythm/Build Test Setup` (`Assets/_Project/Scripts/Rhythm/Editor/`, asmdef `DiosPunk.Rhythm.Editor`): genera sprites placeholder (`Art/Placeholders`), WAV de metrónomo 120 BPM (`Audio/Placeholders`, PCM mono), `Prefabs/Note.prefab`, `Data/Songs/TestSong_120BPM.asset` (64 notas, 1 por beat) y arma la escena (RhythmTrack, HitBar y=-3.5, cámara ortográfica 5, DebugCanvas + RhythmDebugHUD). Idempotente. Scripts M01/M02 compilan sin errores; en Play Mode inició sin errores, el feel de timing aún no se probó con teclado.
 - 2026-11-04 · [Rhythm/Debug] · Sistema de Debug & Testing: `RhythmHitFeedback` (pads por carril Verde/Amarillo/Rojo), gizmos de ventanas Perfect/Good/Early Miss en `RhythmTrackController`, `RhythmDebugAutoPlayer` (bot: AlwaysPerfect/AlwaysGood/SimulateMisses/HumanRandom gaussiano con semilla), `RhythmDebugTools` (F1 autoplay, F2 reiniciar, F3 pausa, F4 modo bot, +/- latencia ±5 ms; resumen en consola al terminar/pausar; monitor de GC con ProfilerRecorder), `RhythmStats` (media y desvío estándar por Welford). `SongClock` gana `Pause/Resume` y `SongTimeToInputRealtime` (inversa exacta). El builder del escenario agrega todo. Compila sin errores; la prueba end-to-end en Play Mode no se pudo ejecutar con el editor sin foco.
 - 2026-11-04 · [Rhythm] · Validación manual en Play Mode por el equipo: M01/M02 + sistema de debug funcionan según lo esperado (reportado por el usuario; sin cifras de GC/latencia registradas aún).
+- 2026-11-08 · [Rhythm] · Hito 2: `ScoreSystem`, `HealthSystem`, `RhythmSession`, `RhythmHudPresenter` (ADR-009). `NoteView.Init` recibe el color del carril; `RhythmTrackController` expone `GetLaneColor`. `RhythmDebugTools` agrega puntaje/precisión/vida al resumen. `DiosPunk.Rhythm.asmdef` referencia `UnityEngine.UI`.
+- 2026-11-08 · [Art/Scene] · Placeholders alineados al GDD (ADR-010): highway, carriles de color, receptáculos translúcidos y HUD (paneles 9-slice, barra de vida, medidor de Modo Punk vacío). El builder pasa a crear `HudCanvas` (renombra el `DebugCanvas` anterior) y `RhythmHudPresenter`. Compila sin errores; el HUD en Play Mode no se validó.
+- 2026-11-08 · [Docs] · Incorporado el GDD completo de la entrega E1: hoja de ruta por hitos (§10) y preguntas Q-I, Q-J.
 - 2026-11-04 · [Git] · Reglas LFS (audio/texturas) y normalización de YAML de Unity · `.gitattributes`
 
 ---
@@ -186,5 +201,22 @@ Formato: `YYYY-MM-DD · [módulo] · descripción · archivos`
 | Q-E | Notas hold | **Resuelta:** solo notas simples en MVP; hold queda para ampliación |
 | Q-F | Guardado | Abierta → provisional: JSON en `persistentDataPath` (nivel desbloqueado, mejores resultados, ajustes) |
 | Q-G | Teclas | **Resuelta:** D-F-J-K y flechas activos a la vez; sin rebindeo en MVP |
+| Q-H | La bitácora de la entrega E1 menciona consultas al mentor sobre middleware de audio (integración Unity/Wwise). El MVP usa `AudioSource` nativo (ADR-001): ¿se migra a Wwise más adelante? Si sí, `SongClock` deberá abstraer la fuente de tiempo de audio | Abierta |
 | R-1 | Latencia de audio variable en PC → calibración obligatoria | Riesgo |
 | R-2 | Debuffs de shader en 120 Hz: presupuesto de GPU del pase fullscreen en URP 2D | Riesgo |
+| Q-I | Notas sostenidas (hold) | **Resuelta (2026-11-08):** fuera del MVP; arquitectura extensible |
+| Q-J | Estética del GDD (carriles de color, multiplicador, HUD) | **Resuelta (2026-11-08):** aplicada con placeholders (ADR-010). Pendiente: marcos irregulares, NPCs y proyectiles (arte/Hito 3) |
+| Q-K | Escalones del multiplicador (provisional: +1 cada 10 aciertos hasta x4) y formato del puntaje (el boceto usa separador de miles, ej. 293.000) | Abierta |
+
+---
+
+## 10. Hoja de ruta de la entrega E1 (según el GDD entregado)
+
+| Hito | Contenido | Estado |
+|---|---|---|
+| 1 (semana 1) | Repo + Git LFS + convenciones; M01 Core de Ritmo; M02 Input/Hit; escenario de pruebas con placeholders y metrónomo 120 BPM | Hecho (validado en Play Mode) |
+| 2 (semana 2) | Puntuación ponderada, multiplicador de combo, barra de vida (100 HP, penalización por Miss, curación leve por acierto); VFX de impacto y feedback auditivo | Pendiente |
+| 3 (semana 3) | Modo Punk (barra dual) y Debuffs periódicos (25 s / 5 s) con absorción por escudo Punk | Pendiente |
+| 4 (semana 4) | Narrativa pre-canción con ScriptableObjects; userflow completo (menú, selector, resultados) y persistencia JSON local | Pendiente |
+
+**Contexto de audio (GDD):** canciones re-grabadas, "guitarra jugable" con dos procesos de audio (modo normal y modo punk), SFX con frases originales de Javier, ambientes de la peatonal Córdoba y la Facultad de Medicina UNR. El plan técnico de esta fase excluye librerías de audio intermedias (ver Q-H).

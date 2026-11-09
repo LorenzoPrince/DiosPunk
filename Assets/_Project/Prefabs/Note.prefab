@@ -106,5 +106,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: DiosPunk.Rhythm::DiosPunk.Rhythm.NoteView
   _renderer: {fileID: 4633477008433707509}
-  _normalColor: {r: 1, g: 1, b: 1, a: 1}
-  _debuffColor: {r: 1, g: 0.15, b: 0.15, a: 1}
+  _debuffDarken: 0.5

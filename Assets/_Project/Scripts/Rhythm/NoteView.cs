@@ -6,8 +6,9 @@ namespace DiosPunk.Rhythm
     public sealed class NoteView : MonoBehaviour
     {
         [SerializeField] private SpriteRenderer _renderer;
-        [SerializeField] private Color _normalColor = Color.white;
-        [SerializeField] private Color _debuffColor = new Color(1f, 0.15f, 0.15f, 1f);
+
+        [Tooltip("Cuánto se oscurece el color del carril en las notas de debuff (0 = nada, 1 = negro).")]
+        [SerializeField, Range(0f, 1f)] private float _debuffDarken = 0.5f;
 
         private Transform _transform;
 
@@ -25,14 +26,17 @@ namespace DiosPunk.Rhythm
             if (_renderer == null) _renderer = GetComponent<SpriteRenderer>();
         }
 
-        public void Init(int laneIndex, double targetTime, bool isDebuffNote)
+        public void Init(int laneIndex, double targetTime, bool isDebuffNote, Color laneColor)
         {
             LaneIndex = laneIndex;
             TargetTime = targetTime;
             AutoPlanned = false;
             AutoFired = false;
             AutoPlanMs = 0f;
-            if (_renderer != null) _renderer.color = isDebuffNote ? _debuffColor : _normalColor;
+            if (_renderer != null)
+            {
+                _renderer.color = isDebuffNote ? Color.Lerp(laneColor, Color.black, _debuffDarken) : laneColor;
+            }
         }
 
         public void SetPosition(float x, float y)

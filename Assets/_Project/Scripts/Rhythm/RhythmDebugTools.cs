@@ -21,6 +21,8 @@ namespace DiosPunk.Rhythm
 
         [SerializeField] private RhythmTrackController _track;
         [SerializeField] private RhythmDebugAutoPlayer _autoPlayer;
+        [Tooltip("Opcional: agrega puntaje, precisión y vida al resumen.")]
+        [SerializeField] private RhythmSession _session;
         [SerializeField] private TMP_Text _statusText;
         [SerializeField] private TMP_Text _gcText;
         [SerializeField, Min(1f)] private float _latencyStepMs = 5f;
@@ -134,7 +136,9 @@ namespace DiosPunk.Rhythm
             string gc = _gcRecorder.Valid
                 ? $"\n  GC Alloc/frame: ultimo {_lastBytes} B, max {_maxBytes} B, frames con alloc {_allocFrames}/{_sampledFrames}"
                 : "\n  GC Alloc/frame: no disponible en este build";
-            Debug.Log(_track.Stats.BuildSummary(title, _track.TotalNotes) + gc);
+            string game = _session == null ? string.Empty
+                : $"\n  Puntaje {_session.Score.Score}, precision ponderada {_session.Score.AccuracyPercent:F1}%, vida {_session.Health.Current:F0}/{_session.Health.Max:F0}";
+            Debug.Log(_track.Stats.BuildSummary(title, _track.TotalNotes) + game + gc);
             _skipFrames = 2; // el propio log y el string alocan: no contarlos
         }
 
