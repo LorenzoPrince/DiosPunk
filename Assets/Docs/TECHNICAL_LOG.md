@@ -109,7 +109,23 @@ Una entrada por decisión; nunca se borran (si cambian: `Superseded by ADR-XXX`)
 - **Decisión:** carriles con color: 0 rojo, 1 amarillo, 2 verde, 3 azul (`RhythmTrackController._laneColors`). Notas blancas con borde negro, teñidas por carril; las notas de debuff oscurecen el color del carril (50 %). Receptáculos translúcidos (α 0.45) con la forma de la nota, más una línea de HitBar. Highway blanco con 5 líneas negras. Paneles HUD con 9-slice: Modo Punk arriba izquierda (barra aún sin lógica, Hito 3), puntaje + multiplicador + precisión arriba derecha, vida arriba al centro. Textos de debug movidos a la zona inferior.
 - **Notas sostenidas (Q-I):** quedan fuera del MVP; la arquitectura queda abierta (`NoteData` es un struct extensible, el juicio vive en `HitWindows`).
 
-<!-- Añadir ADR-011+ debajo -->
+### ADR-011 — Navegación: máquina de estados pura + orquestador + paneles por estado
+- **Estado:** Aceptada · **Fecha:** 2026-11-08
+- **Decisión:** assembly propio `DiosPunk.Flow` (referencia a `DiosPunk.Rhythm`, nunca al revés). `GameStateMachine` (clase pura) valida transiciones entre `MainMenu, LevelSelect, Options, PreLevel, SongPreparation, Gameplay, PauseMenu, GameOver, ResultsScreen` y recuerda desde dónde se abrió Options. `GameFlowController` es el único que une pantallas, ritmo y progreso. `ScreenManager` solo muestra/oculta `ScreenPanel` (lista de estados visibles por panel) ante cambios de estado. Cada pantalla es un MonoBehaviour fino que expone eventos `Action` de sus botones; no conoce al flujo.
+- **Una sola escena** (`SampleScene`) con `HudCanvas`; las pantallas son GameObjects desactivables. El mundo de juego (`RhythmTrack`) y el HUD se activan en Gameplay/Pausa/Game Over (y en Options abierta desde la pausa).
+- **Reglas de transición:** Gameplay→Pausa/GameOver/Results; Pausa→Gameplay/Options/Selector/Menú; GameOver→Gameplay (reintentar)/Selector/Menú; Results→PreLevel/Selector/Menú; Options→MainMenu|PauseMenu (según origen).
+
+### ADR-012 — Integración flujo ↔ ritmo
+- **Estado:** Aceptada · **Fecha:** 2026-11-08
+- **Pausa:** Escape en Gameplay → `RhythmTrackController.PauseSong()` (`SongClock.Pause()`) + PauseMenu; Escape/Reanudar → `ResumeSong()` (`SongClock.Resume()`).
+- **Game Over:** `RhythmSession.HealthDepleted` → `StopSong()` + GameOver. Para que detener la canción dentro del juicio sea seguro, `RhythmTrackController.Update` corta si `_running` pasó a false tras `ProcessLateMisses`.
+- **Victoria:** `SongFinished` con vida > 0 → arma `ResultsData` desde `ScoreSystem` y `RhythmStats`, guarda progreso y muestra Results. Usos de Modo Punk = 0 hasta el Hito 3.
+- **Reintentar:** desde Pausa y Game Over reinicia la canción directo; desde Resultados vuelve a PreLevel. Salir (pausa) → Selector. Selector/Menú detienen la pista (`StopSong`) antes de cambiar de estado.
+- **Niveles:** `LevelData` (ScriptableObject: título, escenario, dificultad, `SongData`, diálogo). `RhythmTrackController.LoadSong` cambia la canción; `_playOnStart` queda en false (arranca el flujo).
+- **Progreso:** `ProgressStore` en JSON (`persistentDataPath/progress.json`): niveles desbloqueados y mejor puntaje por nivel; I/O solo en eventos.
+- **Puntaje en HUD:** `ScoreFormatter` escribe "293.000" en un `char[]` preasignado y `TMP.SetCharArray` (sin GC) — resuelve Q-K.
+
+<!-- Añadir ADR-013+ debajo -->
 
 ---
 
@@ -160,6 +176,7 @@ Assets/
 | Input (M02) | Acciones D-F-J-K / flechas, timestamp | 🟩 Validado en Play Mode (2026-11-04) |
 | Judgement (M02) | Ventanas Perfect/Good/Miss | 🟩 Validado en Play Mode |
 | Puntaje / Combo / Vida (Hito 2) | `ScoreSystem`, `HealthSystem`, `RhythmSession`, `RhythmHudPresenter` | 🟨 Compila; falta validar en Play Mode |
+| Navegación / Flujo de pantallas (Hito 4) | `GameStateMachine`, `GameFlowController`, `ScreenManager`, 8 pantallas, `LevelData`, `ProgressStore` | 🟨 Compila; arranque verificado (menú visible, sin errores); falta recorrer el ciclo con clics |
 | Debuffs | Scheduler 25 s/5 s, efecto visual + chart | ⬜ |
 | Modo Punk | Barra dual, escudo, ventana ampliada, efecto | ⬜ |
 | Narrativa | Diálogos SO, respuestas cortas | ⬜ |
@@ -183,6 +200,7 @@ Formato: `YYYY-MM-DD · [módulo] · descripción · archivos`
 - 2026-11-04 · [Rhythm/Editor] · Herramienta `DiosPunk/Rhythm/Build Test Setup` (`Assets/_Project/Scripts/Rhythm/Editor/`, asmdef `DiosPunk.Rhythm.Editor`): genera sprites placeholder (`Art/Placeholders`), WAV de metrónomo 120 BPM (`Audio/Placeholders`, PCM mono), `Prefabs/Note.prefab`, `Data/Songs/TestSong_120BPM.asset` (64 notas, 1 por beat) y arma la escena (RhythmTrack, HitBar y=-3.5, cámara ortográfica 5, DebugCanvas + RhythmDebugHUD). Idempotente. Scripts M01/M02 compilan sin errores; en Play Mode inició sin errores, el feel de timing aún no se probó con teclado.
 - 2026-11-04 · [Rhythm/Debug] · Sistema de Debug & Testing: `RhythmHitFeedback` (pads por carril Verde/Amarillo/Rojo), gizmos de ventanas Perfect/Good/Early Miss en `RhythmTrackController`, `RhythmDebugAutoPlayer` (bot: AlwaysPerfect/AlwaysGood/SimulateMisses/HumanRandom gaussiano con semilla), `RhythmDebugTools` (F1 autoplay, F2 reiniciar, F3 pausa, F4 modo bot, +/- latencia ±5 ms; resumen en consola al terminar/pausar; monitor de GC con ProfilerRecorder), `RhythmStats` (media y desvío estándar por Welford). `SongClock` gana `Pause/Resume` y `SongTimeToInputRealtime` (inversa exacta). El builder del escenario agrega todo. Compila sin errores; la prueba end-to-end en Play Mode no se pudo ejecutar con el editor sin foco.
 - 2026-11-04 · [Rhythm] · Validación manual en Play Mode por el equipo: M01/M02 + sistema de debug funcionan según lo esperado (reportado por el usuario; sin cifras de GC/latencia registradas aún).
+- 2026-11-08 · [Flow] · Userflow y gestión de pantallas (ADR-011, ADR-012): assembly `DiosPunk.Flow` (`GameStateMachine`, `GameFlowController`, `ScreenManager`, `ScreenPanel`, `LevelData`, `ProgressStore`, `GameSettings` y 8 pantallas), `ScoreFormatter`, `RhythmTrackController.LoadSong`. Builder `DiosPunk/Flow/Build Screens` (crea 5 `LevelData` placeholder, pantallas, EventSystem con Input System UI y `GameFlow`). Compila sin errores; Play Mode arranca en el menú sin errores.
 - 2026-11-08 · [Rhythm] · Hito 2: `ScoreSystem`, `HealthSystem`, `RhythmSession`, `RhythmHudPresenter` (ADR-009). `NoteView.Init` recibe el color del carril; `RhythmTrackController` expone `GetLaneColor`. `RhythmDebugTools` agrega puntaje/precisión/vida al resumen. `DiosPunk.Rhythm.asmdef` referencia `UnityEngine.UI`.
 - 2026-11-08 · [Art/Scene] · Placeholders alineados al GDD (ADR-010): highway, carriles de color, receptáculos translúcidos y HUD (paneles 9-slice, barra de vida, medidor de Modo Punk vacío). El builder pasa a crear `HudCanvas` (renombra el `DebugCanvas` anterior) y `RhythmHudPresenter`. Compila sin errores; el HUD en Play Mode no se validó.
 - 2026-11-08 · [Docs] · Incorporado el GDD completo de la entrega E1: hoja de ruta por hitos (§10) y preguntas Q-I, Q-J.
@@ -206,7 +224,9 @@ Formato: `YYYY-MM-DD · [módulo] · descripción · archivos`
 | R-2 | Debuffs de shader en 120 Hz: presupuesto de GPU del pase fullscreen en URP 2D | Riesgo |
 | Q-I | Notas sostenidas (hold) | **Resuelta (2026-11-08):** fuera del MVP; arquitectura extensible |
 | Q-J | Estética del GDD (carriles de color, multiplicador, HUD) | **Resuelta (2026-11-08):** aplicada con placeholders (ADR-010). Pendiente: marcos irregulares, NPCs y proyectiles (arte/Hito 3) |
-| Q-K | Escalones del multiplicador (provisional: +1 cada 10 aciertos hasta x4) y formato del puntaje (el boceto usa separador de miles, ej. 293.000) | Abierta |
+| Q-K | Escalones del multiplicador y formato del puntaje | **Resuelta (2026-11-08):** +1 cada 10 aciertos hasta x4; separador de miles con punto |
+| Q-L | Diagrama de Figma del userflow no disponible: el flujo se implementó según el texto del GDD. Pendiente validar ramas no descritas, la calibración de latencia + tutorial de primera partida y el epílogo/créditos | Abierta |
+| Q-M | Botón "Jugar" va directo al selector (sin "partida nueva"/calibración/tutorial) y "Salir" de la pausa vuelve al selector; ajustes de Opciones sin persistir y `ReduceVisualEffects` aún sin efecto | Abierta |
 
 ---
 

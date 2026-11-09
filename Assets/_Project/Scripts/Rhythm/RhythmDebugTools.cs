@@ -95,10 +95,14 @@ namespace DiosPunk.Rhythm
 
         private void ToggleAutoPlay() => _autoPlayer.Enabled = !_autoPlayer.Enabled;
 
-        private void Restart() => _track.RestartSong();
+        private void Restart()
+        {
+            if (_track.isActiveAndEnabled) _track.RestartSong();
+        }
 
         private void TogglePause()
         {
+            if (!_track.isActiveAndEnabled) return;
             _track.TogglePause();
             RefreshStatus();
         }

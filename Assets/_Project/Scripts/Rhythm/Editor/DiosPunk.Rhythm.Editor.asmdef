@@ -3,6 +3,8 @@
     "rootNamespace": "DiosPunk.Rhythm.Editor",
     "references": [
         "DiosPunk.Rhythm",
+        "DiosPunk.Flow",
+        "Unity.InputSystem",
         "Unity.TextMeshPro",
         "UnityEngine.UI"
     ],

@@ -125,6 +125,13 @@ namespace DiosPunk.Rhythm
             RecomputeDerived();
         }
 
+        /// <summary>Cambia la canción (recalcula la lista de notas). Llamar antes de StartSong.</summary>
+        public void LoadSong(SongData song)
+        {
+            _song = song;
+            BuildNoteList();
+        }
+
         public void StartSong()
         {
             ReleaseAllActive();
@@ -173,6 +180,10 @@ namespace DiosPunk.Rhythm
 
             SpawnDueNotes(songTime);
             ProcessLateMisses(_clock.JudgementTime);
+
+            // Un suscriptor (p. ej. Game Over) pudo detener la canción durante el juicio.
+            if (!_running) return;
+
             UpdateNotePositions(songTime);
 
             if (_nextSpawn >= _notes.Length && _active.Count == 0)

@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 980281463d061204eb1b726b274b760c, type: 3}
+  m_Name: Level_05
+  m_EditorClassIdentifier: DiosPunk.Flow::DiosPunk.Flow.LevelData
+  _title: Contra los propios demonios
+  _stage: La noche
+  _difficulty: Dificil
+  _song: {fileID: 11400000, guid: e96ec598aaf64684fa9fd46fdbf26be3, type: 2}
+  _dialogue:
+  - speaker: Narrador
+    text: Escena de prueba del nivel 5. El guion todavia no esta definido.
+  - speaker: Dios Punk
+    text: Linea de dialogo de ejemplo.
+  - speaker: Amigo
+    text: Otra linea de ejemplo antes de la cancion.

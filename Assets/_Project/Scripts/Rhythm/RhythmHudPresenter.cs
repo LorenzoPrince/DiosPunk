@@ -18,6 +18,8 @@ namespace DiosPunk.Rhythm
         [Tooltip("Opcional.")]
         [SerializeField] private TMP_Text _accuracyText;
 
+        private readonly char[] _scoreBuffer = new char[ScoreFormatter.BufferSize];
+
         private void OnEnable()
         {
             _session.Score.Changed += OnScoreChanged;
@@ -35,7 +37,8 @@ namespace DiosPunk.Rhythm
 
         private void OnScoreChanged(int score, int multiplier, int combo)
         {
-            _scoreText.SetText("{0:0}", score);
+            int length = ScoreFormatter.Format(score, _scoreBuffer);
+            _scoreText.SetCharArray(_scoreBuffer, 0, length);
             _multiplierText.SetText("x{0:0}", multiplier);
             if (_accuracyText != null) _accuracyText.SetText("{0:1}%", _session.Score.AccuracyPercent);
         }

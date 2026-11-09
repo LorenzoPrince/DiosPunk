@@ -16,7 +16,7 @@ namespace DiosPunk.Rhythm.Editor
     /// Idempotente: se puede ejecutar varias veces; reutiliza lo que ya exista.
     /// Menú: DiosPunk/Rhythm/Build Test Setup.
     /// </summary>
-    public static class RhythmTestSetupBuilder
+    public static partial class RhythmTestSetupBuilder
     {
         private const string ArtDir = "Assets/_Project/Art/Placeholders";
         private const string AudioDir = "Assets/_Project/Audio/Placeholders";
