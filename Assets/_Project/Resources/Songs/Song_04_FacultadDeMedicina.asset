@@ -1,0 +1,381 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82f989b09a87d054589867dc3e885e80, type: 3}
+  m_Name: Song_04_FacultadDeMedicina
+  m_EditorClassIdentifier: DiosPunk.Rhythm::DiosPunk.Rhythm.SongData
+  _title: Facultad de Medicina (placeholder 130 BPM)
+  _audioClip: {fileID: 8300000, guid: 1aeb9964fe242c7409836b76cff65e57, type: 3}
+  _bpm: 130
+  _notes:
+  - targetTimeDSP: 2
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 2.230769230769231
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 2.4615384615384617
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 2.9230769230769234
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 3.153846153846154
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 3.3846153846153846
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 3.8461538461538463
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 4.076923076923077
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 4.307692307692308
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 4.769230769230769
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 5
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 5.230769230769231
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 5.6923076923076925
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 5.923076923076923
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 6.153846153846154
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 6.615384615384616
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 6.846153846153847
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 7.0769230769230775
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 7.538461538461538
+    laneIndex: 0
+    isDebuffNote: 1
+  - targetTimeDSP: 7.769230769230769
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 8
+    laneIndex: 2
+    isDebuffNote: 1
+  - targetTimeDSP: 8.461538461538462
+    laneIndex: 1
+    isDebuffNote: 1
+  - targetTimeDSP: 8.692307692307693
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 8.923076923076923
+    laneIndex: 3
+    isDebuffNote: 1
+  - targetTimeDSP: 9.384615384615385
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 9.615384615384617
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 9.846153846153847
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 10.307692307692308
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 10.538461538461538
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 10.76923076923077
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 11.230769230769232
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 11.461538461538462
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 11.692307692307693
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 12.153846153846155
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 12.384615384615385
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 12.615384615384617
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 13.076923076923077
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 13.307692307692308
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 13.538461538461538
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 14
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 14.230769230769232
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 14.461538461538462
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 14.923076923076923
+    laneIndex: 0
+    isDebuffNote: 1
+  - targetTimeDSP: 15.153846153846155
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 15.384615384615385
+    laneIndex: 2
+    isDebuffNote: 1
+  - targetTimeDSP: 15.846153846153847
+    laneIndex: 1
+    isDebuffNote: 1
+  - targetTimeDSP: 16.07692307692308
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 16.307692307692307
+    laneIndex: 3
+    isDebuffNote: 1
+  - targetTimeDSP: 16.76923076923077
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 17
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 17.230769230769234
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 17.692307692307693
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 17.923076923076923
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 18.153846153846153
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 18.615384615384617
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 18.846153846153847
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 19.076923076923077
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 19.53846153846154
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 19.76923076923077
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 20
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 20.461538461538463
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 20.692307692307693
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 20.923076923076923
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 21.384615384615387
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 21.615384615384617
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 21.846153846153847
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 22.30769230769231
+    laneIndex: 0
+    isDebuffNote: 1
+  - targetTimeDSP: 22.53846153846154
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 22.76923076923077
+    laneIndex: 2
+    isDebuffNote: 1
+  - targetTimeDSP: 23.230769230769234
+    laneIndex: 1
+    isDebuffNote: 1
+  - targetTimeDSP: 23.461538461538463
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 23.692307692307693
+    laneIndex: 3
+    isDebuffNote: 1
+  - targetTimeDSP: 24.153846153846153
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 24.384615384615387
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 24.615384615384617
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 25.076923076923077
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 25.30769230769231
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 25.53846153846154
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 26
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 26.230769230769234
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 26.461538461538463
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 26.923076923076923
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 27.153846153846157
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 27.384615384615387
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 27.846153846153847
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 28.076923076923077
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 28.30769230769231
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 28.76923076923077
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 29
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 29.230769230769234
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 29.692307692307693
+    laneIndex: 0
+    isDebuffNote: 1
+  - targetTimeDSP: 29.923076923076923
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 30.153846153846157
+    laneIndex: 2
+    isDebuffNote: 1
+  - targetTimeDSP: 30.615384615384617
+    laneIndex: 1
+    isDebuffNote: 1
+  - targetTimeDSP: 30.846153846153847
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 31.07692307692308
+    laneIndex: 3
+    isDebuffNote: 1
+  - targetTimeDSP: 31.53846153846154
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 31.76923076923077
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 32
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 32.46153846153847
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 32.69230769230769
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 32.92307692307692
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 33.38461538461539
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 33.61538461538461
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 33.84615384615385
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 34.30769230769231
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 34.53846153846154
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 34.769230769230774
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 35.23076923076923
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 35.46153846153846
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 35.69230769230769
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 36.15384615384615
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 36.38461538461539
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 36.61538461538462
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 37.07692307692308
+    laneIndex: 0
+    isDebuffNote: 1
+  - targetTimeDSP: 37.30769230769231
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 37.53846153846154
+    laneIndex: 2
+    isDebuffNote: 1
+  - targetTimeDSP: 38
+    laneIndex: 1
+    isDebuffNote: 1
+  - targetTimeDSP: 38.23076923076923
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 38.46153846153847
+    laneIndex: 3
+    isDebuffNote: 1
+  _testFirstBeatSeconds: 2
+  _testBeatCount: 80
+  _testOffbeatEvery: 2

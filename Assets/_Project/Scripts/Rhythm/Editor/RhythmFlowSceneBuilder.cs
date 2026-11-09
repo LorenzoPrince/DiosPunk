@@ -56,9 +56,12 @@ namespace DiosPunk.Rhythm.Editor
             MigrateSongAsset();
             BuiltAssets assets = BuildAssets();
             FxAssets fx = BuildFxAssets();
-            DialogueData[] dialogues = CreateDialogues(fx.Portrait);
+            CreateLevelSongs();                                  // 5 canciones (audio placeholder + chart) en Resources/Songs
+            DialogueData[] dialogues = CreateStoryDialogues(fx.Portrait);
+            CreateEpilogue(fx.Portrait);
             LevelData[] levels = CreateLevels(dialogues);
             LevelCatalog catalog = CreateCatalog(levels);
+            ValidateLevels(catalog);
 
             BuildGameplayScene(assets, catalog);
             BuildMainMenuScene(assets, catalog);
@@ -80,42 +83,6 @@ namespace DiosPunk.Rhythm.Editor
                 string error = AssetDatabase.MoveAsset(LegacySongPath, SongPath);
                 if (!string.IsNullOrEmpty(error)) Debug.LogWarning("[Scenes] No se pudo mover el SongData: " + error);
             }
-        }
-
-        private static LevelData[] CreateLevels(DialogueData[] dialogues)
-        {
-            string[] titles =
-            {
-                "Los comienzos en la musica", "Ensayos con amigos", "Recitales con Suenos Punk Rock",
-                "Tocando en la peatonal", "Contra los propios demonios"
-            };
-            string[] stages = { "El cuarto", "La sala de ensayo", "El escenario", "La peatonal", "La noche" };
-            string[] difficulties = { "Facil", "Facil", "Media", "Media", "Dificil" };
-
-            var levels = new LevelData[titles.Length];
-            for (int i = 0; i < levels.Length; i++)
-            {
-                string path = $"{LevelDir}/Level_{i + 1:00}.asset";
-                var level = AssetDatabase.LoadAssetAtPath<LevelData>(path);
-                if (level == null)
-                {
-                    level = ScriptableObject.CreateInstance<LevelData>();
-                    AssetDatabase.CreateAsset(level, path);
-                }
-
-                var so = new SerializedObject(level);
-                so.FindProperty("_title").stringValue = titles[i];
-                so.FindProperty("_stage").stringValue = stages[i];
-                so.FindProperty("_difficulty").stringValue = difficulties[i];
-                so.FindProperty("_songResource").stringValue = Path.GetFileNameWithoutExtension(SongPath);
-
-                so.FindProperty("_dialogue").objectReferenceValue = dialogues[i];
-                so.ApplyModifiedPropertiesWithoutUndo();
-
-                EditorUtility.SetDirty(level);
-                levels[i] = level;
-            }
-            return levels;
         }
 
         private static LevelCatalog CreateCatalog(LevelData[] levels)
@@ -183,7 +150,7 @@ namespace DiosPunk.Rhythm.Editor
             RectTransform prepRoot = CreateScreenRoot(ui, "SongPreparationScreen", Dark, a.White);
             var preparation = BuildPreparation(prepRoot, a.Panel);
             RectTransform optionsRoot = CreateScreenRoot(ui, "OptionsScreen", new Color(0.12f, 0.12f, 0.12f, 0.92f), a.White);
-            var options = BuildOptions(optionsRoot, a.Panel, a.White);
+            var options = BuildOptions(optionsRoot, a.Panel, a.White, false);
             RectTransform pauseRoot = CreateScreenRoot(ui, "PauseMenuScreen", new Color(0f, 0f, 0f, 0.55f), a.White);
             var pause = BuildPause(pauseRoot, a.Panel);
             RectTransform overRoot = CreateScreenRoot(ui, "GameOverScreen", new Color(0.35f, 0f, 0f, 0.7f), a.White);
@@ -191,12 +158,19 @@ namespace DiosPunk.Rhythm.Editor
             RectTransform resultsRoot = CreateScreenRoot(ui, "ResultsScreenPanel", Dark, a.White);
             var results = BuildResults(resultsRoot, a.Panel);
 
+            // Cierre del juego: epílogo narrativo (mismo presentador de diálogos) y créditos.
+            RectTransform epilogueRoot = CreateScreenRoot(ui, "EpilogueScreen", Dark, a.White);
+            var epilogue = BuildPreLevel(epilogueRoot, a.Panel);
+            RectTransform creditsRoot = CreateScreenRoot(ui, "CreditsScreen", Dark, a.White);
+            var credits = BuildCredits(creditsRoot, a.Panel);
+            var epilogueData = AssetDatabase.LoadAssetAtPath<DialogueData>(EpiloguePath);
+
             GameObject flowGo = new GameObject("GameplayFlow");
             var flow = flowGo.AddComponent<GameplayFlowController>();
             var screenManager = flowGo.AddComponent<ScreenManager>();
             SetRefs(flow, ("_track", controller), ("_session", session), ("_catalog", catalog), ("_preLevel", preLevel),
                 ("_preparation", preparation), ("_options", options), ("_pause", pause), ("_gameOver", gameOver),
-                ("_results", results));
+                ("_results", results), ("_epilogue", epilogue), ("_epilogueData", epilogueData), ("_credits", credits));
 
             var panels = new List<ScreenPanel>
             {
@@ -205,7 +179,9 @@ namespace DiosPunk.Rhythm.Editor
                 MakePanel(optionsRoot.gameObject, false, GameState.Options),
                 MakePanel(pauseRoot.gameObject, false, GameState.PauseMenu),
                 MakePanel(overRoot.gameObject, false, GameState.GameOver),
-                MakePanel(resultsRoot.gameObject, false, GameState.ResultsScreen)
+                MakePanel(resultsRoot.gameObject, false, GameState.ResultsScreen),
+                MakePanel(epilogueRoot.gameObject, false, GameState.Epilogue),
+                MakePanel(creditsRoot.gameObject, false, GameState.Credits)
             };
 
             // Mundo de juego y HUD: visibles en Gameplay / Pausa / Game Over (y en Opciones abierta desde la pausa).
@@ -221,7 +197,7 @@ namespace DiosPunk.Rhythm.Editor
             SetRefs(screenManager, ("_flow", flow));
             SetRefArray(screenManager, "_panels", panels.ToArray());
 
-            foreach (RectTransform r in new[] { preRoot, prepRoot, optionsRoot, pauseRoot, overRoot, resultsRoot })
+            foreach (RectTransform r in new[] { preRoot, prepRoot, optionsRoot, pauseRoot, overRoot, resultsRoot, epilogueRoot, creditsRoot })
             {
                 r.gameObject.SetActive(false);
             }
@@ -276,7 +252,7 @@ namespace DiosPunk.Rhythm.Editor
             RectTransform selectRoot = CreateScreenRoot(ui, "LevelSelectScreen", Dark, a.White);
             var levelSelect = BuildLevelSelect(selectRoot, a.Panel);
             RectTransform optionsRoot = CreateScreenRoot(ui, "OptionsScreen", Dark, a.White);
-            var options = BuildOptions(optionsRoot, a.Panel, a.White);
+            var options = BuildOptions(optionsRoot, a.Panel, a.White, true);
             RectTransform creditsRoot = CreateScreenRoot(ui, "CreditsScreen", Dark, a.White);
             var credits = BuildCredits(creditsRoot, a.Panel);
             RectTransform calibrationRoot = CreateScreenRoot(ui, "CalibrationScreen", Dark, a.White);
@@ -412,7 +388,7 @@ namespace DiosPunk.Rhythm.Editor
             return screen;
         }
 
-        private static OptionsScreen BuildOptions(RectTransform root, Sprite panel, Sprite white)
+        private static OptionsScreen BuildOptions(RectTransform root, Sprite panel, Sprite white, bool includeRecalibrate)
         {
             FindOrCreateText(root, "Title", "OPCIONES", 90f, TextAlignmentOptions.Center, Center, Center,
                 new Vector2(0f, 400f), new Vector2(1000f, 120f), Color.white);
@@ -438,6 +414,17 @@ namespace DiosPunk.Rhythm.Editor
                 Center, Center, new Vector2(-300f, 60f), new Vector2(500f, 70f), Color.black);
             Slider volume = FindOrCreateSlider(pages[0].transform, "VolumeSlider", new Vector2(0f, -40f), new Vector2(700f, 36f));
 
+            // Recalibrar latencia: solo en la escena MainMenu (desde el gameplay habría que salir de la canción).
+            Button recalibrate = null;
+            TMP_Text latencyLabel = null;
+            if (includeRecalibrate)
+            {
+                latencyLabel = FindOrCreateText(pages[0].transform, "LatencyLabel", "Latencia actual: 0 ms", 40f,
+                    TextAlignmentOptions.Left, Center, Center, new Vector2(-250f, -130f), new Vector2(560f, 70f), Color.black);
+                recalibrate = CreateButton(pages[0].transform, "RecalibrateButton", "RECALIBRAR LATENCIA",
+                    new Vector2(0f, -220f), new Vector2(680f, 90f), panel);
+            }
+
             Toggle fullscreen = FindOrCreateToggle(pages[1].transform, "FullscreenToggle", "Pantalla completa",
                 new Vector2(0f, 40f), panel, white);
 
@@ -453,7 +440,8 @@ namespace DiosPunk.Rhythm.Editor
             var screen = GetOrAdd<OptionsScreen>(root.gameObject);
             SetRefArray(screen, "_tabButtons", tabs);
             SetRefArray(screen, "_tabPages", pages);
-            SetRefs(screen, ("_volume", volume), ("_fullscreen", fullscreen), ("_reduceEffects", reduce), ("_back", back));
+            SetRefs(screen, ("_volume", volume), ("_fullscreen", fullscreen), ("_reduceEffects", reduce), ("_back", back),
+                ("_recalibrate", recalibrate), ("_latencyLabel", latencyLabel));
             return screen;
         }
 
@@ -608,12 +596,13 @@ namespace DiosPunk.Rhythm.Editor
 
             Button retry = CreateButton(p, "RetryButton", "REINTENTAR", new Vector2(-480f, -330f), new Vector2(290f, 80f), panel);
             Button next = CreateButton(p, "NextButton", "CONTINUAR", new Vector2(-160f, -330f), new Vector2(290f, 80f), panel);
+            TMP_Text nextLabel = next.transform.Find("Label").GetComponent<TMP_Text>();
             Button select = CreateButton(p, "LevelSelectButton", "SELECTOR", new Vector2(160f, -330f), new Vector2(290f, 80f), panel);
             Button menu = CreateButton(p, "MainMenuButton", "MENU", new Vector2(480f, -330f), new Vector2(290f, 80f), panel);
 
             var screen = GetOrAdd<ResultsScreen>(root.gameObject);
             SetRefs(screen, ("_scoreText", score), ("_accuracyText", accuracy), ("_comboText", combo), ("_punkText", punk),
-                ("_countsText", counts), ("_evaluationText", evaluation), ("_retry", retry), ("_next", next),
+                ("_countsText", counts), ("_evaluationText", evaluation), ("_retry", retry), ("_next", next), ("_nextLabel", nextLabel),
                 ("_levelSelect", select), ("_mainMenu", menu));
             return screen;
         }

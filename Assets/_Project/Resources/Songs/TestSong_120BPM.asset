@@ -210,3 +210,4 @@ MonoBehaviour:
     isDebuffNote: 1
   _testFirstBeatSeconds: 2
   _testBeatCount: 64
+  _testOffbeatEvery: 0

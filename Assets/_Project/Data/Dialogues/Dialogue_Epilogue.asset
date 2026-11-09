@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42f7eb367c13169478e34cf309609beb, type: 3}
+  m_Name: Dialogue_Epilogue
+  m_EditorClassIdentifier: DiosPunk.Flow::DiosPunk.Flow.DialogueData
+  _lines:
+  - speaker: Narrador
+    text: "El Dios Punk toc\xF3 en cuartos, garajes, bares, escalinatas y calles.
+      En todos lados con la misma convicci\xF3n."
+    portrait: {fileID: 0}
+  - speaker: Narrador
+    text: "Este juego no cuenta c\xF3mo termin\xF3 la historia. Cuenta c\xF3mo sonaba."
+    portrait: {fileID: 0}
+  - speaker: Narrador
+    text: Sonaba a fotocopia, a pegamento, a amplificador prendido y a ganas de ser
+      escuchado.
+    portrait: {fileID: 0}
+  - speaker: Narrador
+    text: "Gracias por tocar con \xE9l. Que el ruido siga."
+    portrait: {fileID: 0}
+  - speaker: Dios Punk
+    text: "\xA1Uno, dos, tres, cuatro!"
+    portrait: {fileID: 21300000, guid: 8df356341b82c1d488e1058091925b88, type: 3}
+  _choicePrompt: 
+  _choices: []

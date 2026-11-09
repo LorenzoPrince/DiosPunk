@@ -1,0 +1,189 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82f989b09a87d054589867dc3e885e80, type: 3}
+  m_Name: Song_01_Comienzos
+  m_EditorClassIdentifier: DiosPunk.Rhythm::DiosPunk.Rhythm.SongData
+  _title: Comienzos (placeholder 100 BPM)
+  _audioClip: {fileID: 8300000, guid: 494c876cadc84a8418e68c9e6cb6ff07, type: 3}
+  _bpm: 100
+  _notes:
+  - targetTimeDSP: 2
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 2.6
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 3.2
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 3.8
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 4.4
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 5
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 5.6
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 6.2
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 6.8
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 7.3999999999999995
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 8
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 8.6
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 9.2
+    laneIndex: 0
+    isDebuffNote: 1
+  - targetTimeDSP: 9.8
+    laneIndex: 2
+    isDebuffNote: 1
+  - targetTimeDSP: 10.4
+    laneIndex: 1
+    isDebuffNote: 1
+  - targetTimeDSP: 11
+    laneIndex: 3
+    isDebuffNote: 1
+  - targetTimeDSP: 11.6
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 12.2
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 12.799999999999999
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 13.4
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 14
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 14.6
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 15.2
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 15.799999999999999
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 16.4
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 17
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 17.6
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 18.2
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 18.8
+    laneIndex: 0
+    isDebuffNote: 1
+  - targetTimeDSP: 19.4
+    laneIndex: 2
+    isDebuffNote: 1
+  - targetTimeDSP: 20
+    laneIndex: 1
+    isDebuffNote: 1
+  - targetTimeDSP: 20.599999999999998
+    laneIndex: 3
+    isDebuffNote: 1
+  - targetTimeDSP: 21.2
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 21.8
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 22.4
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 23
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 23.599999999999998
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 24.2
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 24.8
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 25.4
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 26
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 26.599999999999998
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 27.2
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 27.8
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 28.4
+    laneIndex: 0
+    isDebuffNote: 1
+  - targetTimeDSP: 29
+    laneIndex: 2
+    isDebuffNote: 1
+  - targetTimeDSP: 29.599999999999998
+    laneIndex: 1
+    isDebuffNote: 1
+  - targetTimeDSP: 30.2
+    laneIndex: 3
+    isDebuffNote: 1
+  - targetTimeDSP: 30.799999999999997
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 31.4
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 32
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 32.599999999999994
+    laneIndex: 3
+    isDebuffNote: 0
+  - targetTimeDSP: 33.2
+    laneIndex: 1
+    isDebuffNote: 0
+  - targetTimeDSP: 33.8
+    laneIndex: 2
+    isDebuffNote: 0
+  - targetTimeDSP: 34.4
+    laneIndex: 0
+    isDebuffNote: 0
+  - targetTimeDSP: 35
+    laneIndex: 3
+    isDebuffNote: 0
+  _testFirstBeatSeconds: 2
+  _testBeatCount: 56
+  _testOffbeatEvery: 0

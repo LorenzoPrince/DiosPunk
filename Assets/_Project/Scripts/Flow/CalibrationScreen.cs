@@ -8,15 +8,21 @@ using UnityEngine.UI;
 namespace DiosPunk.Flow
 {
     /// <summary>
-    /// Pantalla de primera partida: calibración de latencia con un metrónomo visual y sonoro (el jugador pulsa
-    /// una tecla al ritmo; la media del desfase es el LatencyOffsetMs recomendado) y mini tutorial de controles
+    /// Calibración de latencia con un metrónomo visual y sonoro (el jugador pulsa una tecla al ritmo; la media
+    /// del desfase es el LatencyOffsetMs recomendado) y, en la primera partida, un mini tutorial de controles
     /// (validar los 4 carriles). Los clics se programan con AudioSource.PlayScheduled sobre dspTime y los
-    /// timestamps de las pulsaciones (ctx.time) se convierten a tiempo DSP con DspRealtimeMapper.
+    /// timestamps de las pulsaciones (ctx.time) se convierten a tiempo DSP con la API de SongClock
+    /// (InputRealtimeToDsp), la misma conversión que usa el juicio en juego.
+    /// Modo recalibración (desde Opciones): sin tutorial y sin tocar el progreso; al aceptar devuelve la latencia.
     /// El Update solo corre en la fase de calibración (programar clics y animar el pulso) y no genera garbage.
     /// </summary>
     public sealed class CalibrationScreen : MonoBehaviour
     {
         private enum Phase { Intro, Calibrating, Result, Tutorial }
+
+        [Header("Reloj")]
+        [Tooltip("SongClock de la escena: provee la conversión de timestamps de input a tiempo DSP.")]
+        [SerializeField] private SongClock _clock;
 
         [Header("Paneles por fase")]
         [SerializeField] private GameObject _introPanel;
@@ -28,6 +34,7 @@ namespace DiosPunk.Flow
         [SerializeField] private Button _startCalibration;
         [SerializeField] private Button _retry;
         [SerializeField] private Button _accept;
+        [SerializeField] private TMP_Text _acceptLabel;
         [SerializeField] private Button _finishTutorial;
         [SerializeField] private Button _skip;
         [SerializeField] private Button _back;
@@ -48,13 +55,16 @@ namespace DiosPunk.Flow
         [SerializeField] private Image[] _laneBoxes = new Image[RhythmInputReader.LaneCount];
         [SerializeField] private TMP_Text _tutorialStatus;
 
-        private readonly DspRealtimeMapper _mapper = new DspRealtimeMapper();
+        private const string AcceptLabelNewGame = "ACEPTAR";
+        private const string AcceptLabelRecalibrate = "GUARDAR";
+
         private InputAction _anyKey;
         private InputAction[] _laneActions;
         private readonly bool[] _laneDone = new bool[RhythmInputReader.LaneCount];
         private Color[] _laneColors;
 
         private Phase _phase;
+        private bool _recalibration;
         private double _startDsp;
         private double _interval;
         private int _nextBeat;
@@ -64,13 +74,30 @@ namespace DiosPunk.Flow
         private float _resultOffsetMs;
         private int _lanesDone;
 
-        /// <summary>Calibración aceptada y tutorial terminado: latencia en ms recomendada.</summary>
+        /// <summary>true si se abrió desde Opciones (sin tutorial, sin tocar el progreso).</summary>
+        public bool IsRecalibration => _recalibration;
+
+        /// <summary>Calibración aceptada (y tutorial terminado, si corresponde): latencia en ms recomendada.</summary>
         public event Action<float> Completed;
 
-        /// <summary>El jugador eligió omitir la calibración y el tutorial.</summary>
+        /// <summary>El jugador eligió omitir la calibración y el tutorial (solo primera partida).</summary>
         public event Action SkipRequested;
 
         public event Action BackRequested;
+
+        /// <summary>Instante DSP del primer clic de la calibración en curso.</summary>
+        public double ClickStartDsp => _startDsp;
+
+        /// <summary>Segundos entre clics.</summary>
+        public double BeatInterval => _interval;
+
+        /// <summary>Llamar antes de mostrar la pantalla: true = recalibrar desde Opciones; false = primera partida.</summary>
+        public void SetRecalibrationMode(bool recalibration)
+        {
+            _recalibration = recalibration;
+            _skip.gameObject.SetActive(!recalibration);
+            _acceptLabel.text = recalibration ? AcceptLabelRecalibrate : AcceptLabelNewGame;
+        }
 
         private void Awake()
         {
@@ -100,7 +127,7 @@ namespace DiosPunk.Flow
 
         private void OnEnable()
         {
-            _mapper.Reset();
+            _clock.ResetTimebase();
             ShowPhase(Phase.Intro);
         }
 
@@ -139,7 +166,7 @@ namespace DiosPunk.Flow
         private void StartCalibration()
         {
             _interval = 60.0 / _bpm;
-            _mapper.Sample();
+            _clock.SampleNow();
             _startDsp = AudioSettings.dspTime + _leadInSeconds;
             _nextBeat = 0;
             _presses = 0;
@@ -152,7 +179,10 @@ namespace DiosPunk.Flow
         private void AcceptCalibration()
         {
             GameSettings.LatencyOffsetMs = _resultOffsetMs; // vigente ya para el resto de la sesión
-            StartTutorial();
+
+            // Recalibrar desde Opciones: se guarda y se vuelve; la primera partida sigue con el tutorial.
+            if (_recalibration) Completed?.Invoke(_resultOffsetMs);
+            else StartTutorial();
         }
 
         private void StartTutorial()
@@ -176,7 +206,6 @@ namespace DiosPunk.Flow
         {
             if (_phase != Phase.Calibrating) return;
 
-            _mapper.Sample();
             double now = AudioSettings.dspTime;
 
             // Programa los próximos clics con anticipación, alternando dos AudioSource para que no se pisen.
@@ -199,12 +228,6 @@ namespace DiosPunk.Flow
             _pulse.rectTransform.localScale = new Vector3(scale, scale, 1f);
         }
 
-        /// <summary>Instante DSP del primer clic de la calibración en curso.</summary>
-        public double ClickStartDsp => _startDsp;
-
-        /// <summary>Segundos entre clics.</summary>
-        public double BeatInterval => _interval;
-
         /// <summary>
         /// Registra una pulsación de calibración con su timestamp de input (línea de tiempo de realtimeSinceStartup).
         /// Lo llama la InputAction y también se puede invocar para probar el cálculo.
@@ -214,8 +237,8 @@ namespace DiosPunk.Flow
             if (_phase != Phase.Calibrating) return;
             if (Keyboard.current != null && Keyboard.current.escapeKey.isPressed) return;
 
-            _mapper.Sample();
-            double relative = _mapper.RealtimeToDsp(inputRealtime) - _startDsp;
+            _clock.SampleNow();
+            double relative = _clock.InputRealtimeToDsp(inputRealtime) - _startDsp;
             if (relative < -_interval * 0.25) return; // antes de empezar
 
             double deltaMs = (relative - Math.Round(relative / _interval) * _interval) * 1000.0;

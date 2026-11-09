@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 980281463d061204eb1b726b274b760c, type: 3}
   m_Name: Level_05
   m_EditorClassIdentifier: DiosPunk.Flow::DiosPunk.Flow.LevelData
-  _title: Contra los propios demonios
-  _stage: La noche
+  _title: Lucha Interior
+  _stage: El escenario final
   _difficulty: Dificil
-  _songResource: TestSong_120BPM
+  _songResource: Song_05_LuchaInterior
   _dialogue: {fileID: 11400000, guid: d178f887e4785a2418aa649d7e505c60, type: 2}

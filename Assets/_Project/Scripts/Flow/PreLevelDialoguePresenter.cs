@@ -54,14 +54,17 @@ namespace DiosPunk.Flow
             }
         }
 
-        public void Begin(LevelData level)
+        public void Begin(LevelData level) => BeginDialogue(level.Title, level.Dialogue);
+
+        /// <summary>Muestra cualquier DialogueData (escena pre-nivel o epílogo) bajo el título indicado.</summary>
+        public void BeginDialogue(string title, DialogueData data)
         {
             GameSession.ResetNarrativeChoices();
 
-            _data = level.Dialogue;
+            _data = data;
             _index = 0;
             _finished = false;
-            _titleText.text = level.Title;
+            _titleText.text = title;
             _choicesRoot.SetActive(false);
             _advance.gameObject.SetActive(true);
 

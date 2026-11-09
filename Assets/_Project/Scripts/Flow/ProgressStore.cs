@@ -15,6 +15,9 @@ namespace DiosPunk.Flow
 
         /// <summary>Latencia calibrada en ms (positivo = el jugador pulsa tarde).</summary>
         public float latencyOffsetMs;
+
+        /// <summary>true si se completó el juego (nivel 5, epílogo y créditos).</summary>
+        public bool gameCompleted;
     }
 
     /// <summary>Progreso local en JSON (Application.persistentDataPath/progress.json). Solo I/O en eventos, nunca por frame.</summary>
@@ -28,6 +31,7 @@ namespace DiosPunk.Flow
         public int UnlockedLevels => _data.unlockedLevels;
         public bool Calibrated => _data.calibrated;
         public float LatencyOffsetMs => _data.latencyOffsetMs;
+        public bool GameCompleted => _data.gameCompleted;
 
         private ProgressStore(ProgressData data, int levelCount)
         {
@@ -87,6 +91,23 @@ namespace DiosPunk.Flow
             Array.Clear(_data.bestScores, 0, _data.bestScores.Length);
             _data.calibrated = calibrated;
             _data.latencyOffsetMs = calibrated ? latencyOffsetMs : 0f;
+            _data.gameCompleted = false;
+            Save();
+        }
+
+        /// <summary>Guarda una latencia recalibrada sin tocar niveles ni récords.</summary>
+        public void SetCalibration(float latencyOffsetMs)
+        {
+            _data.calibrated = true;
+            _data.latencyOffsetMs = latencyOffsetMs;
+            Save();
+        }
+
+        /// <summary>Marca el juego como completado y deja todos los niveles desbloqueados en el selector.</summary>
+        public void MarkGameCompleted()
+        {
+            _data.gameCompleted = true;
+            _data.unlockedLevels = _levelCount;
             Save();
         }
 

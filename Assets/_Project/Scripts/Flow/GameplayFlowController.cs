@@ -25,6 +25,11 @@ namespace DiosPunk.Flow
         [SerializeField] private GameOverScreen _gameOver;
         [SerializeField] private ResultsScreen _results;
 
+        [Header("Cierre del juego (nivel 5 -> epílogo -> créditos)")]
+        [SerializeField] private PreLevelDialoguePresenter _epilogue;
+        [SerializeField] private DialogueData _epilogueData;
+        [SerializeField] private CreditsScreen _credits;
+
         private ProgressStore _progress;
         private int _levelIndex;
         private SongData _song;
@@ -67,6 +72,9 @@ namespace DiosPunk.Flow
             _results.LevelSelectRequested += ExitToLevelSelect;
             _results.MainMenuRequested += ExitToMainMenu;
 
+            _epilogue.Finished += OnEpilogueFinished;
+            _credits.BackRequested += ExitToMainMenu;
+
             _track.SongFinished += OnSongFinished;
             _session.HealthDepleted += OnHealthDepleted;
         }
@@ -96,6 +104,9 @@ namespace DiosPunk.Flow
             _results.NextRequested -= NextLevel;
             _results.LevelSelectRequested -= ExitToLevelSelect;
             _results.MainMenuRequested -= ExitToMainMenu;
+
+            _epilogue.Finished -= OnEpilogueFinished;
+            _credits.BackRequested -= ExitToMainMenu;
 
             _track.SongFinished -= OnSongFinished;
             _session.HealthDepleted -= OnHealthDepleted;
@@ -198,7 +209,8 @@ namespace DiosPunk.Flow
                 punkUses = _session.Punk.UseCount,
                 newBest = newBest,
                 nextUnlocked = nextUnlocked,
-                hasNextLevel = _levelIndex + 1 < _catalog.Count && _progress.UnlockedLevels > _levelIndex + 1
+                hasNextLevel = _levelIndex + 1 < _catalog.Count && _progress.UnlockedLevels > _levelIndex + 1,
+                isFinalLevel = _levelIndex == _catalog.Count - 1
             };
 
             _track.StopSong();
@@ -214,13 +226,30 @@ namespace DiosPunk.Flow
             Machine.TryGoTo(GameState.PreLevel);
         }
 
-        /// <summary>Recarga la escena Gameplay con el nivel siguiente: así se descarta el audio del anterior.</summary>
+        /// <summary>
+        /// CONTINUAR: en el último nivel pasa al epílogo; en los demás recarga la escena Gameplay con el nivel
+        /// siguiente (así se descarta el audio del anterior).
+        /// </summary>
         private void NextLevel()
         {
-            if (SceneLoader.IsLoading || _levelIndex + 1 >= _catalog.Count) return;
+            if (_levelIndex == _catalog.Count - 1)
+            {
+                _epilogue.BeginDialogue("EPILOGO", _epilogueData);
+                Machine.TryGoTo(GameState.Epilogue);
+                return;
+            }
+
+            if (SceneLoader.IsLoading) return;
             GameSession.SelectedLevelIndex = _levelIndex + 1;
             _track.StopSong();
             SceneLoader.Load(SceneLoader.GameplayScene);
+        }
+
+        /// <summary>Fin del epílogo: se marca el juego como completado (todos los niveles quedan abiertos) y siguen los créditos.</summary>
+        private void OnEpilogueFinished()
+        {
+            _progress.MarkGameCompleted();
+            Machine.TryGoTo(GameState.Credits);
         }
 
         private void ExitToLevelSelect()

@@ -17,6 +17,8 @@ namespace DiosPunk.Rhythm
         [Tooltip("Segundos desde el inicio del audio hasta el primer beat.")]
         [SerializeField, Min(0f)] private float _testFirstBeatSeconds = 2f;
         [SerializeField, Min(1)] private int _testBeatCount = 64;
+        [Tooltip("Cada N beats se agrega una nota extra a contratiempo (0 = ninguna, 1 = una por beat). Sube la densidad.")]
+        [SerializeField, Min(0)] private int _testOffbeatEvery;
 
         public string Title => _title;
         public AudioClip AudioClip => _audioClip;
@@ -35,18 +37,30 @@ namespace DiosPunk.Rhythm
             UnityEditor.Undo.RecordObject(this, "Generate Test Chart");
 
             double beat = 60.0 / _bpm;
-            var notes = new NoteData[_testBeatCount];
-            for (int i = 0; i < notes.Length; i++)
+            var notes = new System.Collections.Generic.List<NoteData>(_testBeatCount * 2);
+            for (int i = 0; i < _testBeatCount; i++)
             {
-                notes[i] = new NoteData
+                int lane = s_testLanePattern[i % s_testLanePattern.Length];
+                notes.Add(new NoteData
                 {
                     targetTimeDSP = _testFirstBeatSeconds + i * beat,
-                    laneIndex = s_testLanePattern[i % s_testLanePattern.Length],
+                    laneIndex = lane,
                     isDebuffNote = (i % 16) >= 12
-                };
+                });
+
+                // Nota extra a contratiempo en otro carril: más densidad en los niveles avanzados.
+                if (_testOffbeatEvery > 0 && i % _testOffbeatEvery == 0)
+                {
+                    notes.Add(new NoteData
+                    {
+                        targetTimeDSP = _testFirstBeatSeconds + (i + 0.5) * beat,
+                        laneIndex = (lane + 2) % 4,
+                        isDebuffNote = false
+                    });
+                }
             }
 
-            _notes = notes;
+            _notes = notes.ToArray();
             UnityEditor.EditorUtility.SetDirty(this);
         }
 #endif

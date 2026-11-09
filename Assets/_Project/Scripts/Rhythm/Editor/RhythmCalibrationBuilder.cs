@@ -37,6 +37,7 @@ namespace DiosPunk.Rhythm.Editor
                 Center, Center, new Vector2(0f, 90f), new Vector2(1400f, 300f), Color.white);
             Button retry = CreateButton(result.transform, "RetryButton", "REPETIR", new Vector2(-260f, -170f), new Vector2(440f, 100f), panel);
             Button accept = CreateButton(result.transform, "AcceptButton", "ACEPTAR", new Vector2(260f, -170f), new Vector2(440f, 100f), panel);
+            TMP_Text acceptLabel = accept.transform.Find("Label").GetComponent<TMP_Text>();
 
             // --- Tutorial de controles: 4 carriles con su color ---
             GameObject tutorial = FindOrCreateRect(root, "TutorialPanel", phasePos, phaseSize);
@@ -69,8 +70,14 @@ namespace DiosPunk.Rhythm.Editor
             }
             foreach (AudioSource s in sources) s.playOnAwake = false;
 
+            // Reloj propio (SongClock) que provee la conversión de timestamps de input a tiempo DSP.
+            Transform clockTransform = root.Find("CalibrationClock");
+            GameObject clockGo = clockTransform != null ? clockTransform.gameObject : new GameObject("CalibrationClock");
+            clockGo.transform.SetParent(root, false);
+            var clock = GetOrAdd<SongClock>(clockGo);
+
             var screen = GetOrAdd<CalibrationScreen>(root.gameObject);
-            SetRefs(screen, ("_introPanel", intro), ("_calibratingPanel", calibrating), ("_resultPanel", result),
+            SetRefs(screen, ("_clock", clock), ("_acceptLabel", acceptLabel), ("_introPanel", intro), ("_calibratingPanel", calibrating), ("_resultPanel", result),
                 ("_tutorialPanel", tutorial), ("_startCalibration", startCalibration), ("_retry", retry),
                 ("_accept", accept), ("_finishTutorial", finish), ("_skip", skip), ("_back", back), ("_pulse", pulse),
                 ("_progressText", progress), ("_resultText", resultText), ("_clickSourceA", sources[0]),

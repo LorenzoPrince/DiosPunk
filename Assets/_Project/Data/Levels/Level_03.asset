@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 980281463d061204eb1b726b274b760c, type: 3}
   m_Name: Level_03
   m_EditorClassIdentifier: DiosPunk.Flow::DiosPunk.Flow.LevelData
-  _title: Recitales con Suenos Punk Rock
-  _stage: El escenario
+  _title: "Peatonal C\xF3rdoba"
+  _stage: La peatonal
   _difficulty: Media
-  _songResource: TestSong_120BPM
+  _songResource: Song_03_PeatonalCordoba
   _dialogue: {fileID: 11400000, guid: f11597c6de61d054a9ca663e17668dfc, type: 2}

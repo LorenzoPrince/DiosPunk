@@ -46,11 +46,12 @@ namespace DiosPunk.Flow
             _levelSelect.BackRequested += GoToMainMenu;
 
             _options.BackRequested += CloseOptions;
+            _options.RecalibrateRequested += OnRecalibrateRequested;
             _credits.BackRequested += GoToMainMenu;
 
             _calibration.Completed += OnCalibrationCompleted;
             _calibration.SkipRequested += OnCalibrationSkipped;
-            _calibration.BackRequested += GoToMainMenu;
+            _calibration.BackRequested += CloseCalibration;
         }
 
         private void OnDisable()
@@ -68,11 +69,12 @@ namespace DiosPunk.Flow
             _levelSelect.BackRequested -= GoToMainMenu;
 
             _options.BackRequested -= CloseOptions;
+            _options.RecalibrateRequested -= OnRecalibrateRequested;
             _credits.BackRequested -= GoToMainMenu;
 
             _calibration.Completed -= OnCalibrationCompleted;
             _calibration.SkipRequested -= OnCalibrationSkipped;
-            _calibration.BackRequested -= GoToMainMenu;
+            _calibration.BackRequested -= CloseCalibration;
         }
 
         private void OnDestroy()
@@ -114,8 +116,19 @@ namespace DiosPunk.Flow
         /// <summary>Entra a la calibración + tutorial. El progreso solo se reemplaza al terminar u omitir.</summary>
         private void StartNewGame()
         {
+            _calibration.SetRecalibrationMode(false);
             Machine.TryGoTo(GameState.Calibration);
         }
+
+        /// <summary>"Recalibrar latencia" en Opciones: abre la calibración sin tocar el progreso.</summary>
+        private void OnRecalibrateRequested()
+        {
+            _calibration.SetRecalibrationMode(true);
+            Machine.TryGoTo(GameState.Calibration);
+        }
+
+        /// <summary>Volver desde la calibración: al menú (primera partida) o a Opciones (recalibración).</summary>
+        private void CloseCalibration() => Machine.TryGoTo(Machine.CalibrationReturnState);
 
         private void GoToLevelSelect()
         {
@@ -134,6 +147,15 @@ namespace DiosPunk.Flow
         private void OnCalibrationCompleted(float latencyOffsetMs)
         {
             GameSettings.LatencyOffsetMs = latencyOffsetMs;
+
+            if (_calibration.IsRecalibration)
+            {
+                // Solo se guarda la nueva latencia; niveles y récords quedan intactos.
+                _progress.SetCalibration(latencyOffsetMs);
+                CloseCalibration();
+                return;
+            }
+
             _progress.StartNewGame(true, latencyOffsetMs);
             StartLevel(0);
         }
@@ -158,8 +180,8 @@ namespace DiosPunk.Flow
             {
                 case GameState.Options: CloseOptions(); break;
                 case GameState.LevelSelect:
-                case GameState.Credits:
-                case GameState.Calibration: GoToMainMenu(); break;
+                case GameState.Credits: GoToMainMenu(); break;
+                case GameState.Calibration: CloseCalibration(); break;
             }
         }
 

@@ -14,23 +14,27 @@ MonoBehaviour:
   m_EditorClassIdentifier: DiosPunk.Flow::DiosPunk.Flow.DialogueData
   _lines:
   - speaker: Narrador
-    text: Escena de prueba del nivel 3. El guion todavia no esta definido.
+    text: "La peatonal C\xF3rdoba al mediod\xEDa: pasos apurados, vidrieras y un
+      tipo con una guitarra."
+    portrait: {fileID: 0}
+  - speaker: "Transe\xFAnte"
+    text: "\xBFEso es m\xFAsica o se te cay\xF3 la p\xFAa al piso?"
     portrait: {fileID: 0}
   - speaker: Dios Punk
-    text: Linea de ejemplo con retrato. Aca iria una anecdota breve del nivel.
+    text: Es lo que tengo y lo toco igual.
     portrait: {fileID: 21300000, guid: 8df356341b82c1d488e1058091925b88, type: 3}
-  - speaker: Amigo
-    text: Otra linea de ejemplo, dicha por un companero de banda o un desconocido
-      en la calle.
+  - speaker: "Otro transe\xFAnte"
+    text: Che, al menos tiene actitud...
     portrait: {fileID: 0}
-  - speaker: Dios Punk
-    text: Ultima linea antes de subir al escenario.
-    portrait: {fileID: 21300000, guid: 8df356341b82c1d488e1058091925b88, type: 3}
-  _choicePrompt: Donde tocas hoy?
+  - speaker: Narrador
+    text: Algunos pasan de largo. Otros se frenan a escuchar. Alcanza con que uno
+      se frene.
+    portrait: {fileID: 0}
+  _choicePrompt: "\xBFD\xF3nde te par\xE1s hoy?"
   _choices:
-  - label: En el escenario de siempre
+  - label: En la esquina de siempre
     variable: 2
     value: 0
-  - label: En la vereda de enfrente
+  - label: Frente a la vidriera
     variable: 2
     value: 1

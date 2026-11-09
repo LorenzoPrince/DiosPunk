@@ -185,59 +185,6 @@ namespace DiosPunk.Rhythm.Editor
 
         // ---------------- Diálogos ----------------
 
-        private static DialogueData[] CreateDialogues(Sprite portrait)
-        {
-            string[] titles = { "01", "02", "03", "04", "05" };
-            var dialogues = new DialogueData[5];
-
-            for (int i = 0; i < dialogues.Length; i++)
-            {
-                string path = $"{DialogueDir}/Dialogue_{titles[i]}.asset";
-                var data = AssetDatabase.LoadAssetAtPath<DialogueData>(path);
-                if (data == null)
-                {
-                    data = ScriptableObject.CreateInstance<DialogueData>();
-                    AssetDatabase.CreateAsset(data, path);
-                }
-
-                var so = new SerializedObject(data);
-                SerializedProperty lines = so.FindProperty("_lines");
-                lines.arraySize = 4;
-                SetDialogueLine(lines, 0, "Narrador", "Escena de prueba del nivel " + (i + 1) + ". El guion todavia no esta definido.", null);
-                SetDialogueLine(lines, 1, "Dios Punk", "Linea de ejemplo con retrato. Aca iria una anecdota breve del nivel.", portrait);
-                SetDialogueLine(lines, 2, "Amigo", "Otra linea de ejemplo, dicha por un companero de banda o un desconocido en la calle.", null);
-                SetDialogueLine(lines, 3, "Dios Punk", "Ultima linea antes de subir al escenario.", portrait);
-
-                // Nivel 1 sin decision; nivel 3 cambia la variante de escenario; el resto modifica la dificultad.
-                SerializedProperty choices = so.FindProperty("_choices");
-                if (i == 0)
-                {
-                    so.FindProperty("_choicePrompt").stringValue = string.Empty;
-                    choices.arraySize = 0;
-                }
-                else if (i == 2)
-                {
-                    so.FindProperty("_choicePrompt").stringValue = "Donde tocas hoy?";
-                    choices.arraySize = 2;
-                    SetChoice(choices, 0, "En el escenario de siempre", ChoiceVariable.ScenarioVariant, 0);
-                    SetChoice(choices, 1, "En la vereda de enfrente", ChoiceVariable.ScenarioVariant, 1);
-                }
-                else
-                {
-                    so.FindProperty("_choicePrompt").stringValue = "Con que actitud encaras la cancion?";
-                    choices.arraySize = 3;
-                    SetChoice(choices, 0, "Con calma", ChoiceVariable.Difficulty, -1);
-                    SetChoice(choices, 1, "Como siempre", ChoiceVariable.Difficulty, 0);
-                    SetChoice(choices, 2, "A todo volumen", ChoiceVariable.Difficulty, 1);
-                }
-                so.ApplyModifiedPropertiesWithoutUndo();
-
-                EditorUtility.SetDirty(data);
-                dialogues[i] = data;
-            }
-            return dialogues;
-        }
-
         private static void SetDialogueLine(SerializedProperty array, int index, string speaker, string text, Sprite portrait)
         {
             SerializedProperty line = array.GetArrayElementAtIndex(index);

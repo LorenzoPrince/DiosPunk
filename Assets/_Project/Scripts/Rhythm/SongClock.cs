@@ -164,10 +164,35 @@ namespace DiosPunk.Rhythm
             return judgedSongTime + _latencyOffsetMs * 0.001 + _songStartDsp - _dspMinusRealtime;
         }
 
+        /// <summary>
+        /// Convierte un timestamp de input (línea de tiempo de Time.realtimeSinceStartup) a tiempo DSP absoluto
+        /// (AudioSettings.dspTime), sin referirse a ninguna canción. Lo usa la calibración de latencia.
+        /// </summary>
+        public double InputRealtimeToDsp(double inputRealtime)
+        {
+            return inputRealtime + _dspMinusRealtime;
+        }
+
+        /// <summary>Refresca la estimación del offset dsp-realtime (útil antes de convertir si no hay canción sonando).</summary>
+        public void SampleNow()
+        {
+            SampleOffset(Time.realtimeSinceStartupAsDouble);
+        }
+
+        /// <summary>Descarta la estimación actual del offset y la vuelve a tomar desde cero.</summary>
+        public void ResetTimebase()
+        {
+            _offsetInitialized = false;
+            SampleOffset(Time.realtimeSinceStartupAsDouble);
+        }
+
         private void Update()
         {
-            if (!_isPlaying || _isPaused) return;
-            RefreshTimes(Time.realtimeSinceStartupAsDouble);
+            double realtime = Time.realtimeSinceStartupAsDouble;
+
+            // Con canción en curso se refrescan los tiempos; sin ella (menús, calibración) solo se mantiene el offset.
+            if (_isPlaying && !_isPaused) RefreshTimes(realtime);
+            else SampleOffset(realtime);
         }
 
         private void RefreshTimes(double realtimeNow)

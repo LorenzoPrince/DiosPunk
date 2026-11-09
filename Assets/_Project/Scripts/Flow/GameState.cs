@@ -20,7 +20,8 @@ namespace DiosPunk.Flow
         GameOver = 7,
         ResultsScreen = 8,
         Credits = 9,
-        Calibration = 10
+        Calibration = 10,
+        Epilogue = 11
     }
 
     /// <summary>
@@ -34,6 +35,9 @@ namespace DiosPunk.Flow
 
         /// <summary>Estado desde el que se abrió Options.</summary>
         public GameState ReturnState { get; private set; } = GameState.MainMenu;
+
+        /// <summary>Estado desde el que se abrió la calibración (MainMenu en la primera partida, Options al recalibrar).</summary>
+        public GameState CalibrationReturnState { get; private set; } = GameState.MainMenu;
 
         /// <summary>Options abierta sobre el juego (desde la pausa o el Game Over): el mundo de juego sigue visible detrás.</summary>
         public bool OptionsOpenedOverGameplay =>
@@ -52,10 +56,12 @@ namespace DiosPunk.Flow
                 case GameState.LevelSelect:
                     return to == GameState.MainMenu;
                 case GameState.Credits:
-                case GameState.Calibration:
                     return to == GameState.MainMenu;
+                case GameState.Calibration:
+                    return to == GameState.MainMenu || to == GameState.Options;
                 case GameState.Options:
-                    return to == GameState.MainMenu || to == GameState.PauseMenu || to == GameState.GameOver;
+                    return to == GameState.MainMenu || to == GameState.PauseMenu || to == GameState.GameOver
+                        || to == GameState.Calibration;
                 case GameState.PreLevel:
                     return to == GameState.SongPreparation;
                 case GameState.SongPreparation:
@@ -67,7 +73,9 @@ namespace DiosPunk.Flow
                 case GameState.GameOver:
                     return to == GameState.Gameplay || to == GameState.Options;
                 case GameState.ResultsScreen:
-                    return to == GameState.PreLevel;
+                    return to == GameState.PreLevel || to == GameState.Epilogue;
+                case GameState.Epilogue:
+                    return to == GameState.Credits;
                 default:
                     return false;
             }
@@ -81,7 +89,9 @@ namespace DiosPunk.Flow
                 return false;
             }
 
-            if (next == GameState.Options) ReturnState = Current;
+            // Options abierta desde Calibration (al volver) no debe pisar su estado de retorno.
+            if (next == GameState.Options && Current != GameState.Calibration) ReturnState = Current;
+            if (next == GameState.Calibration) CalibrationReturnState = Current;
             Apply(next);
             return true;
         }

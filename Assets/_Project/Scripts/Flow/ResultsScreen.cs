@@ -19,6 +19,9 @@ namespace DiosPunk.Flow
         public bool newBest;
         public bool nextUnlocked;
         public bool hasNextLevel;
+
+        /// <summary>true si es el último nivel: CONTINUAR pasa a ser EPILOGO.</summary>
+        public bool isFinalLevel;
     }
 
     /// <summary>Pantalla de resultados: puntaje, precisión ponderada, combo máximo y evaluación del siguiente nivel.</summary>
@@ -32,6 +35,7 @@ namespace DiosPunk.Flow
         [SerializeField] private TMP_Text _evaluationText;
         [SerializeField] private Button _retry;
         [SerializeField] private Button _next;
+        [SerializeField] private TMP_Text _nextLabel;
         [SerializeField] private Button _levelSelect;
         [SerializeField] private Button _mainMenu;
 
@@ -56,13 +60,15 @@ namespace DiosPunk.Flow
             _punkText.text = "Usos de Modo Punk: " + data.punkUses;
             _countsText.text = "Perfect " + data.perfect + "   Good " + data.good + "   Miss " + data.miss;
 
-            string evaluation = data.nextUnlocked ? "Siguiente nivel desbloqueado!"
+            string evaluation = data.isFinalLevel ? "Completaste el ultimo nivel! Sigue el epilogo."
+                : data.nextUnlocked ? "Siguiente nivel desbloqueado!"
                 : data.hasNextLevel ? "Siguiente nivel disponible."
-                : "Ultimo nivel completado (epilogo y creditos pendientes).";
+                : string.Empty;
             if (data.newBest) evaluation += "\nNuevo record!";
             _evaluationText.text = evaluation;
 
-            _next.interactable = data.hasNextLevel;
+            _next.interactable = data.hasNextLevel || data.isFinalLevel;
+            _nextLabel.text = data.isFinalLevel ? "EPILOGO" : "CONTINUAR";
         }
     }
 }
