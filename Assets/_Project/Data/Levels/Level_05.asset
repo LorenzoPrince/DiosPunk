@@ -16,10 +16,4 @@ MonoBehaviour:
   _stage: La noche
   _difficulty: Dificil
   _songResource: TestSong_120BPM
-  _dialogue:
-  - speaker: Narrador
-    text: Escena de prueba del nivel 5. El guion todavia no esta definido.
-  - speaker: Dios Punk
-    text: Linea de dialogo de ejemplo.
-  - speaker: Amigo
-    text: Otra linea de ejemplo antes de la cancion.
+  _dialogue: {fileID: 11400000, guid: d178f887e4785a2418aa649d7e505c60, type: 2}

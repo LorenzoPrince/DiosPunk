@@ -14,19 +14,28 @@ namespace DiosPunk.Rhythm
         private double _endTime;
         private Func<bool> _absorber;
 
+        private bool _incomingFired;
+
         public float Interval { get; private set; } = 25f;
         public float Duration { get; private set; } = 5f;
+
+        /// <summary>Segundos de aviso previo al impacto (el NPC arroja el proyectil en ese tiempo).</summary>
+        public float Lead { get; private set; } = 1.5f;
         public bool IsActive { get; private set; }
+
+        /// <summary>Se avisa Lead segundos antes del disparo; el argumento es esa anticipación en segundos.</summary>
+        public event Action<float> Incoming;
 
         /// <summary>duración en segundos.</summary>
         public event Action<float> Started;
         public event Action Ended;
         public event Action Absorbed;
 
-        public void Configure(float interval, float duration)
+        public void Configure(float interval, float duration, float lead = 1.5f)
         {
             Interval = Math.Max(0.1f, interval);
             Duration = Math.Max(0.1f, duration);
+            Lead = Math.Clamp(lead, 0.1f, Interval * 0.5f);
             _nextTrigger = Interval;
         }
 
@@ -42,6 +51,7 @@ namespace DiosPunk.Rhythm
             }
             _nextTrigger = Interval;
             _endTime = 0.0;
+            _incomingFired = false;
         }
 
         public void Tick(double songTime)
@@ -52,10 +62,17 @@ namespace DiosPunk.Rhythm
                 Ended?.Invoke();
             }
 
+            if (!_incomingFired && songTime >= _nextTrigger - Lead)
+            {
+                _incomingFired = true;
+                Incoming?.Invoke(Lead);
+            }
+
             if (songTime >= _nextTrigger)
             {
                 Trigger(songTime);
                 while (_nextTrigger <= songTime) _nextTrigger += Interval;
+                _incomingFired = false;
             }
         }
 

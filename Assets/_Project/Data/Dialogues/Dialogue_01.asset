@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42f7eb367c13169478e34cf309609beb, type: 3}
+  m_Name: Dialogue_01
+  m_EditorClassIdentifier: DiosPunk.Flow::DiosPunk.Flow.DialogueData
+  _lines:
+  - speaker: Narrador
+    text: Escena de prueba del nivel 1. El guion todavia no esta definido.
+    portrait: {fileID: 0}
+  - speaker: Dios Punk
+    text: Linea de ejemplo con retrato. Aca iria una anecdota breve del nivel.
+    portrait: {fileID: 21300000, guid: 8df356341b82c1d488e1058091925b88, type: 3}
+  - speaker: Amigo
+    text: Otra linea de ejemplo, dicha por un companero de banda o un desconocido
+      en la calle.
+    portrait: {fileID: 0}
+  - speaker: Dios Punk
+    text: Ultima linea antes de subir al escenario.
+    portrait: {fileID: 21300000, guid: 8df356341b82c1d488e1058091925b88, type: 3}
+  _choicePrompt: 
+  _choices: []

@@ -14,10 +14,10 @@ namespace DiosPunk.Rhythm
     {
         public const int LaneCount = 4;
 
-        private static readonly string[] s_primaryKeys =
+        public static readonly string[] PrimaryKeys =
             { "<Keyboard>/a", "<Keyboard>/s", "<Keyboard>/d", "<Keyboard>/f" };
 
-        private static readonly string[] s_arrowKeys =
+        public static readonly string[] ArrowKeys =
             { "<Keyboard>/leftArrow", "<Keyboard>/downArrow", "<Keyboard>/upArrow", "<Keyboard>/rightArrow" };
 
         /// <summary>laneIndex, timestamp del input en la línea de tiempo de Time.realtimeSinceStartup.</summary>
@@ -41,8 +41,8 @@ namespace DiosPunk.Rhythm
             {
                 int lane = i; // captura una sola vez, en init
                 var action = new InputAction("Lane" + lane, InputActionType.Button);
-                action.AddBinding(s_primaryKeys[lane]);
-                action.AddBinding(s_arrowKeys[lane]);
+                action.AddBinding(PrimaryKeys[lane]);
+                action.AddBinding(ArrowKeys[lane]);
 
                 Action<InputAction.CallbackContext> handler = ctx => LanePressed?.Invoke(lane, ctx.time);
                 action.performed += handler;

@@ -9,6 +9,12 @@ namespace DiosPunk.Flow
     {
         public int unlockedLevels = 1;
         public int[] bestScores = Array.Empty<int>();
+
+        /// <summary>true si el jugador completó la calibración de latencia.</summary>
+        public bool calibrated;
+
+        /// <summary>Latencia calibrada en ms (positivo = el jugador pulsa tarde).</summary>
+        public float latencyOffsetMs;
     }
 
     /// <summary>Progreso local en JSON (Application.persistentDataPath/progress.json). Solo I/O en eventos, nunca por frame.</summary>
@@ -20,6 +26,8 @@ namespace DiosPunk.Flow
         private readonly int _levelCount;
 
         public int UnlockedLevels => _data.unlockedLevels;
+        public bool Calibrated => _data.calibrated;
+        public float LatencyOffsetMs => _data.latencyOffsetMs;
 
         private ProgressStore(ProgressData data, int levelCount)
         {
@@ -36,6 +44,8 @@ namespace DiosPunk.Flow
         }
 
         private static string FilePath => Path.Combine(Application.persistentDataPath, FileName);
+
+        public static bool FileExists => File.Exists(FilePath);
 
         public static ProgressStore Load(int levelCount)
         {
@@ -68,6 +78,16 @@ namespace DiosPunk.Flow
             if (score <= _data.bestScores[levelIndex]) return false;
             _data.bestScores[levelIndex] = score;
             return true;
+        }
+
+        /// <summary>Empieza una partida nueva: borra niveles y récords, guarda la latencia calibrada (si hay) y escribe el archivo.</summary>
+        public void StartNewGame(bool calibrated, float latencyOffsetMs)
+        {
+            _data.unlockedLevels = 1;
+            Array.Clear(_data.bestScores, 0, _data.bestScores.Length);
+            _data.calibrated = calibrated;
+            _data.latencyOffsetMs = calibrated ? latencyOffsetMs : 0f;
+            Save();
         }
 
         public void Save()

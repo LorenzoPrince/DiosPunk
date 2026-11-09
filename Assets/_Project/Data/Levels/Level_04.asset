@@ -16,10 +16,4 @@ MonoBehaviour:
   _stage: La peatonal
   _difficulty: Media
   _songResource: TestSong_120BPM
-  _dialogue:
-  - speaker: Narrador
-    text: Escena de prueba del nivel 4. El guion todavia no esta definido.
-  - speaker: Dios Punk
-    text: Linea de dialogo de ejemplo.
-  - speaker: Amigo
-    text: Otra linea de ejemplo antes de la cancion.
+  _dialogue: {fileID: 11400000, guid: 78e381edeb9d94a46a27094a6a8e1b50, type: 2}

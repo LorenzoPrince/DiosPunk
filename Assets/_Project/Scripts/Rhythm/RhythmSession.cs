@@ -38,6 +38,8 @@ namespace DiosPunk.Rhythm
         [Header("Debuffs")]
         [SerializeField, Min(1f)] private float _debuffInterval = 25f;
         [SerializeField, Min(0.5f)] private float _debuffDuration = 5f;
+        [Tooltip("Segundos de aviso previo: el NPC arroja el proyectil y llega justo cuando se resuelve el debuff.")]
+        [SerializeField, Min(0.3f)] private float _debuffLead = 1.5f;
 
         public ScoreSystem Score { get; } = new ScoreSystem();
         public HealthSystem Health { get; } = new HealthSystem();
@@ -45,6 +47,7 @@ namespace DiosPunk.Rhythm
         public DebuffSystem Debuffs { get; } = new DebuffSystem();
 
         public bool IsPaused => _track != null && _track.IsPaused;
+        public RhythmTrackController Track => _track;
 
         /// <summary>Señal para el Game Over: la vida llegó a 0.</summary>
         public event Action HealthDepleted;
@@ -54,7 +57,7 @@ namespace DiosPunk.Rhythm
             Score.Configure(_perfectPoints, _goodPoints, _comboPerMultiplierStep, _maxMultiplier);
             Health.Configure(_maxHealth, _missDamage, _perfectHeal, _goodHeal);
             Punk.Configure(_punkMissCharge, _punkStreakCharge, _punkStreakSize, _punkActiveSeconds);
-            Debuffs.Configure(_debuffInterval, _debuffDuration);
+            Debuffs.Configure(_debuffInterval, _debuffDuration, _debuffLead);
             Debuffs.SetAbsorber(Punk.TryAbsorbDebuff);
             ResetAll();
         }

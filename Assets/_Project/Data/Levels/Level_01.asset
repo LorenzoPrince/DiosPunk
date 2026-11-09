@@ -16,10 +16,4 @@ MonoBehaviour:
   _stage: El cuarto
   _difficulty: Facil
   _songResource: TestSong_120BPM
-  _dialogue:
-  - speaker: Narrador
-    text: Escena de prueba del nivel 1. El guion todavia no esta definido.
-  - speaker: Dios Punk
-    text: Linea de dialogo de ejemplo.
-  - speaker: Amigo
-    text: Otra linea de ejemplo antes de la cancion.
+  _dialogue: {fileID: 11400000, guid: e6e0601b0ddcdb94fb98707470ead91c, type: 2}

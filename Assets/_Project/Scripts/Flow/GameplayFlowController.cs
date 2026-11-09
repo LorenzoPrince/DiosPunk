@@ -18,7 +18,7 @@ namespace DiosPunk.Flow
         [SerializeField] private LevelCatalog _catalog;
 
         [Header("Pantallas")]
-        [SerializeField] private PreLevelScreen _preLevel;
+        [SerializeField] private PreLevelDialoguePresenter _preLevel;
         [SerializeField] private SongPreparationScreen _preparation;
         [SerializeField] private OptionsScreen _options;
         [SerializeField] private PauseMenuScreen _pause;
@@ -140,6 +140,7 @@ namespace DiosPunk.Flow
             if (!Machine.TryGoTo(GameState.Gameplay)) return;
 
             // El cambio de estado ya activó el mundo de juego: cargar la canción y arrancar.
+            _track.SetSpeedMultiplier(GameSession.NoteSpeedMultiplier); // dificultad elegida en la narrativa
             _track.LoadSong(_song);
             _track.StartSong();
         }

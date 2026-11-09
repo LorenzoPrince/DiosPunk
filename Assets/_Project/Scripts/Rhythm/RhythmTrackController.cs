@@ -30,13 +30,7 @@ namespace DiosPunk.Rhythm
         [SerializeField, Min(0.1f)] private float _noteSpeed = 8f;
 
         [Header("Colores de carril (0 rojo, 1 amarillo, 2 verde, 3 azul)")]
-        [SerializeField] private Color[] _laneColors =
-        {
-            new Color(0.92f, 0.20f, 0.20f, 1f),
-            new Color(0.97f, 0.82f, 0.15f, 1f),
-            new Color(0.20f, 0.72f, 0.30f, 1f),
-            new Color(0.20f, 0.38f, 0.90f, 1f)
-        };
+        [SerializeField] private Color[] _laneColors = LaneStyle.CreateDefaultColors();
 
         [Header("Juicio")]
         [SerializeField] private HitWindows _windows = HitWindows.Default;
@@ -61,6 +55,7 @@ namespace DiosPunk.Rhythm
         private double _goodWindowSeconds;
         private bool _running;
         private bool _permissive;
+        private float _speedMultiplier = 1f;
         private SongData _notesBuiltFor;
 
         /// <summary>Resultado de un juicio: tipo, carril y delta en ms (negativo = temprano, positivo = tarde).</summary>
@@ -142,6 +137,13 @@ namespace DiosPunk.Rhythm
 
             _song = song;
             BuildNoteList();
+        }
+
+        /// <summary>Multiplicador de velocidad de caída (dificultad). Solo afecta lo visual: el juicio usa tiempos.</summary>
+        public void SetSpeedMultiplier(float multiplier)
+        {
+            _speedMultiplier = Mathf.Clamp(multiplier, 0.5f, 2f);
+            RecomputeDerived();
         }
 
         /// <summary>Activa o desactiva las ventanas de impacto permisivas (Modo Punk).</summary>
@@ -238,7 +240,7 @@ namespace DiosPunk.Rhythm
         private void PlaceNote(NoteView view, double songTime)
         {
             float x = (view.LaneIndex - (RhythmInputReader.LaneCount - 1) * 0.5f) * _laneSpacing;
-            float y = _hitLineY + (float)((view.TargetTime - songTime) * _noteSpeed);
+            float y = _hitLineY + (float)((view.TargetTime - songTime) * _noteSpeed * _speedMultiplier);
             view.SetPosition(x, y);
         }
 
@@ -313,7 +315,7 @@ namespace DiosPunk.Rhythm
 
         private void RecomputeDerived()
         {
-            _lookaheadSeconds = (_spawnY - _hitLineY) / Mathf.Max(0.01f, _noteSpeed);
+            _lookaheadSeconds = (_spawnY - _hitLineY) / Mathf.Max(0.01f, _noteSpeed * _speedMultiplier);
             _goodWindowSeconds = Windows.goodMs * 0.001;
         }
 

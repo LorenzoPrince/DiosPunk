@@ -19,7 +19,8 @@ namespace DiosPunk.Flow
         PauseMenu = 6,
         GameOver = 7,
         ResultsScreen = 8,
-        Credits = 9
+        Credits = 9,
+        Calibration = 10
     }
 
     /// <summary>
@@ -46,10 +47,12 @@ namespace DiosPunk.Flow
             switch (from)
             {
                 case GameState.MainMenu:
-                    return to == GameState.LevelSelect || to == GameState.Options || to == GameState.Credits;
+                    return to == GameState.LevelSelect || to == GameState.Options || to == GameState.Credits
+                        || to == GameState.Calibration;
                 case GameState.LevelSelect:
                     return to == GameState.MainMenu;
                 case GameState.Credits:
+                case GameState.Calibration:
                     return to == GameState.MainMenu;
                 case GameState.Options:
                     return to == GameState.MainMenu || to == GameState.PauseMenu || to == GameState.GameOver;

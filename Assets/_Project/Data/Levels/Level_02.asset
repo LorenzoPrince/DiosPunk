@@ -16,10 +16,4 @@ MonoBehaviour:
   _stage: La sala de ensayo
   _difficulty: Facil
   _songResource: TestSong_120BPM
-  _dialogue:
-  - speaker: Narrador
-    text: Escena de prueba del nivel 2. El guion todavia no esta definido.
-  - speaker: Dios Punk
-    text: Linea de dialogo de ejemplo.
-  - speaker: Amigo
-    text: Otra linea de ejemplo antes de la cancion.
+  _dialogue: {fileID: 11400000, guid: 819c2df552347224fa87a788266eec61, type: 2}

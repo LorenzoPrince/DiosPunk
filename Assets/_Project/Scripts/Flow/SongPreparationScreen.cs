@@ -22,11 +22,23 @@ namespace DiosPunk.Flow
             _back.onClick.AddListener(() => BackRequested?.Invoke());
         }
 
+        /// <summary>Muestra título, escenario y dificultad, incluyendo lo elegido en la escena narrativa (GameSession).</summary>
         public void Begin(LevelData level, DiosPunk.Rhythm.SongData song)
         {
             _titleText.text = song != null ? level.Title + " - " + song.Title : level.Title;
-            _stageText.text = "Escenario: " + level.Stage;
-            _difficultyText.text = "Dificultad: " + level.Difficulty;
+
+            string stage = "Escenario: " + level.Stage;
+            if (GameSession.ScenarioVariant > 0) stage += " (variante " + GameSession.ScenarioVariant + ")";
+            _stageText.text = stage;
+
+            string difficulty = "Dificultad: " + level.Difficulty;
+            int modifier = GameSession.DifficultyModifier;
+            if (modifier != 0)
+            {
+                int percent = Mathf.RoundToInt((GameSession.NoteSpeedMultiplier - 1f) * 100f);
+                difficulty += " (velocidad " + (percent > 0 ? "+" : string.Empty) + percent + "%)";
+            }
+            _difficultyText.text = difficulty;
         }
     }
 }

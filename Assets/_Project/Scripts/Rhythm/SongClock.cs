@@ -64,6 +64,9 @@ namespace DiosPunk.Rhythm
         {
             if (_audioSource == null) _audioSource = GetComponent<AudioSource>();
             _audioSource.playOnAwake = false;
+
+            // Latencia calibrada por el jugador (si la hay); el ajuste en vivo del debug sigue pudiendo modificarla.
+            if (GameSettings.LatencyOffsetMs != 0f) LatencyOffsetMs = GameSettings.LatencyOffsetMs;
         }
 
         /// <summary>Programa el audio con PlayScheduled y arranca el reloj. clip puede ser null (reloj mudo).</summary>

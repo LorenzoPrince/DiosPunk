@@ -55,7 +55,9 @@ namespace DiosPunk.Rhythm.Editor
 
             MigrateSongAsset();
             BuiltAssets assets = BuildAssets();
-            LevelData[] levels = CreateLevels();
+            FxAssets fx = BuildFxAssets();
+            DialogueData[] dialogues = CreateDialogues(fx.Portrait);
+            LevelData[] levels = CreateLevels(dialogues);
             LevelCatalog catalog = CreateCatalog(levels);
 
             BuildGameplayScene(assets, catalog);
@@ -80,7 +82,7 @@ namespace DiosPunk.Rhythm.Editor
             }
         }
 
-        private static LevelData[] CreateLevels()
+        private static LevelData[] CreateLevels(DialogueData[] dialogues)
         {
             string[] titles =
             {
@@ -107,11 +109,7 @@ namespace DiosPunk.Rhythm.Editor
                 so.FindProperty("_difficulty").stringValue = difficulties[i];
                 so.FindProperty("_songResource").stringValue = Path.GetFileNameWithoutExtension(SongPath);
 
-                SerializedProperty dialogue = so.FindProperty("_dialogue");
-                dialogue.arraySize = 3;
-                SetLine(dialogue, 0, "Narrador", "Escena de prueba del nivel " + (i + 1) + ". El guion todavia no esta definido.");
-                SetLine(dialogue, 1, "Dios Punk", "Linea de dialogo de ejemplo.");
-                SetLine(dialogue, 2, "Amigo", "Otra linea de ejemplo antes de la cancion.");
+                so.FindProperty("_dialogue").objectReferenceValue = dialogues[i];
                 so.ApplyModifiedPropertiesWithoutUndo();
 
                 EditorUtility.SetDirty(level);
@@ -131,13 +129,6 @@ namespace DiosPunk.Rhythm.Editor
             SetRefArray(catalog, "_levels", levels);
             EditorUtility.SetDirty(catalog);
             return catalog;
-        }
-
-        private static void SetLine(SerializedProperty array, int index, string speaker, string text)
-        {
-            SerializedProperty line = array.GetArrayElementAtIndex(index);
-            line.FindPropertyRelative("speaker").stringValue = speaker;
-            line.FindPropertyRelative("text").stringValue = text;
         }
 
         // ---------------- Escena Gameplay ----------------
@@ -185,6 +176,7 @@ namespace DiosPunk.Rhythm.Editor
 
             Transform ui = GameObject.Find("HudCanvas").transform;
             EnsureEventSystem();
+            BuildSabotage(track, session, ui, ReloadFx());
 
             RectTransform preRoot = CreateScreenRoot(ui, "PreLevelScreen", Dark, a.White);
             var preLevel = BuildPreLevel(preRoot, a.Panel);
@@ -280,31 +272,34 @@ namespace DiosPunk.Rhythm.Editor
             EnsureEventSystem();
 
             RectTransform mainRoot = CreateScreenRoot(ui, "MainMenuScreen", Dark, a.White);
-            var mainMenu = BuildMainMenu(mainRoot, a.Panel);
+            var mainMenu = BuildMainMenu(mainRoot, a.Panel, a.White);
             RectTransform selectRoot = CreateScreenRoot(ui, "LevelSelectScreen", Dark, a.White);
             var levelSelect = BuildLevelSelect(selectRoot, a.Panel);
             RectTransform optionsRoot = CreateScreenRoot(ui, "OptionsScreen", Dark, a.White);
             var options = BuildOptions(optionsRoot, a.Panel, a.White);
             RectTransform creditsRoot = CreateScreenRoot(ui, "CreditsScreen", Dark, a.White);
             var credits = BuildCredits(creditsRoot, a.Panel);
+            RectTransform calibrationRoot = CreateScreenRoot(ui, "CalibrationScreen", Dark, a.White);
+            var calibration = BuildCalibration(calibrationRoot, a.Panel, a.White, ReloadFx());
 
             var flowGo = new GameObject("MenuFlow");
             var flow = flowGo.AddComponent<MenuFlowController>();
             var screenManager = flowGo.AddComponent<ScreenManager>();
             SetRefs(flow, ("_catalog", catalog), ("_mainMenu", mainMenu), ("_levelSelect", levelSelect),
-                ("_options", options), ("_credits", credits));
+                ("_options", options), ("_credits", credits), ("_calibration", calibration));
 
             var panels = new[]
             {
                 MakePanel(mainRoot.gameObject, false, GameState.MainMenu),
                 MakePanel(selectRoot.gameObject, false, GameState.LevelSelect),
                 MakePanel(optionsRoot.gameObject, false, GameState.Options),
-                MakePanel(creditsRoot.gameObject, false, GameState.Credits)
+                MakePanel(creditsRoot.gameObject, false, GameState.Credits),
+                MakePanel(calibrationRoot.gameObject, false, GameState.Calibration)
             };
             SetRefs(screenManager, ("_flow", flow));
             SetRefArray(screenManager, "_panels", panels);
 
-            foreach (RectTransform r in new[] { mainRoot, selectRoot, optionsRoot, creditsRoot })
+            foreach (RectTransform r in new[] { mainRoot, selectRoot, optionsRoot, creditsRoot, calibrationRoot })
             {
                 r.gameObject.SetActive(false);
             }
@@ -346,17 +341,33 @@ namespace DiosPunk.Rhythm.Editor
 
         // ---------------- Pantallas ----------------
 
-        private static MainMenuScreen BuildMainMenu(RectTransform root, Sprite panel)
+        private static MainMenuScreen BuildMainMenu(RectTransform root, Sprite panel, Sprite white)
         {
             FindOrCreateText(root, "Title", "DIOS PUNK", 160f, TextAlignmentOptions.Center, Center, Center,
                 new Vector2(0f, 270f), new Vector2(1400f, 220f), Red);
-            Button play = CreateButton(root, "PlayButton", "JUGAR", new Vector2(0f, 70f), new Vector2(460f, 100f), panel);
-            Button options = CreateButton(root, "OptionsButton", "OPCIONES", new Vector2(0f, -50f), new Vector2(460f, 100f), panel);
-            Button credits = CreateButton(root, "CreditsButton", "CREDITOS", new Vector2(0f, -170f), new Vector2(460f, 100f), panel);
-            Button quit = CreateButton(root, "QuitButton", "SALIR", new Vector2(0f, -290f), new Vector2(460f, 100f), panel);
+            Button play = CreateButton(root, "PlayButton", "JUGAR", new Vector2(0f, 90f), new Vector2(460f, 90f), panel);
+            TMP_Text playLabel = play.transform.Find("Label").GetComponent<TMP_Text>();
+            Button newGame = CreateButton(root, "NewGameButton", "PARTIDA NUEVA", new Vector2(0f, -20f), new Vector2(460f, 90f), panel);
+            Button options = CreateButton(root, "OptionsButton", "OPCIONES", new Vector2(0f, -130f), new Vector2(460f, 90f), panel);
+            Button credits = CreateButton(root, "CreditsButton", "CREDITOS", new Vector2(0f, -240f), new Vector2(460f, 90f), panel);
+            Button quit = CreateButton(root, "QuitButton", "SALIR", new Vector2(0f, -350f), new Vector2(460f, 90f), panel);
+
+            // Confirmación antes de reemplazar un progreso existente (se muestra por script).
+            RectTransform confirm = CreateScreenRoot(root, "ConfirmPanel", new Color(0f, 0f, 0f, 0.8f), white);
+            confirm.GetComponent<Image>().raycastTarget = true; // bloquea los botones de atrás mientras está abierto
+            Image confirmPaper = FindOrCreateImage(confirm, "Paper", panel, Color.white, Center, Center,
+                Vector2.zero, new Vector2(1000f, 480f), Image.Type.Sliced);
+            FindOrCreateText(confirmPaper.rectTransform, "Message",
+                "Ya hay una partida guardada.\nEmpezar una nueva reemplaza tu progreso.\n\nContinuar?",
+                44f, TextAlignmentOptions.Center, Center, Center, new Vector2(0f, 90f), new Vector2(900f, 260f), Color.black);
+            Button yes = CreateButton(confirmPaper.rectTransform, "YesButton", "SI, EMPEZAR", new Vector2(-250f, -170f), new Vector2(400f, 90f), panel);
+            Button no = CreateButton(confirmPaper.rectTransform, "NoButton", "CANCELAR", new Vector2(250f, -170f), new Vector2(400f, 90f), panel);
+            confirm.gameObject.SetActive(false);
 
             var screen = GetOrAdd<MainMenuScreen>(root.gameObject);
-            SetRefs(screen, ("_play", play), ("_options", options), ("_credits", credits), ("_quit", quit));
+            SetRefs(screen, ("_play", play), ("_playLabel", playLabel), ("_newGame", newGame), ("_options", options),
+                ("_credits", credits), ("_quit", quit), ("_confirmPanel", confirm.gameObject),
+                ("_confirmYes", yes), ("_confirmNo", no));
             return screen;
         }
 
@@ -446,25 +457,79 @@ namespace DiosPunk.Rhythm.Editor
             return screen;
         }
 
-        private static PreLevelScreen BuildPreLevel(RectTransform root, Sprite panel)
+        private static PreLevelDialoguePresenter BuildPreLevel(RectTransform root, Sprite panel)
         {
             Image paper = FindOrCreateImage(root, "Paper", panel, Color.white, Center, Center,
-                Vector2.zero, new Vector2(1400f, 760f), Image.Type.Sliced);
+                Vector2.zero, new Vector2(1500f, 800f), Image.Type.Sliced);
             RectTransform p = paper.rectTransform;
 
-            TMP_Text title = FindOrCreateText(p, "TitleText", "Titulo", 64f, TextAlignmentOptions.Center, Center, Center,
-                new Vector2(0f, 290f), new Vector2(1200f, 100f), Red);
-            TMP_Text speaker = FindOrCreateText(p, "SpeakerText", "", 48f, TextAlignmentOptions.Left, Center, Center,
-                new Vector2(0f, 170f), new Vector2(1200f, 70f), Color.black);
-            TMP_Text body = FindOrCreateText(p, "BodyText", "", 44f, TextAlignmentOptions.TopLeft, Center, Center,
-                new Vector2(0f, -10f), new Vector2(1200f, 300f), Color.black);
-            Button skip = CreateButton(p, "SkipButton", "SALTAR", new Vector2(-300f, -300f), new Vector2(360f, 90f), panel);
-            Button advance = CreateButton(p, "AdvanceButton", "AVANZAR", new Vector2(300f, -300f), new Vector2(360f, 90f), panel);
+            TMP_Text title = FindOrCreateText(p, "TitleText", "Titulo", 56f, TextAlignmentOptions.Center, Center, Center,
+                new Vector2(0f, 330f), new Vector2(1300f, 90f), Red);
 
-            var screen = GetOrAdd<PreLevelScreen>(root.gameObject);
-            SetRefs(screen, ("_titleText", title), ("_speakerText", speaker), ("_bodyText", body),
-                ("_advance", advance), ("_skip", skip));
+            // Retrato (opcional, estilo fotocopia) a la izquierda; texto a la derecha.
+            Image portrait = FindOrCreateImage(p, "Portrait", null, Color.white, Center, Center,
+                new Vector2(-540f, 90f), new Vector2(300f, 300f), Image.Type.Simple);
+            portrait.preserveAspect = true;
+            portrait.enabled = false;
+
+            TMP_Text speaker = FindOrCreateText(p, "SpeakerText", "", 46f, TextAlignmentOptions.Left, Center, Center,
+                new Vector2(160f, 210f), new Vector2(1000f, 70f), Red);
+            TMP_Text body = FindOrCreateText(p, "BodyText", "", 42f, TextAlignmentOptions.TopLeft, Center, Center,
+                new Vector2(160f, 40f), new Vector2(1000f, 300f), Color.black);
+
+            // Respuestas cortas (nodo de decisión), hasta 3, ocultas hasta el final de la escena.
+            GameObject choicesRoot = FindOrCreateRect(p, "Choices", new Vector2(160f, -110f), new Vector2(1000f, 280f));
+            var choiceButtons = new Button[3];
+            var choiceLabels = new TMP_Text[3];
+            for (int i = 0; i < 3; i++)
+            {
+                choiceButtons[i] = CreateButton(choicesRoot.transform, "Choice" + (i + 1), "Respuesta",
+                    new Vector2(0f, 90f - i * 90f), new Vector2(940f, 76f), panel);
+                choiceLabels[i] = choiceButtons[i].transform.Find("Label").GetComponent<TMP_Text>();
+                choiceLabels[i].fontSize = 36f;
+            }
+            choicesRoot.SetActive(false);
+
+            Button skip = CreateButton(p, "SkipButton", "SALTAR NARRATIVA", new Vector2(-330f, -340f), new Vector2(440f, 90f), panel);
+            skip.transform.Find("Label").GetComponent<TMP_Text>().fontSize = 34f;
+            Button advance = CreateButton(p, "AdvanceButton", "SIGUIENTE", new Vector2(420f, -340f), new Vector2(400f, 90f), panel);
+            TMP_Text advanceLabel = advance.transform.Find("Label").GetComponent<TMP_Text>();
+
+            var screen = GetOrAdd<PreLevelDialoguePresenter>(root.gameObject);
+            SetRefs(screen, ("_titleText", title), ("_speakerText", speaker), ("_bodyText", body), ("_portrait", portrait),
+                ("_advance", advance), ("_advanceLabel", advanceLabel), ("_skip", skip), ("_choicesRoot", choicesRoot));
+            SetRefArray(screen, "_choiceButtons", choiceButtons);
+            SetRefArray(screen, "_choiceLabels", choiceLabels);
             return screen;
+        }
+
+        /// <summary>NPC saboteadores, proyectil, escudo Punk y marco inferior dentado (parte visual de los debuffs).</summary>
+        private static void BuildSabotage(GameObject track, RhythmSession session, Transform ui, FxAssets fx)
+        {
+            SpriteRenderer left = FindOrCreateSprite(track.transform, "NpcLeft", fx.Npc1, Color.white,
+                new Vector3(-6.4f, -0.4f, 0f), new Vector3(1.9f, 1.9f, 1f), 4);
+            SpriteRenderer right = FindOrCreateSprite(track.transform, "NpcRight", fx.Npc2, Color.white,
+                new Vector3(6.4f, -0.4f, 0f), new Vector3(-1.9f, 1.9f, 1f), 4);
+
+            SpriteRenderer projectile = FindOrCreateSprite(track.transform, "SabotageProjectile", fx.Projectile, Color.white,
+                Vector3.zero, new Vector3(1.3f, 1.3f, 1f), 15);
+            projectile.enabled = false;
+
+            SpriteRenderer shield = FindOrCreateSprite(track.transform, "PunkShield", fx.Shield, new Color(1f, 0.85f, 0.1f, 1f),
+                new Vector3(0f, -4.0f, 0f), new Vector3(3.6f, 1.6f, 1f), 20);
+            shield.enabled = false;
+
+            Image frame = FindOrCreateImage(ui, "DebuffFrame", fx.Frame, new Color(1f, 0.1f, 0.65f, 0.9f),
+                new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), Vector2.zero, new Vector2(0f, 150f), Image.Type.Simple);
+            frame.rectTransform.anchorMin = new Vector2(0f, 0f);
+            frame.rectTransform.anchorMax = new Vector2(1f, 0f);
+            frame.rectTransform.sizeDelta = new Vector2(0f, 150f);
+            frame.raycastTarget = false;
+            frame.enabled = false;
+
+            var sabotage = GetOrAdd<NpcSabotageController>(track);
+            SetRefs(sabotage, ("_session", session), ("_leftNpc", left.transform), ("_rightNpc", right.transform),
+                ("_projectile", projectile), ("_shield", shield), ("_frame", frame));
         }
 
         private static SongPreparationScreen BuildPreparation(RectTransform root, Sprite panel)

@@ -16,10 +16,4 @@ MonoBehaviour:
   _stage: El escenario
   _difficulty: Media
   _songResource: TestSong_120BPM
-  _dialogue:
-  - speaker: Narrador
-    text: Escena de prueba del nivel 3. El guion todavia no esta definido.
-  - speaker: Dios Punk
-    text: Linea de dialogo de ejemplo.
-  - speaker: Amigo
-    text: Otra linea de ejemplo antes de la cancion.
+  _dialogue: {fileID: 11400000, guid: f11597c6de61d054a9ca663e17668dfc, type: 2}
