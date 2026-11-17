@@ -18,7 +18,22 @@ namespace DiosPunk.Rhythm
         public const float DefaultLatencyOffsetMs = 25f;
 
         /// <summary>Calibración de latencia (ms) que SongClock toma al iniciar. Positivo = el jugador pulsa tarde.</summary>
-        public static float LatencyOffsetMs = DefaultLatencyOffsetMs;
+        public static float LatencyOffsetMs
+        {
+            get => s_latencyOffsetMs;
+            set
+            {
+                value = value < -300f ? -300f : (value > 300f ? 300f : value);
+                if (s_latencyOffsetMs == value) return;
+                s_latencyOffsetMs = value;
+                LatencyOffsetMsChanged?.Invoke(value);
+            }
+        }
+
+        private static float s_latencyOffsetMs = DefaultLatencyOffsetMs;
+
+        /// <summary>Se dispara al cambiar la latencia (calibración, ajuste fino en Opciones): SongClock la toma en vivo.</summary>
+        public static event System.Action<float> LatencyOffsetMsChanged;
 
         private static ControlScheme s_controlScheme = ControlScheme.All;
 
@@ -60,7 +75,8 @@ namespace DiosPunk.Rhythm
         private static void ResetStatics()
         {
             ReduceVisualEffects = false;
-            LatencyOffsetMs = DefaultLatencyOffsetMs;
+            s_latencyOffsetMs = DefaultLatencyOffsetMs;
+            LatencyOffsetMsChanged = null;
             SfxVolume = 1f;
             s_controlScheme = ControlScheme.All;
             ControlSchemeChanged = null;

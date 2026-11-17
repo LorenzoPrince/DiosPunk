@@ -429,11 +429,18 @@ namespace DiosPunk.Rhythm.Editor
 
             // Recalibrar latencia: solo en la escena MainMenu (desde el gameplay habría que salir de la canción).
             Button recalibrate = null;
-            TMP_Text latencyLabel = null;
+
+            // Latencia: valor actual + ajuste fino -5 / +5 ms y restaurar (en ambas escenas; vale en vivo, también en pausa).
+            TMP_Text latencyLabel = FindOrCreateText(pages[0].transform, "LatencyLabel", "Latencia actual: +25 ms", 38f,
+                TextAlignmentOptions.Left, Center, Center, new Vector2(-300f, -90f), new Vector2(560f, 70f), Color.black);
+            Button latencyMinus = CreateButton(pages[0].transform, "LatencyMinusButton", "-5", new Vector2(40f, -90f), new Vector2(110f, 70f), panel);
+            Button latencyPlus = CreateButton(pages[0].transform, "LatencyPlusButton", "+5", new Vector2(165f, -90f), new Vector2(110f, 70f), panel);
+            Button latencyRestore = CreateButton(pages[0].transform, "LatencyRestoreButton", "Restaurar +25 ms", new Vector2(400f, -90f), new Vector2(300f, 70f), panel);
+            latencyRestore.transform.Find("Label").GetComponent<TMP_Text>().fontSize = 26f;
+
+            // Recalibrar latencia: solo en la escena MainMenu (desde el gameplay habría que salir de la canción).
             if (includeRecalibrate)
             {
-                latencyLabel = FindOrCreateText(pages[0].transform, "LatencyLabel", "Latencia actual: 0 ms", 40f,
-                    TextAlignmentOptions.Left, Center, Center, new Vector2(-250f, -90f), new Vector2(560f, 70f), Color.black);
                 recalibrate = CreateButton(pages[0].transform, "RecalibrateButton", "RECALIBRAR LATENCIA",
                     new Vector2(0f, -180f), new Vector2(680f, 90f), panel);
             }
@@ -472,7 +479,8 @@ namespace DiosPunk.Rhythm.Editor
             SetRefs(screen, ("_schemePrev", schemePrev), ("_schemeNext", schemeNext), ("_schemeValue", schemeValue),
                 ("_schemeDetail", schemeDetail), ("_controlsHelp", controlsHelp));
             SetRefs(screen, ("_volume", volume), ("_sfxVolume", sfxVolume), ("_fullscreen", fullscreen), ("_reduceEffects", reduce), ("_immortal", immortal), ("_back", back),
-                ("_recalibrate", recalibrate), ("_latencyLabel", latencyLabel));
+                ("_recalibrate", recalibrate), ("_latencyLabel", latencyLabel),
+                ("_latencyMinus", latencyMinus), ("_latencyPlus", latencyPlus), ("_latencyRestore", latencyRestore));
             return screen;
         }
 

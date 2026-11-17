@@ -108,6 +108,13 @@ namespace DiosPunk.Rhythm
             LatencyOffsetMs = GameSettings.LatencyOffsetMs;
         }
 
+        private void OnEnable() => GameSettings.LatencyOffsetMsChanged += OnLatencySettingChanged;
+
+        private void OnDisable() => GameSettings.LatencyOffsetMsChanged -= OnLatencySettingChanged;
+
+        // Ajuste fino desde Opciones (también en pausa): vale de inmediato.
+        private void OnLatencySettingChanged(float ms) => LatencyOffsetMs = ms;
+
         /// <summary>
         /// Programa el audio con PlayScheduled y arranca el reloj. clip puede ser null (reloj mudo).
         /// punkStem es opcional: si se pasa, suena en sincronía con clip pero con volumen 0 hasta SetPunkStemActive(true).

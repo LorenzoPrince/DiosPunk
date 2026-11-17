@@ -37,6 +37,13 @@ namespace DiosPunk.Flow
         [SerializeField] private Button _recalibrate;
         [SerializeField] private TMP_Text _latencyLabel;
 
+        [Header("Ajuste fino de latencia (ambas escenas)")]
+        [SerializeField] private Button _latencyMinus;
+        [SerializeField] private Button _latencyPlus;
+        [SerializeField] private Button _latencyRestore;
+
+        private const float LatencyStepMs = 5f;
+
         public event Action BackRequested;
         public event Action RecalibrateRequested;
 
@@ -55,6 +62,10 @@ namespace DiosPunk.Flow
             _immortal.onValueChanged.AddListener(GameSession.SetImmortalMode);
             _back.onClick.AddListener(() => BackRequested?.Invoke());
             if (_recalibrate != null) _recalibrate.onClick.AddListener(() => RecalibrateRequested?.Invoke());
+
+            _latencyMinus.onClick.AddListener(() => GameSession.SetLatencyOffset(GameSettings.LatencyOffsetMs - LatencyStepMs));
+            _latencyPlus.onClick.AddListener(() => GameSession.SetLatencyOffset(GameSettings.LatencyOffsetMs + LatencyStepMs));
+            _latencyRestore.onClick.AddListener(() => GameSession.SetLatencyOffset(GameSettings.DefaultLatencyOffsetMs));
 
             _schemePrev.onClick.AddListener(() => CycleScheme(-1));
             _schemeNext.onClick.AddListener(() => CycleScheme(1));
@@ -85,8 +96,15 @@ namespace DiosPunk.Flow
             _controlsHelp.text = "Pausa: Escape\nDebug: F1 Auto-Play, F2 reiniciar, F3 pausa, F4 modo, F5/P Modo Punk, F6/B debuff, V Inmortal, +/- latencia";
         }
 
+        private void RefreshLatency(float latency)
+        {
+            if (_latencyLabel == null) return;
+            _latencyLabel.text = "Latencia actual: " + (latency >= 0f ? "+" : string.Empty) + latency.ToString("F0") + " ms";
+        }
+
         private void OnDisable()
         {
+            GameSettings.LatencyOffsetMsChanged -= RefreshLatency;
             _schemeLeft.Disable();
             _schemeRight.Disable();
         }
@@ -105,11 +123,8 @@ namespace DiosPunk.Flow
             _reduceEffects.SetIsOnWithoutNotify(GameSettings.ReduceVisualEffects);
             _immortal.SetIsOnWithoutNotify(GameSettings.ImmortalMode);
 
-            if (_latencyLabel != null)
-            {
-                float latency = GameSettings.LatencyOffsetMs;
-                _latencyLabel.text = "Latencia actual: " + (latency >= 0f ? "+" : string.Empty) + latency.ToString("F0") + " ms";
-            }
+            GameSettings.LatencyOffsetMsChanged += RefreshLatency;
+            RefreshLatency(GameSettings.LatencyOffsetMs);
 
             RefreshScheme();
             ShowTab(0);

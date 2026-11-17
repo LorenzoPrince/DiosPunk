@@ -26,14 +26,8 @@ MonoBehaviour:
   - targetTimeDSP: 2.4285714285714284
     laneIndex: 1
     isDebuffNote: 0
-  - targetTimeDSP: 2.642857142857143
-    laneIndex: 3
-    isDebuffNote: 0
   - targetTimeDSP: 2.857142857142857
     laneIndex: 2
-    isDebuffNote: 0
-  - targetTimeDSP: 3.071428571428571
-    laneIndex: 0
     isDebuffNote: 0
   - targetTimeDSP: 3.2857142857142856
     laneIndex: 3
@@ -44,14 +38,8 @@ MonoBehaviour:
   - targetTimeDSP: 3.7142857142857144
     laneIndex: 1
     isDebuffNote: 0
-  - targetTimeDSP: 3.9285714285714284
-    laneIndex: 3
-    isDebuffNote: 0
   - targetTimeDSP: 4.142857142857142
     laneIndex: 2
-    isDebuffNote: 0
-  - targetTimeDSP: 4.357142857142858
-    laneIndex: 0
     isDebuffNote: 0
   - targetTimeDSP: 4.571428571428571
     laneIndex: 0
@@ -62,14 +50,8 @@ MonoBehaviour:
   - targetTimeDSP: 5
     laneIndex: 3
     isDebuffNote: 0
-  - targetTimeDSP: 5.2142857142857135
-    laneIndex: 1
-    isDebuffNote: 0
   - targetTimeDSP: 5.428571428571429
     laneIndex: 2
-    isDebuffNote: 0
-  - targetTimeDSP: 5.642857142857142
-    laneIndex: 0
     isDebuffNote: 0
   - targetTimeDSP: 5.857142857142857
     laneIndex: 1
@@ -80,14 +62,8 @@ MonoBehaviour:
   - targetTimeDSP: 6.285714285714286
     laneIndex: 3
     isDebuffNote: 0
-  - targetTimeDSP: 6.5
-    laneIndex: 1
-    isDebuffNote: 0
   - targetTimeDSP: 6.714285714285714
     laneIndex: 0
-    isDebuffNote: 0
-  - targetTimeDSP: 6.928571428571428
-    laneIndex: 2
     isDebuffNote: 0
   - targetTimeDSP: 7.142857142857142
     laneIndex: 0
@@ -98,15 +74,9 @@ MonoBehaviour:
   - targetTimeDSP: 7.571428571428571
     laneIndex: 2
     isDebuffNote: 1
-  - targetTimeDSP: 7.785714285714286
-    laneIndex: 0
-    isDebuffNote: 0
   - targetTimeDSP: 8
     laneIndex: 1
     isDebuffNote: 1
-  - targetTimeDSP: 8.214285714285714
-    laneIndex: 3
-    isDebuffNote: 0
   - targetTimeDSP: 8.428571428571427
     laneIndex: 3
     isDebuffNote: 1
@@ -116,14 +86,8 @@ MonoBehaviour:
   - targetTimeDSP: 8.857142857142858
     laneIndex: 0
     isDebuffNote: 0
-  - targetTimeDSP: 9.071428571428571
-    laneIndex: 2
-    isDebuffNote: 0
   - targetTimeDSP: 9.285714285714285
     laneIndex: 1
-    isDebuffNote: 0
-  - targetTimeDSP: 9.5
-    laneIndex: 3
     isDebuffNote: 0
   - targetTimeDSP: 9.714285714285714
     laneIndex: 2
@@ -134,14 +98,8 @@ MonoBehaviour:
   - targetTimeDSP: 10.142857142857142
     laneIndex: 3
     isDebuffNote: 0
-  - targetTimeDSP: 10.357142857142856
-    laneIndex: 1
-    isDebuffNote: 0
   - targetTimeDSP: 10.571428571428571
     laneIndex: 1
-    isDebuffNote: 0
-  - targetTimeDSP: 10.785714285714285
-    laneIndex: 3
     isDebuffNote: 0
   - targetTimeDSP: 11
     laneIndex: 2
@@ -152,14 +110,8 @@ MonoBehaviour:
   - targetTimeDSP: 11.428571428571429
     laneIndex: 0
     isDebuffNote: 0
-  - targetTimeDSP: 11.642857142857142
-    laneIndex: 2
-    isDebuffNote: 0
   - targetTimeDSP: 11.857142857142856
     laneIndex: 3
-    isDebuffNote: 0
-  - targetTimeDSP: 12.071428571428571
-    laneIndex: 1
     isDebuffNote: 0
   - targetTimeDSP: 12.285714285714285
     laneIndex: 2
@@ -170,14 +122,8 @@ MonoBehaviour:
   - targetTimeDSP: 12.714285714285714
     laneIndex: 1
     isDebuffNote: 0
-  - targetTimeDSP: 12.928571428571429
-    laneIndex: 3
-    isDebuffNote: 0
   - targetTimeDSP: 13.142857142857142
     laneIndex: 3
-    isDebuffNote: 0
-  - targetTimeDSP: 13.357142857142856
-    laneIndex: 1
     isDebuffNote: 0
   - targetTimeDSP: 13.571428571428571
     laneIndex: 0
@@ -188,15 +134,9 @@ MonoBehaviour:
   - targetTimeDSP: 14
     laneIndex: 0
     isDebuffNote: 1
-  - targetTimeDSP: 14.214285714285714
-    laneIndex: 2
-    isDebuffNote: 0
   - targetTimeDSP: 14.428571428571427
     laneIndex: 2
     isDebuffNote: 1
-  - targetTimeDSP: 14.642857142857142
-    laneIndex: 0
-    isDebuffNote: 0
   - targetTimeDSP: 14.857142857142856
     laneIndex: 1
     isDebuffNote: 1
@@ -206,14 +146,8 @@ MonoBehaviour:
   - targetTimeDSP: 15.285714285714285
     laneIndex: 3
     isDebuffNote: 1
-  - targetTimeDSP: 15.5
-    laneIndex: 1
-    isDebuffNote: 0
   - targetTimeDSP: 15.714285714285714
     laneIndex: 0
-    isDebuffNote: 0
-  - targetTimeDSP: 15.928571428571427
-    laneIndex: 2
     isDebuffNote: 0
   - targetTimeDSP: 16.142857142857142
     laneIndex: 1
@@ -224,14 +158,8 @@ MonoBehaviour:
   - targetTimeDSP: 16.57142857142857
     laneIndex: 2
     isDebuffNote: 0
-  - targetTimeDSP: 16.785714285714285
-    laneIndex: 0
-    isDebuffNote: 0
   - targetTimeDSP: 17
     laneIndex: 3
-    isDebuffNote: 0
-  - targetTimeDSP: 17.214285714285715
-    laneIndex: 1
     isDebuffNote: 0
   - targetTimeDSP: 17.428571428571427
     laneIndex: 1
@@ -242,14 +170,8 @@ MonoBehaviour:
   - targetTimeDSP: 17.857142857142854
     laneIndex: 2
     isDebuffNote: 0
-  - targetTimeDSP: 18.07142857142857
-    laneIndex: 0
-    isDebuffNote: 0
   - targetTimeDSP: 18.285714285714285
     laneIndex: 0
-    isDebuffNote: 0
-  - targetTimeDSP: 18.5
-    laneIndex: 2
     isDebuffNote: 0
   - targetTimeDSP: 18.71428571428571
     laneIndex: 3
@@ -260,14 +182,8 @@ MonoBehaviour:
   - targetTimeDSP: 19.142857142857142
     laneIndex: 2
     isDebuffNote: 0
-  - targetTimeDSP: 19.357142857142858
-    laneIndex: 0
-    isDebuffNote: 0
   - targetTimeDSP: 19.57142857142857
     laneIndex: 1
-    isDebuffNote: 0
-  - targetTimeDSP: 19.785714285714285
-    laneIndex: 3
     isDebuffNote: 0
   - targetTimeDSP: 20
     laneIndex: 3
@@ -278,15 +194,9 @@ MonoBehaviour:
   - targetTimeDSP: 20.428571428571427
     laneIndex: 0
     isDebuffNote: 0
-  - targetTimeDSP: 20.642857142857142
-    laneIndex: 2
-    isDebuffNote: 0
   - targetTimeDSP: 20.857142857142858
     laneIndex: 0
     isDebuffNote: 1
-  - targetTimeDSP: 21.07142857142857
-    laneIndex: 2
-    isDebuffNote: 0
   - targetTimeDSP: 21.285714285714285
     laneIndex: 2
     isDebuffNote: 1
@@ -296,15 +206,9 @@ MonoBehaviour:
   - targetTimeDSP: 21.71428571428571
     laneIndex: 1
     isDebuffNote: 1
-  - targetTimeDSP: 21.928571428571427
-    laneIndex: 3
-    isDebuffNote: 0
   - targetTimeDSP: 22.142857142857142
     laneIndex: 3
     isDebuffNote: 1
-  - targetTimeDSP: 22.357142857142858
-    laneIndex: 1
-    isDebuffNote: 0
   - targetTimeDSP: 22.57142857142857
     laneIndex: 0
     isDebuffNote: 0
@@ -314,14 +218,8 @@ MonoBehaviour:
   - targetTimeDSP: 23
     laneIndex: 1
     isDebuffNote: 0
-  - targetTimeDSP: 23.21428571428571
-    laneIndex: 3
-    isDebuffNote: 0
   - targetTimeDSP: 23.428571428571427
     laneIndex: 2
-    isDebuffNote: 0
-  - targetTimeDSP: 23.642857142857142
-    laneIndex: 0
     isDebuffNote: 0
   - targetTimeDSP: 23.857142857142858
     laneIndex: 3
@@ -332,14 +230,8 @@ MonoBehaviour:
   - targetTimeDSP: 24.285714285714285
     laneIndex: 1
     isDebuffNote: 0
-  - targetTimeDSP: 24.5
-    laneIndex: 3
-    isDebuffNote: 0
   - targetTimeDSP: 24.71428571428571
     laneIndex: 2
-    isDebuffNote: 0
-  - targetTimeDSP: 24.928571428571427
-    laneIndex: 0
     isDebuffNote: 0
   - targetTimeDSP: 25.142857142857142
     laneIndex: 0
@@ -350,14 +242,8 @@ MonoBehaviour:
   - targetTimeDSP: 25.57142857142857
     laneIndex: 3
     isDebuffNote: 0
-  - targetTimeDSP: 25.785714285714285
-    laneIndex: 1
-    isDebuffNote: 0
   - targetTimeDSP: 26
     laneIndex: 2
-    isDebuffNote: 0
-  - targetTimeDSP: 26.21428571428571
-    laneIndex: 0
     isDebuffNote: 0
   - targetTimeDSP: 26.428571428571427
     laneIndex: 1
@@ -368,14 +254,8 @@ MonoBehaviour:
   - targetTimeDSP: 26.857142857142854
     laneIndex: 3
     isDebuffNote: 0
-  - targetTimeDSP: 27.07142857142857
-    laneIndex: 1
-    isDebuffNote: 0
   - targetTimeDSP: 27.285714285714285
     laneIndex: 0
-    isDebuffNote: 0
-  - targetTimeDSP: 27.5
-    laneIndex: 2
     isDebuffNote: 0
   - targetTimeDSP: 27.71428571428571
     laneIndex: 0
@@ -386,15 +266,9 @@ MonoBehaviour:
   - targetTimeDSP: 28.142857142857142
     laneIndex: 2
     isDebuffNote: 1
-  - targetTimeDSP: 28.357142857142854
-    laneIndex: 0
-    isDebuffNote: 0
   - targetTimeDSP: 28.57142857142857
     laneIndex: 1
     isDebuffNote: 1
-  - targetTimeDSP: 28.785714285714285
-    laneIndex: 3
-    isDebuffNote: 0
   - targetTimeDSP: 29
     laneIndex: 3
     isDebuffNote: 1
@@ -404,14 +278,8 @@ MonoBehaviour:
   - targetTimeDSP: 29.428571428571427
     laneIndex: 0
     isDebuffNote: 0
-  - targetTimeDSP: 29.642857142857142
-    laneIndex: 2
-    isDebuffNote: 0
   - targetTimeDSP: 29.857142857142854
     laneIndex: 1
-    isDebuffNote: 0
-  - targetTimeDSP: 30.07142857142857
-    laneIndex: 3
     isDebuffNote: 0
   - targetTimeDSP: 30.285714285714285
     laneIndex: 2
@@ -422,14 +290,8 @@ MonoBehaviour:
   - targetTimeDSP: 30.71428571428571
     laneIndex: 3
     isDebuffNote: 0
-  - targetTimeDSP: 30.928571428571427
-    laneIndex: 1
-    isDebuffNote: 0
   - targetTimeDSP: 31.142857142857142
     laneIndex: 1
-    isDebuffNote: 0
-  - targetTimeDSP: 31.357142857142854
-    laneIndex: 3
     isDebuffNote: 0
   - targetTimeDSP: 31.57142857142857
     laneIndex: 2
@@ -440,14 +302,8 @@ MonoBehaviour:
   - targetTimeDSP: 32
     laneIndex: 0
     isDebuffNote: 0
-  - targetTimeDSP: 32.21428571428571
-    laneIndex: 2
-    isDebuffNote: 0
   - targetTimeDSP: 32.42857142857143
     laneIndex: 3
-    isDebuffNote: 0
-  - targetTimeDSP: 32.64285714285714
-    laneIndex: 1
     isDebuffNote: 0
   - targetTimeDSP: 32.857142857142854
     laneIndex: 2
@@ -458,14 +314,8 @@ MonoBehaviour:
   - targetTimeDSP: 33.285714285714285
     laneIndex: 1
     isDebuffNote: 0
-  - targetTimeDSP: 33.5
-    laneIndex: 3
-    isDebuffNote: 0
   - targetTimeDSP: 33.71428571428571
     laneIndex: 3
-    isDebuffNote: 0
-  - targetTimeDSP: 33.92857142857143
-    laneIndex: 1
     isDebuffNote: 0
   - targetTimeDSP: 34.14285714285714
     laneIndex: 0
@@ -476,15 +326,9 @@ MonoBehaviour:
   - targetTimeDSP: 34.57142857142857
     laneIndex: 0
     isDebuffNote: 1
-  - targetTimeDSP: 34.785714285714285
-    laneIndex: 2
-    isDebuffNote: 0
   - targetTimeDSP: 35
     laneIndex: 2
     isDebuffNote: 1
-  - targetTimeDSP: 35.214285714285715
-    laneIndex: 0
-    isDebuffNote: 0
   - targetTimeDSP: 35.42857142857142
     laneIndex: 1
     isDebuffNote: 1
@@ -494,14 +338,8 @@ MonoBehaviour:
   - targetTimeDSP: 35.857142857142854
     laneIndex: 3
     isDebuffNote: 1
-  - targetTimeDSP: 36.07142857142857
-    laneIndex: 1
-    isDebuffNote: 0
   - targetTimeDSP: 36.285714285714285
     laneIndex: 0
-    isDebuffNote: 0
-  - targetTimeDSP: 36.5
-    laneIndex: 2
     isDebuffNote: 0
   - targetTimeDSP: 36.714285714285715
     laneIndex: 1
@@ -512,14 +350,8 @@ MonoBehaviour:
   - targetTimeDSP: 37.14285714285714
     laneIndex: 2
     isDebuffNote: 0
-  - targetTimeDSP: 37.357142857142854
-    laneIndex: 0
-    isDebuffNote: 0
   - targetTimeDSP: 37.57142857142857
     laneIndex: 3
-    isDebuffNote: 0
-  - targetTimeDSP: 37.785714285714285
-    laneIndex: 1
     isDebuffNote: 0
   - targetTimeDSP: 38
     laneIndex: 1
@@ -530,14 +362,8 @@ MonoBehaviour:
   - targetTimeDSP: 38.42857142857142
     laneIndex: 2
     isDebuffNote: 0
-  - targetTimeDSP: 38.64285714285714
-    laneIndex: 0
-    isDebuffNote: 0
   - targetTimeDSP: 38.857142857142854
     laneIndex: 0
-    isDebuffNote: 0
-  - targetTimeDSP: 39.07142857142857
-    laneIndex: 2
     isDebuffNote: 0
   - targetTimeDSP: 39.285714285714285
     laneIndex: 3
@@ -548,14 +374,8 @@ MonoBehaviour:
   - targetTimeDSP: 39.714285714285715
     laneIndex: 2
     isDebuffNote: 0
-  - targetTimeDSP: 39.92857142857142
-    laneIndex: 0
-    isDebuffNote: 0
   - targetTimeDSP: 40.14285714285714
     laneIndex: 1
-    isDebuffNote: 0
-  - targetTimeDSP: 40.357142857142854
-    laneIndex: 3
     isDebuffNote: 0
   - targetTimeDSP: 40.57142857142857
     laneIndex: 3
@@ -566,15 +386,9 @@ MonoBehaviour:
   - targetTimeDSP: 41
     laneIndex: 0
     isDebuffNote: 0
-  - targetTimeDSP: 41.214285714285715
-    laneIndex: 2
-    isDebuffNote: 0
   - targetTimeDSP: 41.42857142857142
     laneIndex: 0
     isDebuffNote: 1
-  - targetTimeDSP: 41.64285714285714
-    laneIndex: 2
-    isDebuffNote: 0
   - targetTimeDSP: 41.857142857142854
     laneIndex: 2
     isDebuffNote: 1
@@ -584,16 +398,10 @@ MonoBehaviour:
   - targetTimeDSP: 42.285714285714285
     laneIndex: 1
     isDebuffNote: 1
-  - targetTimeDSP: 42.5
-    laneIndex: 3
-    isDebuffNote: 0
   - targetTimeDSP: 42.714285714285715
     laneIndex: 3
     isDebuffNote: 1
-  - targetTimeDSP: 42.92857142857142
-    laneIndex: 1
-    isDebuffNote: 0
   _testFirstBeatSeconds: 2
   _testBeatCount: 96
-  _testOffbeatEvery: 1
+  _testOffbeatEvery: 3
   _testWarmupBeats: 0

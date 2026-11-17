@@ -32,17 +32,18 @@ namespace DiosPunk.Rhythm.Editor
         private static readonly LevelSpec[] Specs =
         {
             // Nivel 1: ritmo puro (sin debuffs ni Modo Punk), lento y con la primera mitad a media densidad.
-            new LevelSpec { title = "Comienzos", stage = "El cuarto", difficulty = "Facil", songName = "Song_01_Comienzos", bpm = 100f, beats = 56, offbeatEvery = 0, warmupBeats = 28, speed = 0.80f,
+            new LevelSpec { title = "Comienzos", stage = "El cuarto", difficulty = "Facil", songName = "Song_01_Comienzos", bpm = 100f, beats = 56, offbeatEvery = 0, warmupBeats = 28, speed = 0.78f,
                 debuffs = false, punk = false, firstDebuff = 0f, debuffInterval = 25f },
             // Nivel 2: primer debuff a los 30 s, Modo Punk como salvavidas, notas más espaciadas (sin contratiempos).
-            new LevelSpec { title = "Sueños Punk Rock", stage = "El garaje", difficulty = "Facil", songName = "Song_02_SuenosPunkRock", bpm = 110f, beats = 64, offbeatEvery = 0, warmupBeats = 32, speed = 0.85f,
+            new LevelSpec { title = "Sueños Punk Rock", stage = "El garaje", difficulty = "Facil", songName = "Song_02_SuenosPunkRock", bpm = 110f, beats = 64, offbeatEvery = 0, warmupBeats = 32, speed = 0.82f,
                 debuffs = true, punk = true, firstDebuff = 30f, debuffInterval = 30f },
-            // Niveles 3 a 5: velocidad y frecuencia de debuffs crecientes (cada 28 s, 25 s y 22 s).
-            new LevelSpec { title = "Peatonal Córdoba", stage = "La peatonal", difficulty = "Media", songName = "Song_03_PeatonalCordoba", bpm = 120f, beats = 72, offbeatEvery = 4, warmupBeats = 0, speed = 0.92f,
+            // Niveles 3 a 5: escalada gradual de velocidad, contratiempos y frecuencia de debuffs (28 s, 25 s y 22 s).
+            // Nivel 3: pulso principal; los primeros 12 beats a media densidad y un contratiempo aislado cada 8 beats.
+            new LevelSpec { title = "Peatonal Córdoba", stage = "La peatonal", difficulty = "Media", songName = "Song_03_PeatonalCordoba", bpm = 120f, beats = 72, offbeatEvery = 8, warmupBeats = 12, speed = 0.86f,
                 debuffs = true, punk = true, firstDebuff = 0f, debuffInterval = 28f },
-            new LevelSpec { title = "Facultad de Medicina", stage = "Las escalinatas", difficulty = "Media", songName = "Song_04_FacultadDeMedicina", bpm = 130f, beats = 80, offbeatEvery = 2, warmupBeats = 0, speed = 1.00f,
+            new LevelSpec { title = "Facultad de Medicina", stage = "Las escalinatas", difficulty = "Media", songName = "Song_04_FacultadDeMedicina", bpm = 130f, beats = 80, offbeatEvery = 4, warmupBeats = 0, speed = 0.92f,
                 debuffs = true, punk = true, firstDebuff = 0f, debuffInterval = 25f },
-            new LevelSpec { title = "Lucha Interior", stage = "El escenario final", difficulty = "Dificil", songName = "Song_05_LuchaInterior", bpm = 140f, beats = 96, offbeatEvery = 1, warmupBeats = 0, speed = 1.08f,
+            new LevelSpec { title = "Lucha Interior", stage = "El escenario final", difficulty = "Dificil", songName = "Song_05_LuchaInterior", bpm = 140f, beats = 96, offbeatEvery = 3, warmupBeats = 0, speed = 0.98f,
                 debuffs = true, punk = true, firstDebuff = 0f, debuffInterval = 22f }
         };
 

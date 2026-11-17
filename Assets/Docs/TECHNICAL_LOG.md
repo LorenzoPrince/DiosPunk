@@ -329,7 +329,26 @@ Una entrada por decisión; nunca se borran (si cambian: `Superseded by ADR-XXX`)
 - **Decisión a validar:** `V` cambia solo el estado de la sesión y **no se guarda**: la preferencia persistente es la del toggle de Opciones. Así un atajo de testeo no deja el modo activado en el siguiente arranque; el indicador del HUD evita confusiones. Un resultado jugado en Inmortal igual registra récord (no se bloquea): si se quiere excluirlo del ranking, hay que decidirlo.
 - **Pendiente:** compilar, regenerar con `DiosPunk/Scenes/Build MainMenu + Gameplay` y probar: con vida baja y Inmortal activo no debe aparecer Game Over; V debe mostrar/ocultar el indicador al instante; P y B deben funcionar con el esquema de teclas que sea.
 
-<!-- Añadir ADR-039+ debajo -->
+### ADR-039 — Curva de niveles 3–5 más suave y calibración guiada con ajuste fino
+- **Estado:** Aceptada (generador ejecutado sin errores; **no probada jugando**) · **Fecha:** 2026-11-16 · Modifica ADR-027 y ADR-036.
+- **Velocidades:** 0,78 / 0,82 / 0,86 / 0,92 / 0,98 (antes 0,80 / 0,85 / 0,92 / 1,00 / 1,08).
+- **Densidad (generador de charts en `RhythmLevelContentBuilder`):** nivel 3 pasa de un contratiempo cada 4 beats a uno cada 8, con los primeros 12 beats a media densidad; nivel 4, de uno cada 2 a uno cada 4; nivel 5, de uno por beat a uno cada 3. Los niveles 1 y 2 no cambian salvo la velocidad. Ningún nivel tiene notas simultáneas (medido sobre los `SongData` generados).
+
+| Nivel | Notas | Notas/s | Separación mínima |
+|---|---|---|---|
+| 1 | 42 | 1,27 | 0,600 s |
+| 2 | 48 | 1,40 | 0,545 s |
+| 3 | 73 | 2,06 | 0,250 s |
+| 4 | 100 | 2,74 | 0,231 s |
+| 5 | 128 | 3,14 | 0,214 s |
+
+- **Calibración, indicador rítmico:** un marcador recorre una pista y toca la línea de impacto roja justo con cada clic del metrónomo a 100 BPM (posición = fracción del beat calculada con `dspTime`, la misma base que programa el audio), más el pulso en la línea. Sin allocations en `Update`.
+- **Calibración, entrada:** acepta cualquier tecla de carril del esquema elegido (`LaneInputSet`) o la Barra Espaciadora (antes cualquier tecla). Los 2 primeros golpes son de adaptación y no cuentan; después se toman 8 válidos (rango configurable 6–8), con el último desfase a la vista en el texto de progreso. Si tras recortar outliers quedan menos de 6 golpes consistentes, el resultado se marca no confiable, se avisa y se desactiva ACEPTAR hasta repetir o ajustar a mano.
+- **Ajuste fino:** botones −5 / +5 ms con el valor actual y "Restaurar +25 ms" en el panel de resultado de la calibración (afectan al valor antes de aceptar) y en Opciones > Audio, en MainMenu y en Pausa. `GameSettings.LatencyOffsetMs` pasa a propiedad con evento (`LatencyOffsetMsChanged`): `SongClock` lo toma en vivo, así que el cambio vale incluso desde Pausa. `GameSession.SetLatencyOffset` lo guarda en `progress.json` (marca `calibrated`) sin crear el archivo si no existe.
+- **Limitación conocida:** el marcador visual sale de `dspTime`, no compensa la latencia de salida de audio ni la de pantalla; quien se guía por la vista o por el oído obtiene valores algo distintos. El ajuste fino y el "Restaurar +25 ms" cubren ese caso.
+- **Verificado:** el generador corrió sin errores en consola, los `LevelData` y las escenas tienen los valores y referencias nuevas, y los 5 charts cumplen la tabla. **Pendiente en vivo:** sentir la curva jugando sin Modo Inmortal, ver el marcador sincronizado con el clic y probar las teclas de calibración con cada esquema.
+
+<!-- Añadir ADR-040+ debajo -->
 
 ---
 
@@ -413,6 +432,7 @@ Formato: `YYYY-MM-DD · [módulo] · descripción · archivos`
 - 2026-11-04 · [Rhythm/Editor] · Herramienta `DiosPunk/Rhythm/Build Test Setup` (`Assets/_Project/Scripts/Rhythm/Editor/`, asmdef `DiosPunk.Rhythm.Editor`): genera sprites placeholder (`Art/Placeholders`), WAV de metrónomo 120 BPM (`Audio/Placeholders`, PCM mono), `Prefabs/Note.prefab`, `Data/Songs/TestSong_120BPM.asset` (64 notas, 1 por beat) y arma la escena (RhythmTrack, HitBar y=-3.5, cámara ortográfica 5, DebugCanvas + RhythmDebugHUD). Idempotente. Scripts M01/M02 compilan sin errores; en Play Mode inició sin errores, el feel de timing aún no se probó con teclado.
 - 2026-11-04 · [Rhythm/Debug] · Sistema de Debug & Testing: `RhythmHitFeedback` (pads por carril Verde/Amarillo/Rojo), gizmos de ventanas Perfect/Good/Early Miss en `RhythmTrackController`, `RhythmDebugAutoPlayer` (bot: AlwaysPerfect/AlwaysGood/SimulateMisses/HumanRandom gaussiano con semilla), `RhythmDebugTools` (F1 autoplay, F2 reiniciar, F3 pausa, F4 modo bot, +/- latencia ±5 ms; resumen en consola al terminar/pausar; monitor de GC con ProfilerRecorder), `RhythmStats` (media y desvío estándar por Welford). `SongClock` gana `Pause/Resume` y `SongTimeToInputRealtime` (inversa exacta). El builder del escenario agrega todo. Compila sin errores; la prueba end-to-end en Play Mode no se pudo ejecutar con el editor sin foco.
 - 2026-11-04 · [Rhythm] · Validación manual en Play Mode por el equipo: M01/M02 + sistema de debug funcionan según lo esperado (reportado por el usuario; sin cifras de GC/latencia registradas aún).
+- 2026-11-16 · [Balance/Calibración] · Cierre de balance y calibración (ADR-039): velocidades 0,78–0,98, menos contratiempos en niveles 3–5, indicador rítmico en `CalibrationScreen`, 2 golpes de adaptación + 8 válidos, teclas del esquema o Barra Espaciadora, ajuste fino ±5 ms y restaurar +25 en calibración y Opciones, `GameSettings.LatencyOffsetMs` con evento, `ProgressStore.SetLatency`. Escenas y niveles regenerados (también incluyen los Bloques 2 y 3).
 - 2026-11-16 · [Rhythm/Flow/Debug] · Bloque 3, Modo Inmortal y atajos (ADR-038): `HealthSystem.ImmortalMode` (piso de 1 HP), `GameSettings.ImmortalMode`/evento, `ProgressData.immortalMode`, `GameSession.SetImmortalMode`, toggle en `OptionsScreen`, indicador en `RhythmHudPresenter`, teclas V/P/B en `RhythmDebugTools`. Builders actualizados. **Sin compilar ni regenerar escenas.**
 - 2026-11-16 · [Input/Flow] · Bloque 2, esquema de teclas (ADR-037): `ControlScheme`/`ControlSchemes`/`LaneInputSet` (nuevo `ControlScheme.cs`), `LaneKeyLabels`, `GameSettings.ControlScheme`, `ProgressData.controlScheme`, `GameSession.SetControlScheme`, selector en `OptionsScreen`, tutorial de `CalibrationScreen` con el esquema; `RhythmInputReader` reescrito sobre `LaneInputSet`. Builders actualizados. **Sin compilar ni regenerar escenas** (MCP revocado).
 - 2026-11-16 · [Rhythm/Flow/Balance] · Bloque 1 de feedback v0.2.0 (ADR-034, ADR-035, ADR-036): ventanas 55/115 (Punk 75/145) con juicio `Bad` hasta 155/185 ms, vida Miss −10 / Bad −5 / Perfect +3 / Good +1,5, latencia por defecto +25 ms, calibración con mediana y descarte de outliers, flags de mecánicas por nivel (`LevelData`, `RhythmSession.ConfigureLevel`, `DebuffSystem.Enabled/FirstTrigger`, `PunkModeSystem.Enabled`) y curva de velocidad ×0,80 / 0,85 / 0,92 / 1,00 / 1,08. **Sin compilar ni regenerar escenas:** MCP de Unity revocado.

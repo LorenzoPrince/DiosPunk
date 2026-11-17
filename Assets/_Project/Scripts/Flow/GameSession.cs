@@ -51,6 +51,13 @@ namespace DiosPunk.Flow
             return s_progress;
         }
 
+        /// <summary>Ajuste manual de latencia (botones ±5 ms / restaurar): se aplica en vivo y se guarda.</summary>
+        public static void SetLatencyOffset(float ms)
+        {
+            GameSettings.LatencyOffsetMs = ms;
+            s_progress?.SetLatency(GameSettings.LatencyOffsetMs);
+        }
+
         /// <summary>Aplica el Modo Inmortal y lo guarda en progress.json (si ya hay progreso cargado).</summary>
         public static void SetImmortalMode(bool enabled)
         {

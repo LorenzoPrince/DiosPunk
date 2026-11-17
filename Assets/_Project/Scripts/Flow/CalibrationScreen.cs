@@ -47,9 +47,21 @@ namespace DiosPunk.Flow
         [SerializeField] private AudioSource _clickSourceB;
         [SerializeField] private AudioClip _clickClip;
         [SerializeField, Min(40f)] private float _bpm = 100f;
-        [SerializeField, Min(4)] private int _targetPresses = 10;
+        [Tooltip("Golpes válidos que se promedian (6 a 8), sin contar los de adaptación.")]
+        [SerializeField, Range(6, 8)] private int _targetPresses = 8;
         [Tooltip("Pausa antes del primer clic.")]
         [SerializeField, Min(0.5f)] private float _leadInSeconds = 1.5f;
+
+        [Header("Indicador rítmico y ajuste fino")]
+        [Tooltip("Marcador que viaja hacia la línea de impacto y la toca justo con cada clic del metrónomo.")]
+        [SerializeField] private RectTransform _marker;
+        [SerializeField] private float _markerFromX = -420f;
+        [Tooltip("X de la línea de impacto (donde el marcador coincide con el clic).")]
+        [SerializeField] private float _markerToX = 300f;
+        [SerializeField] private TMP_Text _offsetText;
+        [SerializeField] private Button _offsetMinus;
+        [SerializeField] private Button _offsetPlus;
+        [SerializeField] private Button _offsetRestore;
 
         [Header("Tutorial de controles")]
         [SerializeField] private Image[] _laneBoxes = new Image[RhythmInputReader.LaneCount];
@@ -60,8 +72,10 @@ namespace DiosPunk.Flow
         private const string AcceptLabelNewGame = "ACEPTAR";
         private const string AcceptLabelRecalibrate = "GUARDAR";
 
-        private InputAction _anyKey;
+        private InputAction _space;
         private LaneInputSet _laneSet;
+        private int _adaptationDone;
+        private float _lastDeltaMs;
         private readonly bool[] _laneDone = new bool[RhythmInputReader.LaneCount];
         private Color[] _laneColors;
 
@@ -80,7 +94,10 @@ namespace DiosPunk.Flow
         private const double OutlierMs = 250.0;
         // Tras la mediana se descarta lo que quede a más de esto de ella (pulsaciones despistadas).
         private const double TrimMs = 80.0;
-        private const int MinKept = 4;
+        // Los primeros golpes son de adaptación al ritmo: no cuentan.
+        private const int AdaptationPresses = 2;
+        // Con menos golpes consistentes que esto el resultado no es confiable y hay que repetir.
+        private const int MinKept = 6;
         private int _lanesDone;
 
         /// <summary>true si se abrió desde Opciones (sin tutorial, sin tocar el progreso).</summary>
@@ -117,15 +134,39 @@ namespace DiosPunk.Flow
             _startCalibration.onClick.AddListener(StartCalibration);
             _retry.onClick.AddListener(StartCalibration);
             _accept.onClick.AddListener(AcceptCalibration);
+            _offsetMinus.onClick.AddListener(() => AdjustResult(-5f));
+            _offsetPlus.onClick.AddListener(() => AdjustResult(5f));
+            _offsetRestore.onClick.AddListener(() => SetResult(GameSettings.DefaultLatencyOffsetMs));
             _finishTutorial.onClick.AddListener(() => Completed?.Invoke(_resultOffsetMs));
             _skip.onClick.AddListener(() => SkipRequested?.Invoke());
             _back.onClick.AddListener(() => BackRequested?.Invoke());
 
-            _anyKey = new InputAction("CalibrationPress", InputActionType.Button, "<Keyboard>/anyKey");
-            _anyKey.performed += ctx => RegisterPress(ctx.time);
+            // Calibración: cualquier tecla de carril del esquema elegido o la Barra Espaciadora.
+            _space = new InputAction("CalibrationSpace", InputActionType.Button, "<Keyboard>/space");
+            _space.performed += ctx => RegisterPress(ctx.time);
 
-            // Tutorial de carriles: acepta el esquema de teclas elegido (ASDF, DFJK, flechas o ambos).
-            _laneSet = new LaneInputSet((lane, time) => RegisterLanePress(lane));
+            // El mismo LaneInputSet (esquema elegido) sirve a la calibración (cualquier carril) y al tutorial (cada carril).
+            _laneSet = new LaneInputSet((lane, time) =>
+            {
+                if (_phase == Phase.Calibrating) RegisterPress(time);
+                else RegisterLanePress(lane);
+            });
+        }
+
+        // ---------- Ajuste fino de la latencia resultante ----------
+
+        private void AdjustResult(float deltaMs) => SetResult(_resultOffsetMs + deltaMs);
+
+        private void SetResult(float offsetMs)
+        {
+            _resultOffsetMs = Mathf.Clamp(offsetMs, -300f, 300f);
+            _accept.interactable = true; // un ajuste manual deliberado habilita aceptar aunque la medición no fuera confiable
+            RefreshOffsetText();
+        }
+
+        private void RefreshOffsetText()
+        {
+            _offsetText.text = "Latencia: " + (_resultOffsetMs >= 0f ? "+" : string.Empty) + _resultOffsetMs.ToString("F0") + " ms";
         }
 
         private void OnEnable()
@@ -136,7 +177,7 @@ namespace DiosPunk.Flow
 
         private void OnDisable()
         {
-            _anyKey.Disable();
+            _space.Disable();
             _laneSet.Disable();
             if (_clickSourceA != null) _clickSourceA.Stop();
             if (_clickSourceB != null) _clickSourceB.Stop();
@@ -144,7 +185,7 @@ namespace DiosPunk.Flow
 
         private void OnDestroy()
         {
-            _anyKey?.Dispose();
+            _space?.Dispose();
             _laneSet?.Dispose();
         }
 
@@ -158,8 +199,8 @@ namespace DiosPunk.Flow
             _resultPanel.SetActive(phase == Phase.Result);
             _tutorialPanel.SetActive(phase == Phase.Tutorial);
 
-            if (phase == Phase.Calibrating) _anyKey.Enable(); else _anyKey.Disable();
-            if (phase == Phase.Tutorial) _laneSet.Enable(); else _laneSet.Disable();
+            if (phase == Phase.Calibrating) _space.Enable(); else _space.Disable();
+            if (phase == Phase.Calibrating || phase == Phase.Tutorial) _laneSet.Enable(); else _laneSet.Disable();
         }
 
         private void StartCalibration()
@@ -170,7 +211,8 @@ namespace DiosPunk.Flow
             _nextBeat = 0;
             _presses = 0;
             _rejected = 0;
-            _progressText.text = "Pulsa una tecla al ritmo del metronomo: 0 / " + _targetPresses;
+            _adaptationDone = 0;
+            _progressText.text = "Adaptacion (no cuenta): 0 / " + AdaptationPresses;
             ShowPhase(Phase.Calibrating);
         }
 
@@ -231,6 +273,13 @@ namespace DiosPunk.Flow
                 scale = 1f + 0.4f * Mathf.Max(0f, 1f - fraction * 4f);
             }
             _pulse.rectTransform.localScale = new Vector3(scale, scale, 1f);
+
+            // Marcador: recorre la pista en un beat y toca la línea de impacto justo cuando suena cada clic
+            // (la fracción del beat sale de dspTime, la misma base que programa el audio).
+            float phase = (float)(beatPosition - Math.Floor(beatPosition));
+            Vector2 p = _marker.anchoredPosition;
+            p.x = Mathf.Lerp(_markerFromX, _markerToX, phase);
+            _marker.anchoredPosition = p;
         }
 
         /// <summary>
@@ -240,24 +289,36 @@ namespace DiosPunk.Flow
         public void RegisterPress(double inputRealtime)
         {
             if (_phase != Phase.Calibrating) return;
-            if (Keyboard.current != null && Keyboard.current.escapeKey.isPressed) return;
 
             _clock.SampleNow();
             double relative = _clock.InputRealtimeToDsp(inputRealtime) - _startDsp;
             if (relative < -_interval * 0.25) return; // antes de empezar
 
             double deltaMs = (relative - Math.Round(relative / _interval) * _interval) * 1000.0;
+            _lastDeltaMs = (float)deltaMs;
+
+            // Los primeros golpes son de adaptación: se muestran pero no entran en el promedio.
+            if (_adaptationDone < AdaptationPresses)
+            {
+                _adaptationDone++;
+                _progressText.text = _adaptationDone < AdaptationPresses
+                    ? "Adaptacion (no cuenta): " + _adaptationDone + " / " + AdaptationPresses
+                    : "Ahora cuentan los golpes: 0 / " + _targetPresses;
+                return;
+            }
 
             // Outliers extremos: no cuentan para la media ni para el objetivo de pulsaciones.
             if (Math.Abs(deltaMs) > OutlierMs)
             {
                 _rejected++;
+                _progressText.text = "Golpe muy fuera de ritmo (ignorado): " + _presses + " / " + _targetPresses;
                 return;
             }
 
             _deltas[_presses] = deltaMs;
             _presses++;
-            _progressText.text = "Pulsa una tecla al ritmo del metronomo: " + _presses + " / " + _targetPresses;
+            _progressText.text = "Golpes: " + _presses + " / " + _targetPresses + "  (ultimo " +
+                                 (_lastDeltaMs >= 0f ? "+" : string.Empty) + _lastDeltaMs.ToString("F0") + " ms)";
 
             if (_presses >= _targetPresses) FinishCalibration();
         }
@@ -306,7 +367,13 @@ namespace DiosPunk.Flow
                           "Latencia recomendada: " + sign + _resultOffsetMs.ToString("F0") + " ms";
             if (discarded > 0) text += "\nSe descartaron " + discarded + " pulsaciones fuera de ritmo.";
             if (deviation > 40.0) text += "\nLas pulsaciones fueron irregulares: conviene repetir.";
+
+            // Con menos de MinKept golpes consistentes no se confía en la medición: hay que repetir (o ajustar a mano).
+            bool reliable = !useAll;
+            if (!reliable) text += "\nSolo " + kept + " de " + _presses + " golpes fueron consistentes: repeti la calibracion.";
             _resultText.text = text;
+            _accept.interactable = reliable;
+            RefreshOffsetText();
 
             ShowPhase(Phase.Result);
         }

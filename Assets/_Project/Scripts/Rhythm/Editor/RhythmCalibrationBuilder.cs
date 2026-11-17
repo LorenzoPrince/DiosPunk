@@ -19,24 +19,41 @@ namespace DiosPunk.Rhythm.Editor
             // --- Introducción ---
             GameObject intro = FindOrCreateRect(root, "IntroPanel", phasePos, phaseSize);
             FindOrCreateText(intro.transform, "Text",
-                "Es tu primera partida.\nVamos a calibrar la latencia de tu equipo:\npulsa cualquier tecla al ritmo del metronomo.\nDespues practicaras los 4 carriles.",
+                "Es tu primera partida.\nVamos a calibrar la latencia de tu equipo:\npulsa una tecla (o la Barra Espaciadora) cuando la barra toque la linea.\nDespues practicaras los 4 carriles.",
                 46f, TextAlignmentOptions.Center, Center, Center, new Vector2(0f, 100f), new Vector2(1400f, 360f), Color.white);
             Button startCalibration = CreateButton(intro.transform, "StartButton", "EMPEZAR CALIBRACION",
                 new Vector2(0f, -170f), new Vector2(680f, 100f), panel);
 
             // --- Calibrando: pulso visual + contador ---
             GameObject calibrating = FindOrCreateRect(root, "CalibratingPanel", phasePos, phaseSize);
-            Image pulse = FindOrCreateImage(calibrating.transform, "Pulse", fx.Shield, Color.white, Center, Center,
-                new Vector2(0f, 60f), new Vector2(300f, 300f), Image.Type.Simple);
+            // Pista rítmica: el marcador viaja de izquierda a derecha y toca la línea roja justo con cada clic.
+            FindOrCreateImage(calibrating.transform, "RhythmTrack", white, new Color(0.9f, 0.9f, 0.86f, 1f), Center, Center,
+                new Vector2(-60f, 110f), new Vector2(900f, 150f), Image.Type.Simple);
+            Image pulse = FindOrCreateImage(calibrating.transform, "Pulse", fx.Shield, new Color(1f, 0.85f, 0.1f, 1f), Center, Center,
+                new Vector2(300f, 110f), new Vector2(210f, 210f), Image.Type.Simple);
+            FindOrCreateImage(calibrating.transform, "ImpactLine", white, new Color(0.85f, 0.1f, 0.1f, 1f), Center, Center,
+                new Vector2(300f, 110f), new Vector2(12f, 190f), Image.Type.Simple);
+            Image marker = FindOrCreateImage(calibrating.transform, "Marker", panel, new Color(0.1f, 0.1f, 0.1f, 1f), Center, Center,
+                new Vector2(-420f, 110f), new Vector2(34f, 130f), Image.Type.Sliced);
+            FindOrCreateText(calibrating.transform, "Hint", "Pulsa cuando la barra toque la linea roja", 40f, TextAlignmentOptions.Center,
+                Center, Center, new Vector2(0f, -40f), new Vector2(1400f, 60f), Color.white);
+            FindOrCreateText(calibrating.transform, "KeysHint", "Cualquier tecla de carril de tu esquema, o Barra Espaciadora", 30f, TextAlignmentOptions.Center,
+                Center, Center, new Vector2(0f, -100f), new Vector2(1400f, 50f), new Color(0.75f, 0.75f, 0.75f, 1f));
             TMP_Text progress = FindOrCreateText(calibrating.transform, "ProgressText", "", 44f, TextAlignmentOptions.Center,
-                Center, Center, new Vector2(0f, -200f), new Vector2(1400f, 80f), Color.white);
+                Center, Center, new Vector2(0f, -190f), new Vector2(1400f, 80f), Color.white);
 
-            // --- Resultado ---
+            // --- Resultado: texto, ajuste fino -5 / +5 ms con el valor actual, restaurar y aceptar/repetir ---
             GameObject result = FindOrCreateRect(root, "ResultPanel", phasePos, phaseSize);
-            TMP_Text resultText = FindOrCreateText(result.transform, "ResultText", "", 48f, TextAlignmentOptions.Center,
-                Center, Center, new Vector2(0f, 90f), new Vector2(1400f, 300f), Color.white);
-            Button retry = CreateButton(result.transform, "RetryButton", "REPETIR", new Vector2(-260f, -170f), new Vector2(440f, 100f), panel);
-            Button accept = CreateButton(result.transform, "AcceptButton", "ACEPTAR", new Vector2(260f, -170f), new Vector2(440f, 100f), panel);
+            TMP_Text resultText = FindOrCreateText(result.transform, "ResultText", "", 42f, TextAlignmentOptions.Center,
+                Center, Center, new Vector2(0f, 150f), new Vector2(1400f, 280f), Color.white);
+            Button offsetMinus = CreateButton(result.transform, "OffsetMinusButton", "-5", new Vector2(-300f, -40f), new Vector2(150f, 80f), panel);
+            Button offsetPlus = CreateButton(result.transform, "OffsetPlusButton", "+5", new Vector2(300f, -40f), new Vector2(150f, 80f), panel);
+            TMP_Text offsetText = FindOrCreateText(result.transform, "OffsetText", "Latencia: +25 ms", 56f, TextAlignmentOptions.Center,
+                Center, Center, new Vector2(0f, -40f), new Vector2(520f, 80f), new Color(1f, 0.85f, 0.1f, 1f));
+            Button offsetRestore = CreateButton(result.transform, "OffsetRestoreButton", "Restaurar +25 ms", new Vector2(0f, -130f), new Vector2(520f, 70f), panel);
+            offsetRestore.transform.Find("Label").GetComponent<TMP_Text>().fontSize = 30f;
+            Button retry = CreateButton(result.transform, "RetryButton", "REPETIR", new Vector2(-260f, -230f), new Vector2(440f, 90f), panel);
+            Button accept = CreateButton(result.transform, "AcceptButton", "ACEPTAR", new Vector2(260f, -230f), new Vector2(440f, 90f), panel);
             TMP_Text acceptLabel = accept.transform.Find("Label").GetComponent<TMP_Text>();
 
             // --- Tutorial de controles: 4 carriles con su color ---
@@ -83,6 +100,8 @@ namespace DiosPunk.Rhythm.Editor
                 ("_accept", accept), ("_finishTutorial", finish), ("_skip", skip), ("_back", back), ("_pulse", pulse),
                 ("_progressText", progress), ("_resultText", resultText), ("_clickSourceA", sources[0]),
                 ("_clickSourceB", sources[1]), ("_clickClip", fx.Click), ("_tutorialStatus", status));
+            SetRefs(screen, ("_marker", marker.rectTransform), ("_offsetText", offsetText), ("_offsetMinus", offsetMinus),
+                ("_offsetPlus", offsetPlus), ("_offsetRestore", offsetRestore));
             SetRefArray(screen, "_laneBoxes", boxes);
             SetRefArray(screen, "_laneKeyLabels", keyTexts);
 

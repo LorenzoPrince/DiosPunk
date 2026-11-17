@@ -48,6 +48,17 @@ namespace DiosPunk.Flow
         /// lo tome por una partida guardada y se saltara la calibración. Si no existe, queda en memoria y se
         /// escribe con el primer guardado.
         /// </summary>
+        /// <summary>
+        /// Ajuste manual de la latencia (Opciones): queda como calibrada para que se aplique al cargar. Solo escribe el
+        /// archivo si ya existe (ver SetControlScheme).
+        /// </summary>
+        public void SetLatency(float latencyOffsetMs)
+        {
+            _data.calibrated = true;
+            _data.latencyOffsetMs = latencyOffsetMs;
+            if (FileExists) Save();
+        }
+
         public bool ImmortalMode => _data.immortalMode;
 
         /// <summary>Guarda la preferencia del Modo Inmortal (mismas reglas que SetControlScheme: no crea el archivo).</summary>
