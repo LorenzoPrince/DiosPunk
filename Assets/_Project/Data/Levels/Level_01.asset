@@ -17,4 +17,8 @@ MonoBehaviour:
   _difficulty: Facil
   _songResource: Song_01_Comienzos
   _dialogue: {fileID: 11400000, guid: e6e0601b0ddcdb94fb98707470ead91c, type: 2}
-  _noteSpeedMultiplier: 1
+  _noteSpeedMultiplier: 0.8
+  _enableDebuffs: 0
+  _enablePunkMode: 0
+  _firstDebuffSeconds: 0
+  _debuffIntervalSeconds: 25

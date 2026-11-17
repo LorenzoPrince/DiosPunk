@@ -42,6 +42,7 @@ namespace DiosPunk.Rhythm
                 case HitType.Perfect: _judgementText.SetText("PERFECT  {0:1} ms", deltaMs); break;
                 case HitType.Good: _judgementText.SetText("GOOD  {0:1} ms", deltaMs); break;
                 case HitType.Miss: _judgementText.SetText("MISS  {0:1} ms", deltaMs); break;
+                case HitType.Bad: _judgementText.SetText("BAD  {0:1} ms", deltaMs); break;
                 default: return;
             }
             Refresh();

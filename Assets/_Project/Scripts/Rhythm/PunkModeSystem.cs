@@ -65,13 +65,18 @@ namespace DiosPunk.Rhythm
             BarChanged?.Invoke(Bar, false);
         }
 
+        /// <summary>false = el nivel no usa Modo Punk: la barra no carga (curva de aprendizaje, ver ADR-036).</summary>
+        public bool Enabled { get; set; } = true;
+
         public void RegisterHit(HitType type)
         {
+            if (!Enabled) return;
             if (IsActive) return; // activo: la barra solo se drena
 
             switch (type)
             {
                 case HitType.Miss: AddCharge(MissCharge); break;
+                case HitType.Bad: AddCharge(MissCharge * 0.5f); break; // rescate parcial
                 case HitType.Perfect: AddCharge(PerfectCharge); break;
                 case HitType.Good: AddCharge(GoodCharge); break;
             }

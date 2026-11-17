@@ -17,6 +17,7 @@ namespace DiosPunk.Rhythm
         [SerializeField] private Color _perfectColor = new Color(0.1f, 1f, 0.25f, 0.9f);
         [SerializeField] private Color _goodColor = new Color(1f, 0.9f, 0.1f, 0.9f);
         [SerializeField] private Color _missColor = new Color(1f, 0.15f, 0.15f, 0.9f);
+        [SerializeField] private Color _badColor = new Color(1f, 0.5f, 0.1f, 0.9f);
         [SerializeField] private Color _pressColor = new Color(1f, 1f, 1f, 0.35f);
         [SerializeField, Min(0.05f)] private float _fadeSeconds = 0.3f;
 
@@ -59,6 +60,7 @@ namespace DiosPunk.Rhythm
                 case HitType.Perfect: Flash(lane, _perfectColor, _fadeSeconds); break;
                 case HitType.Good: Flash(lane, _goodColor, _fadeSeconds); break;
                 case HitType.Miss: Flash(lane, _missColor, _fadeSeconds); break;
+                case HitType.Bad: Flash(lane, _badColor, _fadeSeconds); break;
             }
         }
 

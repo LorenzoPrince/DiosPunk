@@ -280,7 +280,37 @@ Una entrada por decisión; nunca se borran (si cambian: `Superseded by ADR-XXX`)
 - **Robustez:** el overlay se instancia una sola vez dentro del GameObject `DontDestroyOnLoad` del loader. Si el prefab no existe, `SceneLoader` avisa y carga en seco como antes. Si `LoadSceneAsync` devuelve null (escena fuera de Build Settings) se destapa la pantalla y se libera `IsLoading`.
 - **Verificado:** el prefab se renderizó a una textura (grano, tira, texto, cinta al 60 %) y `SceneLoader.Load` instancia el overlay y empieza el fundido en Play Mode. **No se pudo ver la transición completa** MainMenu ↔ Gameplay (sin foco no avanzan frames): falta probarla jugando y ajustar tiempos.
 
-<!-- Añadir ADR-034+ debajo -->
+### ADR-034 — Ventanas de timing permisivas, juicio "Bad" y vida más suave (feedback v0.2.0)
+- **Estado:** Aceptada (código escrito; **sin compilar ni probar**, ver nota) · **Fecha:** 2026-11-16 · Modifica ADR-007 y ADR-015.
+- **Problema:** los playtests reportan ventanas muy severas y un Nivel 2 demasiado difícil.
+- **Ventanas simétricas:** estándar Perfect ±55 ms (antes ±30), Good ±115 (antes ±70); Modo Punk Perfect ±75, Good ±145 (`HitWindows.Default` y `HitWindows.Punk`).
+- **Juicio nuevo `HitType.Bad`:** pulsar entre el borde de Good y el borde exterior (±155 ms estándar, ±185 con Modo Punk), temprano **o tarde**, consume la nota con un Bad: sin puntos, rompe el combo, cuenta como fallo en la precisión y los resultados, resta solo 5 HP (`BadDamage`) y da media carga de rescate al Modo Punk. El campo `earlyMissMs` pasa a `badMs` (`FormerlySerializedAs`). Una nota sin pulsar se declara Miss recién al pasar `badMs` (antes `goodMs`), así que el Miss tardío se detecta ~40 ms después. Un input más temprano que `badMs` se sigue ignorando (sin castigo por tap fantasma). Se agregó Bad al HUD de debug, al color de los pads (naranja), a `RhythmStats` y al SFX (sonido de Miss al 60 %).
+- **Vida:** Miss −10 HP (antes −15), Bad −5, Perfect +3 (antes +2), Good +1,5 (antes +1) (`HealthSystem` y `RhythmSession`).
+- **Nota:** los valores serializados en la escena `Gameplay` y el prefab de la pista viven en la escena: hay que **regenerar** (`DiosPunk/Scenes/Build MainMenu + Gameplay`) para que tomen los nuevos defaults.
+
+### ADR-035 — Latencia por defecto de +25 ms y calibración robusta
+- **Estado:** Aceptada (código escrito; sin compilar ni probar) · **Fecha:** 2026-11-16 · Modifica ADR-021.
+- **Defecto:** `GameSettings.DefaultLatencyOffsetMs = 25` y `LatencyOffsetMs` arranca en ese valor; `SongClock.Awake` lo toma siempre (antes ignoraba 0). Al omitir la calibración se aplica el defecto (antes 0). Un jugador ya calibrado conserva su valor de `progress.json`.
+- **Signo (sin cambios, verificado por lectura):** el offset es positivo si el jugador pulsa tarde; `InputRealtimeToSongTime` lo **resta** del tiempo del input (`input + dspMinusRealtime − songStart − offset`) y `JudgementTime` lo resta también, así que +25 adelanta el input 25 ms. `InputRealtimeToDsp` (usado por la calibración) no aplica offset: mide el desfase crudo.
+- **Calibración:** `CalibrationScreen` descarta pulsaciones a más de 250 ms del clic más cercano (no cuentan para el objetivo de 10) y calcula la **mediana**; sobre ella recorta lo que quede a más de 80 ms y promedia el resto (si quedan menos de 4 usa todas). Muestra cuántas descartó. Arrays preasignados; el cálculo ocurre una vez al terminar.
+
+### ADR-036 — Revelación progresiva de mecánicas por nivel
+- **Estado:** Aceptada (código escrito; assets de nivel pendientes de regenerar) · **Fecha:** 2026-11-16 · Modifica ADR-027.
+- **Flags en `LevelData`:** `_enableDebuffs`, `_enablePunkMode`, `_firstDebuffSeconds`, `_debuffIntervalSeconds`. `GameplayFlowController.ApplyLevelMechanics` los pasa a `RhythmSession.ConfigureLevel` (`DebuffSystem.Enabled/FirstTrigger`, `PunkModeSystem.Enabled`) antes de cada canción y oculta el panel MODO PUNK (`CanvasGroup`) si el nivel no lo usa. F5/F6 de debug siguen funcionando.
+- **Curva (generada por `RhythmLevelContentBuilder`):**
+
+| Nivel | Velocidad | Debuffs | Modo Punk | Densidad |
+|---|---|---|---|---|
+| 1 Comienzos | ×0,80 | no | no (ritmo puro) | 1ª mitad a media densidad, sin contratiempos |
+| 2 Sueños Punk Rock | ×0,85 | primero a los 30 s, luego cada 30 s | sí (salvavidas) | 1ª mitad a media densidad, sin contratiempos |
+| 3 Peatonal Córdoba | ×0,92 | cada 28 s | sí | sin cambios |
+| 4 Facultad de Medicina | ×1,00 | cada 25 s | sí | sin cambios |
+| 5 Lucha Interior | ×1,08 | cada 22 s | sí | sin cambios |
+
+- **Decisiones mías a validar:** el Modo Punk se apaga también en el nivel 1 (el pedido solo pide quitar debuffs, pero "ritmo puro" y "activar Modo Punk como salvavidas" en el 2 lo sugieren); el intervalo del nivel 2 tras el primer debuff es 30 s (no estaba especificado). Con las duraciones actuales (~35–45 s) cada nivel 2–5 recibe un solo debuff: si se quiere más presión, hay que alargar los charts.
+- **Pendiente de verificar:** compilación, regeneración de escenas y niveles, y Play Mode. El MCP de Unity quedó **revocado** durante esta tarea ("Connection revoked"), así que no se pudo compilar ni ejecutar el generador.
+
+<!-- Añadir ADR-037+ debajo -->
 
 ---
 
@@ -364,6 +394,7 @@ Formato: `YYYY-MM-DD · [módulo] · descripción · archivos`
 - 2026-11-04 · [Rhythm/Editor] · Herramienta `DiosPunk/Rhythm/Build Test Setup` (`Assets/_Project/Scripts/Rhythm/Editor/`, asmdef `DiosPunk.Rhythm.Editor`): genera sprites placeholder (`Art/Placeholders`), WAV de metrónomo 120 BPM (`Audio/Placeholders`, PCM mono), `Prefabs/Note.prefab`, `Data/Songs/TestSong_120BPM.asset` (64 notas, 1 por beat) y arma la escena (RhythmTrack, HitBar y=-3.5, cámara ortográfica 5, DebugCanvas + RhythmDebugHUD). Idempotente. Scripts M01/M02 compilan sin errores; en Play Mode inició sin errores, el feel de timing aún no se probó con teclado.
 - 2026-11-04 · [Rhythm/Debug] · Sistema de Debug & Testing: `RhythmHitFeedback` (pads por carril Verde/Amarillo/Rojo), gizmos de ventanas Perfect/Good/Early Miss en `RhythmTrackController`, `RhythmDebugAutoPlayer` (bot: AlwaysPerfect/AlwaysGood/SimulateMisses/HumanRandom gaussiano con semilla), `RhythmDebugTools` (F1 autoplay, F2 reiniciar, F3 pausa, F4 modo bot, +/- latencia ±5 ms; resumen en consola al terminar/pausar; monitor de GC con ProfilerRecorder), `RhythmStats` (media y desvío estándar por Welford). `SongClock` gana `Pause/Resume` y `SongTimeToInputRealtime` (inversa exacta). El builder del escenario agrega todo. Compila sin errores; la prueba end-to-end en Play Mode no se pudo ejecutar con el editor sin foco.
 - 2026-11-04 · [Rhythm] · Validación manual en Play Mode por el equipo: M01/M02 + sistema de debug funcionan según lo esperado (reportado por el usuario; sin cifras de GC/latencia registradas aún).
+- 2026-11-16 · [Rhythm/Flow/Balance] · Bloque 1 de feedback v0.2.0 (ADR-034, ADR-035, ADR-036): ventanas 55/115 (Punk 75/145) con juicio `Bad` hasta 155/185 ms, vida Miss −10 / Bad −5 / Perfect +3 / Good +1,5, latencia por defecto +25 ms, calibración con mediana y descarte de outliers, flags de mecánicas por nivel (`LevelData`, `RhythmSession.ConfigureLevel`, `DebuffSystem.Enabled/FirstTrigger`, `PunkModeSystem.Enabled`) y curva de velocidad ×0,80 / 0,85 / 0,92 / 1,00 / 1,08. **Sin compilar ni regenerar escenas:** MCP de Unity revocado.
 - 2026-11-09 · [Audio/Flow] · Infraestructura de audio y transición (ADR-031, ADR-032, ADR-033): `SoundEffectManager` (pool de 12 voces, `GameSettings.SfxVolume`), `SfxLibrary` + `SfxId`, `GameplaySfxBridge`, `UiSfxTrigger`/`UiSfxBinder`, slider "Volumen de efectos (SFX)" en `OptionsScreen`; doble pista en `SongClock` (`_punkSource`, `Play(clip, punkStem)`, `SetPunkStemActive`, crossfade) con `SongData._punkStemClip` y `RhythmSession` conectada al Modo Punk; `SceneTransitionOverlay` + `SceneLoader` con fundido y activación retenida. Builder nuevo `RhythmAudioBuilder` (11 SFX procedurales, 6 stems punk, grano de papel y prefab de la cortinilla); el generador de escenas valida los stems. Assets nuevos: `Audio/Placeholders/Sfx/*.wav`, `Audio/Placeholders/*_PunkStem.wav`, `Art/Placeholders/PaperGrain_Placeholder.png`, `Resources/Audio/SfxLibrary.asset`, `Resources/UI/SceneTransition.prefab`.
 - 2026-11-09 · [Rhythm/HUD] · Feedback de absorción fuera de los carriles (ADR-030): sello compacto arriba a la izquierda (1,2 s, desvanecimiento con `CanvasGroup`), destello radial sutil y localizado bajo la HitBar, anillo de escudo más chico y bajo; sprite nuevo `ShieldGlow_Placeholder.png`; `NpcSabotageController` suma `_bannerGroup`, `_flashAlpha` y `_absorbEffectSeconds`.
 - 2026-11-09 · [Rhythm/HUD] · Progreso de la pista y rótulos de NPC (ADR-028, ADR-029): `SongProgressPresenter`, `TimeFormatter`, `RhythmTrackController.DurationSeconds`; panel `SongProgressPanel` en el HUD; rótulo "PLACEHOLDER / REEMPLAZAR POR DIBUJO REAL" en ambos NPC (el derecho con `flipX`); textos de juicio y debuff reubicados.

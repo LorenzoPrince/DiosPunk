@@ -1,4 +1,5 @@
 using System;
+using UnityEngine.Serialization;
 
 namespace DiosPunk.Rhythm
 {
@@ -8,11 +9,16 @@ namespace DiosPunk.Rhythm
         None = 0,
         Perfect = 1,
         Good = 2,
-        Miss = 3
+        /// <summary>Nota que pasó de largo sin pulsarse: fallo completo.</summary>
+        Miss = 3,
+        /// <summary>Pulsación fuera de tiempo pero cerca (entre Good y Bad): rompe el combo pero casi no resta vida.</summary>
+        Bad = 4
     }
 
     /// <summary>
-    /// Ventanas de juicio en milisegundos. Lógica pura, sin dependencias de MonoBehaviour (testeable en EditMode).
+    /// Ventanas de juicio en milisegundos (simétricas). Lógica pura, sin dependencias de MonoBehaviour (testeable en EditMode).
+    /// |delta| ≤ perfectMs → Perfect; ≤ goodMs → Good; ≤ badMs → Bad (temprano o tarde); más allá no hay input válido
+    /// y una nota que pasa de badMs sin pulsarse es Miss.
     /// </summary>
     [Serializable]
     public struct HitWindows
@@ -21,16 +27,26 @@ namespace DiosPunk.Rhythm
         public float goodMs;
 
         /// <summary>
-        /// Un input anterior a la nota por más de goodMs pero dentro de esta ventana cuenta como Miss
-        /// (consume la nota). Más temprano que esto se ignora (no hay penalización por "tap fantasma").
+        /// Borde exterior de la ventana "Bad": pulsar entre goodMs y badMs consume la nota con un juicio Bad
+        /// (penalización leve). Un input más temprano se ignora (sin castigo por "tap fantasma") y una nota
+        /// sin pulsar se declara Miss cuando pasa de badMs.
         /// </summary>
-        public float earlyMissMs;
+        [FormerlySerializedAs("earlyMissMs")] public float badMs;
 
+        /// <summary>Estándar: Perfect ±55, Good ±115, Bad ±155.</summary>
         public static HitWindows Default => new HitWindows
         {
-            perfectMs = 30f,
-            goodMs = 70f,
-            earlyMissMs = 120f
+            perfectMs = 55f,
+            goodMs = 115f,
+            badMs = 155f
+        };
+
+        /// <summary>Con Modo Punk activo: Perfect ±75, Good ±145, Bad ±185.</summary>
+        public static HitWindows Punk => new HitWindows
+        {
+            perfectMs = 75f,
+            goodMs = 145f,
+            badMs = 185f
         };
 
         /// <param name="deltaMs">Input menos objetivo, en ms. Negativo = temprano, positivo = tarde.</param>
@@ -40,7 +56,7 @@ namespace DiosPunk.Rhythm
 
             if (abs <= perfectMs) return HitType.Perfect;
             if (abs <= goodMs) return HitType.Good;
-            if (deltaMs < 0.0 && abs <= earlyMissMs) return HitType.Miss;
+            if (abs <= badMs) return HitType.Bad;
             return HitType.None;
         }
     }

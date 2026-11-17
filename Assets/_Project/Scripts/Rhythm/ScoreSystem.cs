@@ -65,6 +65,7 @@ namespace DiosPunk.Rhythm
                     Combo++;
                     break;
                 case HitType.Miss:
+                case HitType.Bad: // fuera de tiempo: sin puntos, rompe el combo y cuenta como fallo en la precisión
                     _miss++;
                     Combo = 0;
                     break;

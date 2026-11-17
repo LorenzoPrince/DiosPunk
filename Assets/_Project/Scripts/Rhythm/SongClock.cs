@@ -102,8 +102,10 @@ namespace DiosPunk.Rhythm
             _punkSource.outputAudioMixerGroup = _audioSource.outputAudioMixerGroup;
             _punkSource.volume = 0f;
 
-            // Latencia calibrada por el jugador (si la hay); el ajuste en vivo del debug sigue pudiendo modificarla.
-            if (GameSettings.LatencyOffsetMs != 0f) LatencyOffsetMs = GameSettings.LatencyOffsetMs;
+            // Latencia vigente: la calibrada por el jugador o, si omitió la calibración, el valor por defecto
+            // (GameSettings.DefaultLatencyOffsetMs). El ajuste en vivo del debug (+/-) sigue pudiendo modificarla.
+            // Convención: positivo = el jugador pulsa tarde; InputRealtimeToSongTime lo resta del tiempo del input.
+            LatencyOffsetMs = GameSettings.LatencyOffsetMs;
         }
 
         /// <summary>

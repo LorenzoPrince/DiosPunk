@@ -36,7 +36,7 @@ namespace DiosPunk.Rhythm
         [SerializeField] private HitWindows _windows = HitWindows.Default;
 
         [Tooltip("Ventanas más permisivas mientras el Modo Punk está activo.")]
-        [SerializeField] private HitWindows _punkWindows = new HitWindows { perfectMs = 45f, goodMs = 90f, earlyMissMs = 130f };
+        [SerializeField] private HitWindows _punkWindows = HitWindows.Punk;
 
         [Header("Pool")]
         [SerializeField, Min(1)] private int _poolPrewarm = 32;
@@ -52,7 +52,7 @@ namespace DiosPunk.Rhythm
         private readonly List<NoteView> _active = new List<NoteView>(64);
         private int _nextSpawn;
         private double _lookaheadSeconds;
-        private double _goodWindowSeconds;
+        private double _lateWindowSeconds; // más allá de esto sin pulsar = Miss (borde exterior de la ventana Bad)
         private bool _running;
         private bool _permissive;
         private float _speedMultiplier = 1f;
@@ -259,7 +259,7 @@ namespace DiosPunk.Rhythm
             {
                 NoteView head = _active[0];
                 double late = judgementTime - head.TargetTime;
-                if (late <= _goodWindowSeconds) break;
+                if (late <= _lateWindowSeconds) break;
 
                 _active.RemoveAt(0);
                 int lane = head.LaneIndex;
@@ -325,7 +325,7 @@ namespace DiosPunk.Rhythm
         private void RecomputeDerived()
         {
             _lookaheadSeconds = (_spawnY - _hitLineY) / Mathf.Max(0.01f, _noteSpeed * _speedMultiplier);
-            _goodWindowSeconds = Windows.goodMs * 0.001;
+            _lateWindowSeconds = Windows.badMs * 0.001;
         }
 
         private void ReleaseAllActive()
@@ -365,10 +365,11 @@ namespace DiosPunk.Rhythm
                 // Distancia espacial = ms * 0.001 * velocidad. Arriba = nota temprana (aún no llegó a la barra).
                 float perfectH = _windows.perfectMs * 0.001f * _noteSpeed;
                 float goodH = _windows.goodMs * 0.001f * _noteSpeed;
-                float earlyH = _windows.earlyMissMs * 0.001f * _noteSpeed;
+                float earlyH = _windows.badMs * 0.001f * _noteSpeed;
 
-                // Early Miss (solo por encima de Good)
+                // Bad (entre Good y el borde exterior, temprano y tarde)
                 DrawBand(halfWidth, _hitLineY + (goodH + earlyH) * 0.5f, earlyH - goodH, new Color(1f, 0.15f, 0.15f, 0.20f));
+                DrawBand(halfWidth, _hitLineY - (goodH + earlyH) * 0.5f, earlyH - goodH, new Color(1f, 0.15f, 0.15f, 0.20f));
                 // Good (±goodMs)
                 DrawBand(halfWidth, _hitLineY, goodH * 2f, new Color(1f, 0.9f, 0.1f, 0.22f));
                 // Perfect (±perfectMs)
@@ -380,7 +381,7 @@ namespace DiosPunk.Rhythm
                 UnityEditor.Handles.Label(transform.TransformPoint(new Vector3(halfWidth + 0.2f, _hitLineY + goodH, 0f)),
                     "Good ±" + _windows.goodMs.ToString("0") + " ms");
                 UnityEditor.Handles.Label(transform.TransformPoint(new Vector3(halfWidth + 0.2f, _hitLineY + earlyH, 0f)),
-                    "Early Miss hasta -" + _windows.earlyMissMs.ToString("0") + " ms");
+                    "Bad ±" + _windows.badMs.ToString("0") + " ms");
             }
 
             Gizmos.matrix = previous;

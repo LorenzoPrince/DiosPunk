@@ -17,6 +17,9 @@ namespace DiosPunk.Flow
 
         [SerializeField] private LevelCatalog _catalog;
 
+        [Tooltip("CanvasGroup del panel MODO PUNK: se oculta en los niveles sin Modo Punk.")]
+        [SerializeField] private CanvasGroup _punkPanelGroup;
+
         [Header("Pantallas")]
         [SerializeField] private PreLevelDialoguePresenter _preLevel;
         [SerializeField] private SongPreparationScreen _preparation;
@@ -122,6 +125,7 @@ namespace DiosPunk.Flow
         {
             // La canción se carga solo en esta escena (Resources) y se libera al salir de ella.
             _song = CurrentLevel.LoadSong();
+            ApplyLevelMechanics();
             _preLevel.Begin(CurrentLevel);
             Machine.Force(GameState.PreLevel);
         }
@@ -153,8 +157,17 @@ namespace DiosPunk.Flow
             // El cambio de estado ya activó el mundo de juego: cargar la canción y arrancar.
             // Velocidad del nivel x ajuste de dificultad elegido en la narrativa.
             _track.SetSpeedMultiplier(CurrentLevel.NoteSpeedMultiplier * GameSession.NoteSpeedMultiplier);
+            ApplyLevelMechanics();
             _track.LoadSong(_song);
             _track.StartSong();
+        }
+
+        /// <summary>Debuffs y Modo Punk del nivel actual; la barra Punk se oculta si el nivel no la usa.</summary>
+        private void ApplyLevelMechanics()
+        {
+            LevelData level = CurrentLevel;
+            _session.ConfigureLevel(level.EnableDebuffs, level.EnablePunkMode, level.FirstDebuffSeconds, level.DebuffIntervalSeconds);
+            if (_punkPanelGroup != null) _punkPanelGroup.alpha = level.EnablePunkMode ? 1f : 0f;
         }
 
         private void OnEscape()
@@ -206,7 +219,7 @@ namespace DiosPunk.Flow
                 maxCombo = score.MaxCombo,
                 perfect = stats.Perfect,
                 good = stats.Good,
-                miss = stats.Miss,
+                miss = stats.Miss + stats.Bad, // los "Bad" (fuera de tiempo) cuentan como fallo en resultados
                 punkUses = _session.Punk.UseCount,
                 newBest = newBest,
                 nextUnlocked = nextUnlocked,

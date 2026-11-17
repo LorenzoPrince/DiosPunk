@@ -170,6 +170,12 @@ namespace DiosPunk.Rhythm.Editor
             GameObject flowGo = new GameObject("GameplayFlow");
             var flow = flowGo.AddComponent<GameplayFlowController>();
             var screenManager = flowGo.AddComponent<ScreenManager>();
+            Transform punkPanelT = ui.Find("PunkPanel");
+            var punkGroup = GetOrAdd<CanvasGroup>(punkPanelT.gameObject);
+            punkGroup.blocksRaycasts = false;
+            punkGroup.interactable = false;
+            SetRefs(flow, ("_punkPanelGroup", punkGroup));
+
             SetRefs(flow, ("_track", controller), ("_session", session), ("_catalog", catalog), ("_preLevel", preLevel),
                 ("_preparation", preparation), ("_options", options), ("_pause", pause), ("_gameOver", gameOver),
                 ("_results", results), ("_epilogue", epilogue), ("_epilogueData", epilogueData), ("_credits", credits));

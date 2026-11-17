@@ -17,4 +17,8 @@ MonoBehaviour:
   _difficulty: Facil
   _songResource: Song_02_SuenosPunkRock
   _dialogue: {fileID: 11400000, guid: 819c2df552347224fa87a788266eec61, type: 2}
-  _noteSpeedMultiplier: 0.9
+  _noteSpeedMultiplier: 0.85
+  _enableDebuffs: 1
+  _enablePunkMode: 1
+  _firstDebuffSeconds: 30
+  _debuffIntervalSeconds: 30

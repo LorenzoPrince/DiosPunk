@@ -31,12 +31,20 @@ namespace DiosPunk.Rhythm
         public event Action Ended;
         public event Action Absorbed;
 
-        public void Configure(float interval, float duration, float lead = 1.5f)
+        /// <summary>false = el nivel no tiene debuffs automáticos (TriggerNow de depuración sigue funcionando).</summary>
+        public bool Enabled { get; set; } = true;
+
+        /// <summary>Segundos de canción del primer debuff (por defecto, igual al intervalo).</summary>
+        public float FirstTrigger { get; private set; } = 25f;
+
+        /// <param name="firstTrigger">Segundo del primer debuff; 0 o menos = usar el intervalo.</param>
+        public void Configure(float interval, float duration, float lead = 1.5f, float firstTrigger = 0f)
         {
             Interval = Math.Max(0.1f, interval);
             Duration = Math.Max(0.1f, duration);
             Lead = Math.Clamp(lead, 0.1f, Interval * 0.5f);
-            _nextTrigger = Interval;
+            FirstTrigger = firstTrigger > 0f ? firstTrigger : Interval;
+            _nextTrigger = FirstTrigger;
         }
 
         /// <summary>Función que intenta absorber el debuff (devuelve true si lo absorbió y consumió la protección).</summary>
@@ -49,7 +57,7 @@ namespace DiosPunk.Rhythm
                 IsActive = false;
                 Ended?.Invoke();
             }
-            _nextTrigger = Interval;
+            _nextTrigger = FirstTrigger;
             _endTime = 0.0;
             _incomingFired = false;
         }
@@ -61,6 +69,8 @@ namespace DiosPunk.Rhythm
                 IsActive = false;
                 Ended?.Invoke();
             }
+
+            if (!Enabled) return;
 
             if (!_incomingFired && songTime >= _nextTrigger - Lead)
             {

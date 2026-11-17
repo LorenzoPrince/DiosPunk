@@ -39,6 +39,7 @@ namespace DiosPunk.Rhythm
                 case HitType.Perfect: SoundEffectManager.Play(SfxId.HitPerfect); break;
                 case HitType.Good: SoundEffectManager.Play(SfxId.HitGood); break;
                 case HitType.Miss: SoundEffectManager.Play(SfxId.Miss); break;
+                case HitType.Bad: SoundEffectManager.Play(SfxId.Miss, 0.6f); break;
             }
         }
 

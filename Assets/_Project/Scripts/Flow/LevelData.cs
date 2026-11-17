@@ -23,6 +23,21 @@ namespace DiosPunk.Flow
         [Tooltip("Velocidad de caída de las notas de este nivel (1 = base). Permite una curva de dificultad suave.")]
         [SerializeField, Range(0.5f, 1.5f)] private float _noteSpeedMultiplier = 1f;
 
+        [Header("Mecánicas del nivel (revelación progresiva)")]
+        [Tooltip("false = sin debuffs: ritmo puro (nivel 1).")]
+        [SerializeField] private bool _enableDebuffs = true;
+        [Tooltip("false = el Modo Punk no carga (la barra se oculta).")]
+        [SerializeField] private bool _enablePunkMode = true;
+        [Tooltip("Segundo de canción del primer debuff (0 = igual al intervalo).")]
+        [SerializeField, Min(0f)] private float _firstDebuffSeconds;
+        [Tooltip("Segundos entre debuffs.")]
+        [SerializeField, Min(5f)] private float _debuffIntervalSeconds = 25f;
+
+        public bool EnableDebuffs => _enableDebuffs;
+        public bool EnablePunkMode => _enablePunkMode;
+        public float FirstDebuffSeconds => _firstDebuffSeconds;
+        public float DebuffIntervalSeconds => _debuffIntervalSeconds;
+
         public float NoteSpeedMultiplier => _noteSpeedMultiplier;
         public string Title => _title;
         public string Stage => _stage;

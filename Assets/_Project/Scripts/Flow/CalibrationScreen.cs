@@ -69,9 +69,16 @@ namespace DiosPunk.Flow
         private double _interval;
         private int _nextBeat;
         private int _presses;
-        private double _sum;
-        private double _sumSquares;
+        private double[] _deltas;       // desfases aceptados (ms), preasignado
+        private double[] _scratch;      // copia ordenable para la mediana
+        private int _rejected;          // pulsaciones descartadas por extremas (> OutlierMs)
         private float _resultOffsetMs;
+
+        // Pulsación a más de 250 ms del clic más cercano: casi seguro un toque accidental, no latencia.
+        private const double OutlierMs = 250.0;
+        // Tras la mediana se descarta lo que quede a más de esto de ella (pulsaciones despistadas).
+        private const double TrimMs = 80.0;
+        private const int MinKept = 4;
         private int _lanesDone;
 
         /// <summary>true si se abrió desde Opciones (sin tutorial, sin tocar el progreso).</summary>
@@ -102,6 +109,8 @@ namespace DiosPunk.Flow
         private void Awake()
         {
             _laneColors = LaneStyle.CreateDefaultColors();
+            _deltas = new double[Math.Max(_targetPresses, MinKept)];
+            _scratch = new double[_deltas.Length];
 
             _startCalibration.onClick.AddListener(StartCalibration);
             _retry.onClick.AddListener(StartCalibration);
@@ -170,8 +179,7 @@ namespace DiosPunk.Flow
             _startDsp = AudioSettings.dspTime + _leadInSeconds;
             _nextBeat = 0;
             _presses = 0;
-            _sum = 0.0;
-            _sumSquares = 0.0;
+            _rejected = 0;
             _progressText.text = "Pulsa una tecla al ritmo del metronomo: 0 / " + _targetPresses;
             ShowPhase(Phase.Calibrating);
         }
@@ -242,9 +250,16 @@ namespace DiosPunk.Flow
             if (relative < -_interval * 0.25) return; // antes de empezar
 
             double deltaMs = (relative - Math.Round(relative / _interval) * _interval) * 1000.0;
+
+            // Outliers extremos: no cuentan para la media ni para el objetivo de pulsaciones.
+            if (Math.Abs(deltaMs) > OutlierMs)
+            {
+                _rejected++;
+                return;
+            }
+
+            _deltas[_presses] = deltaMs;
             _presses++;
-            _sum += deltaMs;
-            _sumSquares += deltaMs * deltaMs;
             _progressText.text = "Pulsa una tecla al ritmo del metronomo: " + _presses + " / " + _targetPresses;
 
             if (_presses >= _targetPresses) FinishCalibration();
@@ -252,15 +267,47 @@ namespace DiosPunk.Flow
 
         private void FinishCalibration()
         {
-            double mean = _sum / _presses;
-            double variance = Math.Max(0.0, _sumSquares / _presses - mean * mean);
-            double deviation = Math.Sqrt(variance);
+            // Estimador robusto: mediana de los desfases y media recortada alrededor de ella (descarta las
+            // pulsaciones a más de TrimMs de la mediana). Si quedaran muy pocas se usan todas.
+            Array.Copy(_deltas, _scratch, _presses);
+            Array.Sort(_scratch, 0, _presses);
+            double median = (_presses & 1) == 1
+                ? _scratch[_presses / 2]
+                : (_scratch[_presses / 2 - 1] + _scratch[_presses / 2]) * 0.5;
+
+            int kept = 0;
+            double sum = 0.0;
+            for (int i = 0; i < _presses; i++)
+            {
+                if (Math.Abs(_deltas[i] - median) > TrimMs) continue;
+                sum += _deltas[i];
+                kept++;
+            }
+            bool useAll = kept < MinKept;
+            if (useAll)
+            {
+                kept = _presses;
+                sum = 0.0;
+                for (int i = 0; i < _presses; i++) sum += _deltas[i];
+            }
+
+            double mean = sum / kept;
+            double sq = 0.0;
+            for (int i = 0; i < _presses; i++)
+            {
+                if (!useAll && Math.Abs(_deltas[i] - median) > TrimMs) continue;
+                double d = _deltas[i] - mean;
+                sq += d * d;
+            }
+            double deviation = Math.Sqrt(sq / kept);
 
             _resultOffsetMs = Mathf.Clamp((float)mean, -300f, 300f);
 
+            int discarded = _rejected + (_presses - kept);
             string sign = _resultOffsetMs >= 0f ? "+" : string.Empty;
             string text = "Desfase medio: " + mean.ToString("F1") + " ms (desvio " + deviation.ToString("F1") + " ms)\n" +
                           "Latencia recomendada: " + sign + _resultOffsetMs.ToString("F0") + " ms";
+            if (discarded > 0) text += "\nSe descartaron " + discarded + " pulsaciones fuera de ritmo.";
             if (deviation > 40.0) text += "\nLas pulsaciones fueron irregulares: conviene repetir.";
             _resultText.text = text;
 

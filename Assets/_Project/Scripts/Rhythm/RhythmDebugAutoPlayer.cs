@@ -117,8 +117,8 @@ namespace DiosPunk.Rhythm
                         }
                         else
                         {
-                            // Presión temprana dentro de la ventana de Early Miss.
-                            note.AutoPlanMs = -(w.goodMs + w.earlyMissMs) * 0.5f;
+                            // Presión temprana dentro de la ventana Bad.
+                            note.AutoPlanMs = -(w.goodMs + w.badMs) * 0.5f;
                         }
                     }
                     else
@@ -130,7 +130,7 @@ namespace DiosPunk.Rhythm
                 case AutoPlayMode.HumanRandom:
                 {
                     float d = _humanMeanMs + _humanSigmaMs * NextGaussian();
-                    if (d > w.goodMs) note.AutoFired = true; // demasiado tarde: la nota se pierde
+                    if (d > w.badMs) note.AutoFired = true; // demasiado tarde: la nota se pierde
                     else note.AutoPlanMs = d;
                     break;
                 }

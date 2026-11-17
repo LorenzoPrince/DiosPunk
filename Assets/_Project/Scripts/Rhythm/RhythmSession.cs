@@ -22,9 +22,11 @@ namespace DiosPunk.Rhythm
 
         [Header("Vida")]
         [SerializeField, Min(1f)] private float _maxHealth = 100f;
-        [SerializeField, Min(0f)] private float _missDamage = 15f;
-        [SerializeField, Min(0f)] private float _perfectHeal = 2f;
-        [SerializeField, Min(0f)] private float _goodHeal = 1f;
+        [SerializeField, Min(0f)] private float _missDamage = 10f;
+        [Tooltip("Daño de una pulsación fuera de tiempo (juicio Bad).")]
+        [SerializeField, Min(0f)] private float _badDamage = 5f;
+        [SerializeField, Min(0f)] private float _perfectHeal = 3f;
+        [SerializeField, Min(0f)] private float _goodHeal = 1.5f;
 
         [Header("Modo Punk")]
         [Tooltip("Cuánto suma a la barra cada Miss (0.15 = 15 %): carga rápida de rescate.")]
@@ -56,11 +58,23 @@ namespace DiosPunk.Rhythm
         private void Awake()
         {
             Score.Configure(_perfectPoints, _goodPoints, _comboPerMultiplierStep, _maxMultiplier);
-            Health.Configure(_maxHealth, _missDamage, _perfectHeal, _goodHeal);
+            Health.Configure(_maxHealth, _missDamage, _perfectHeal, _goodHeal, _badDamage);
             Punk.Configure(_punkMissCharge, _punkPerfectCharge, _punkGoodCharge, _punkActiveSeconds);
             Debuffs.Configure(_debuffInterval, _debuffDuration, _debuffLead);
             Debuffs.SetAbsorber(Punk.TryAbsorbDebuff);
             ResetAll();
+        }
+
+        /// <summary>
+        /// Mecánicas del nivel (revelación progresiva). Llamar antes de iniciar la canción. Con debuffs apagados no
+        /// se dispara ninguno; con el Modo Punk apagado la barra no carga.
+        /// </summary>
+        /// <param name="firstDebuffSeconds">Segundo del primer debuff (0 = igual al intervalo).</param>
+        public void ConfigureLevel(bool enableDebuffs, bool enablePunkMode, float firstDebuffSeconds, float debuffIntervalSeconds)
+        {
+            Debuffs.Configure(debuffIntervalSeconds > 0f ? debuffIntervalSeconds : _debuffInterval, _debuffDuration, _debuffLead, firstDebuffSeconds);
+            Debuffs.Enabled = enableDebuffs;
+            Punk.Enabled = enablePunkMode;
         }
 
         private void OnEnable()

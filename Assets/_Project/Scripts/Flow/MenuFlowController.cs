@@ -163,7 +163,7 @@ namespace DiosPunk.Flow
         private void OnCalibrationSkipped()
         {
             _progress.StartNewGame(false, 0f);
-            GameSettings.LatencyOffsetMs = 0f;
+            GameSettings.LatencyOffsetMs = GameSettings.DefaultLatencyOffsetMs; // sin calibrar: latencia típica de PC
             StartLevel(0);
         }
 

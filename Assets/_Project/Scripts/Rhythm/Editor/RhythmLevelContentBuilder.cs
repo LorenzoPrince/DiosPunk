@@ -22,17 +22,28 @@ namespace DiosPunk.Rhythm.Editor
             public int offbeatEvery;
             public int warmupBeats;       // beats iniciales a media densidad
             public float speed;           // multiplicador de velocidad de caída del nivel
+            public bool debuffs, punk;    // mecánicas activas (revelación progresiva)
+            public float firstDebuff;     // segundo del primer debuff (0 = igual al intervalo)
+            public float debuffInterval;  // segundos entre debuffs
         }
 
         // Dificultad creciente y orgánica: BPM, duración y contratiempos suben de a poco; el nivel 2 entra con
         // media densidad y cae más lento para que el paso desde el nivel 1 no sea un salto brusco.
         private static readonly LevelSpec[] Specs =
         {
-            new LevelSpec { title = "Comienzos", stage = "El cuarto", difficulty = "Facil", songName = "Song_01_Comienzos", bpm = 100f, beats = 56, offbeatEvery = 0, warmupBeats = 0, speed = 1.00f },
-            new LevelSpec { title = "Sueños Punk Rock", stage = "El garaje", difficulty = "Facil", songName = "Song_02_SuenosPunkRock", bpm = 110f, beats = 64, offbeatEvery = 12, warmupBeats = 16, speed = 0.90f },
-            new LevelSpec { title = "Peatonal Córdoba", stage = "La peatonal", difficulty = "Media", songName = "Song_03_PeatonalCordoba", bpm = 120f, beats = 72, offbeatEvery = 4, warmupBeats = 0, speed = 0.95f },
-            new LevelSpec { title = "Facultad de Medicina", stage = "Las escalinatas", difficulty = "Media", songName = "Song_04_FacultadDeMedicina", bpm = 130f, beats = 80, offbeatEvery = 2, warmupBeats = 0, speed = 1.00f },
-            new LevelSpec { title = "Lucha Interior", stage = "El escenario final", difficulty = "Dificil", songName = "Song_05_LuchaInterior", bpm = 140f, beats = 96, offbeatEvery = 1, warmupBeats = 0, speed = 1.05f }
+            // Nivel 1: ritmo puro (sin debuffs ni Modo Punk), lento y con la primera mitad a media densidad.
+            new LevelSpec { title = "Comienzos", stage = "El cuarto", difficulty = "Facil", songName = "Song_01_Comienzos", bpm = 100f, beats = 56, offbeatEvery = 0, warmupBeats = 28, speed = 0.80f,
+                debuffs = false, punk = false, firstDebuff = 0f, debuffInterval = 25f },
+            // Nivel 2: primer debuff a los 30 s, Modo Punk como salvavidas, notas más espaciadas (sin contratiempos).
+            new LevelSpec { title = "Sueños Punk Rock", stage = "El garaje", difficulty = "Facil", songName = "Song_02_SuenosPunkRock", bpm = 110f, beats = 64, offbeatEvery = 0, warmupBeats = 32, speed = 0.85f,
+                debuffs = true, punk = true, firstDebuff = 30f, debuffInterval = 30f },
+            // Niveles 3 a 5: velocidad y frecuencia de debuffs crecientes (cada 28 s, 25 s y 22 s).
+            new LevelSpec { title = "Peatonal Córdoba", stage = "La peatonal", difficulty = "Media", songName = "Song_03_PeatonalCordoba", bpm = 120f, beats = 72, offbeatEvery = 4, warmupBeats = 0, speed = 0.92f,
+                debuffs = true, punk = true, firstDebuff = 0f, debuffInterval = 28f },
+            new LevelSpec { title = "Facultad de Medicina", stage = "Las escalinatas", difficulty = "Media", songName = "Song_04_FacultadDeMedicina", bpm = 130f, beats = 80, offbeatEvery = 2, warmupBeats = 0, speed = 1.00f,
+                debuffs = true, punk = true, firstDebuff = 0f, debuffInterval = 25f },
+            new LevelSpec { title = "Lucha Interior", stage = "El escenario final", difficulty = "Dificil", songName = "Song_05_LuchaInterior", bpm = 140f, beats = 96, offbeatEvery = 1, warmupBeats = 0, speed = 1.08f,
+                debuffs = true, punk = true, firstDebuff = 0f, debuffInterval = 22f }
         };
 
         // Nota raíz (Hz) del acorde de potencia del stem punk de cada nivel: E2, G2, A2, D2, F2.
@@ -117,6 +128,10 @@ namespace DiosPunk.Rhythm.Editor
                 so.FindProperty("_songResource").stringValue = Specs[i].songName;
                 so.FindProperty("_dialogue").objectReferenceValue = dialogues[i];
                 so.FindProperty("_noteSpeedMultiplier").floatValue = Specs[i].speed;
+                so.FindProperty("_enableDebuffs").boolValue = Specs[i].debuffs;
+                so.FindProperty("_enablePunkMode").boolValue = Specs[i].punk;
+                so.FindProperty("_firstDebuffSeconds").floatValue = Specs[i].firstDebuff;
+                so.FindProperty("_debuffIntervalSeconds").floatValue = Specs[i].debuffInterval;
                 so.ApplyModifiedPropertiesWithoutUndo();
 
                 EditorUtility.SetDirty(level);

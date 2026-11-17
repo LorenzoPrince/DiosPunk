@@ -17,4 +17,8 @@ MonoBehaviour:
   _difficulty: Dificil
   _songResource: Song_05_LuchaInterior
   _dialogue: {fileID: 11400000, guid: d178f887e4785a2418aa649d7e505c60, type: 2}
-  _noteSpeedMultiplier: 1.05
+  _noteSpeedMultiplier: 1.08
+  _enableDebuffs: 1
+  _enablePunkMode: 1
+  _firstDebuffSeconds: 0
+  _debuffIntervalSeconds: 22

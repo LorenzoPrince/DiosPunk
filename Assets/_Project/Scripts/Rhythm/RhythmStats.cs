@@ -16,17 +16,18 @@ namespace DiosPunk.Rhythm
         public int Perfect { get; private set; }
         public int Good { get; private set; }
         public int Miss { get; private set; }
+        public int Bad { get; private set; }
         public int Combo { get; private set; }
         public int MaxCombo { get; private set; }
 
-        public int Judged => Perfect + Good + Miss;
+        public int Judged => Perfect + Good + Miss + Bad;
         public double MeanDeltaMs => _n > 0 ? _mean : 0.0;
         public double StdDevDeltaMs => _n > 1 ? Math.Sqrt(_m2 / (_n - 1)) : 0.0;
 
         public void Reset()
         {
             _n = 0; _mean = 0.0; _m2 = 0.0;
-            Perfect = Good = Miss = Combo = MaxCombo = 0;
+            Perfect = Good = Miss = Bad = Combo = MaxCombo = 0;
         }
 
         public void Record(HitType type, float deltaMs)
@@ -36,6 +37,7 @@ namespace DiosPunk.Rhythm
                 case HitType.Perfect: Perfect++; AddDelta(deltaMs); Combo++; break;
                 case HitType.Good: Good++; AddDelta(deltaMs); Combo++; break;
                 case HitType.Miss: Miss++; Combo = 0; break;
+                case HitType.Bad: Bad++; Combo = 0; break;
                 default: return;
             }
             if (Combo > MaxCombo) MaxCombo = Combo;
@@ -58,6 +60,7 @@ namespace DiosPunk.Rhythm
               .Append("  | Juzgadas: ").Append(Judged).Append('\n');
             sb.Append("  Perfect: ").Append(Perfect)
               .Append("  Good: ").Append(Good)
+              .Append("  Bad: ").Append(Bad)
               .Append("  Miss: ").Append(Miss).Append('\n');
             sb.Append("  Combo max: ").Append(MaxCombo).Append('\n');
             sb.Append("  Delta (Perfect+Good): media ").Append(MeanDeltaMs.ToString("F2"))
