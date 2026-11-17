@@ -457,7 +457,12 @@ namespace DiosPunk.Rhythm.Editor
                 32f, TextAlignmentOptions.Center, Center, Center, new Vector2(0f, -150f), new Vector2(1000f, 200f), Color.black);
 
             Toggle reduce = FindOrCreateToggle(pages[3].transform, "ReduceEffectsToggle",
-                "Reducir intensidad de efectos visuales", new Vector2(0f, 40f), panel, white);
+                "Reducir intensidad de efectos visuales", new Vector2(0f, 100f), panel, white);
+            Toggle immortal = FindOrCreateToggle(pages[3].transform, "ImmortalToggle",
+                "Modo Inmortal (No perder vida)", new Vector2(0f, 10f), panel, white);
+            FindOrCreateText(pages[3].transform, "ImmortalHint",
+                "Los fallos rompen el combo igual, pero la vida nunca baja de 1: sin Game Over.", 28f, TextAlignmentOptions.Center,
+                Center, Center, new Vector2(0f, -55f), new Vector2(1000f, 50f), new Color(0.35f, 0.35f, 0.35f, 1f));
 
             Button back = CreateButton(paperRt, "BackButton", "VOLVER", new Vector2(0f, -320f), new Vector2(380f, 80f), panel);
 
@@ -466,7 +471,7 @@ namespace DiosPunk.Rhythm.Editor
             SetRefArray(screen, "_tabPages", pages);
             SetRefs(screen, ("_schemePrev", schemePrev), ("_schemeNext", schemeNext), ("_schemeValue", schemeValue),
                 ("_schemeDetail", schemeDetail), ("_controlsHelp", controlsHelp));
-            SetRefs(screen, ("_volume", volume), ("_sfxVolume", sfxVolume), ("_fullscreen", fullscreen), ("_reduceEffects", reduce), ("_back", back),
+            SetRefs(screen, ("_volume", volume), ("_sfxVolume", sfxVolume), ("_fullscreen", fullscreen), ("_reduceEffects", reduce), ("_immortal", immortal), ("_back", back),
                 ("_recalibrate", recalibrate), ("_latencyLabel", latencyLabel));
             return screen;
         }

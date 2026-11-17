@@ -36,6 +36,22 @@ namespace DiosPunk.Rhythm
 
         public static event System.Action<ControlScheme> ControlSchemeChanged;
 
+        private static bool s_immortalMode;
+
+        /// <summary>Modo Inmortal / No Fail: la vida no baja de 1 HP (sin Game Over). Se activa en Opciones o con V (debug).</summary>
+        public static bool ImmortalMode
+        {
+            get => s_immortalMode;
+            set
+            {
+                if (s_immortalMode == value) return;
+                s_immortalMode = value;
+                ImmortalModeChanged?.Invoke(value);
+            }
+        }
+
+        public static event System.Action<bool> ImmortalModeChanged;
+
         /// <summary>Volumen de efectos de sonido (0..1), independiente de la música. Lo ajusta el slider de Opciones.</summary>
         public static float SfxVolume = 1f;
 
@@ -48,6 +64,8 @@ namespace DiosPunk.Rhythm
             SfxVolume = 1f;
             s_controlScheme = ControlScheme.All;
             ControlSchemeChanged = null;
+            s_immortalMode = false;
+            ImmortalModeChanged = null;
         }
     }
 }

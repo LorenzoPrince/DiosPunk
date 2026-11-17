@@ -29,6 +29,8 @@ namespace DiosPunk.Flow
 
         [SerializeField] private Toggle _fullscreen;
         [SerializeField] private Toggle _reduceEffects;
+        [Tooltip("Modo Inmortal / No Fail: la vida no baja de 1 HP. Se guarda en progress.json.")]
+        [SerializeField] private Toggle _immortal;
         [SerializeField] private Button _back;
 
         [Header("Recalibración (solo en la escena MainMenu)")]
@@ -50,6 +52,7 @@ namespace DiosPunk.Flow
             if (_sfxVolume != null) _sfxVolume.onValueChanged.AddListener(OnSfxVolumeChanged);
             _fullscreen.onValueChanged.AddListener(value => Screen.fullScreen = value);
             _reduceEffects.onValueChanged.AddListener(value => GameSettings.ReduceVisualEffects = value);
+            _immortal.onValueChanged.AddListener(GameSession.SetImmortalMode);
             _back.onClick.AddListener(() => BackRequested?.Invoke());
             if (_recalibrate != null) _recalibrate.onClick.AddListener(() => RecalibrateRequested?.Invoke());
 
@@ -79,7 +82,7 @@ namespace DiosPunk.Flow
             ControlScheme scheme = GameSettings.ControlScheme;
             _schemeValue.text = ControlSchemes.GetName(scheme);
             _schemeDetail.text = ControlSchemes.Describe(scheme);
-            _controlsHelp.text = "Pausa: Escape\nDebug: F1 Auto-Play, F2 reiniciar, F3 pausa, F4 modo, F5 Modo Punk, F6 debuff, +/- latencia";
+            _controlsHelp.text = "Pausa: Escape\nDebug: F1 Auto-Play, F2 reiniciar, F3 pausa, F4 modo, F5/P Modo Punk, F6/B debuff, V Inmortal, +/- latencia";
         }
 
         private void OnDisable()
@@ -100,6 +103,7 @@ namespace DiosPunk.Flow
             if (_sfxVolume != null) _sfxVolume.SetValueWithoutNotify(GameSettings.SfxVolume);
             _fullscreen.SetIsOnWithoutNotify(Screen.fullScreen);
             _reduceEffects.SetIsOnWithoutNotify(GameSettings.ReduceVisualEffects);
+            _immortal.SetIsOnWithoutNotify(GameSettings.ImmortalMode);
 
             if (_latencyLabel != null)
             {

@@ -25,6 +25,10 @@ namespace DiosPunk.Rhythm
         [SerializeField] private Color _punkChargingColor = new Color(0.85f, 0.1f, 0.1f, 1f);
         [SerializeField] private Color _punkActiveColor = new Color(1f, 0.85f, 0.1f, 1f);
 
+        [Header("Modo Inmortal")]
+        [Tooltip("Indicador discreto sobre la barra de vida; visible solo con el Modo Inmortal activo.")]
+        [SerializeField] private GameObject _immortalIndicator;
+
         private const string PunkLabelIdle = "MODO PUNK";
         private const string PunkLabelActive = "MODO PUNK ACTIVO!";
 
@@ -35,7 +39,9 @@ namespace DiosPunk.Rhythm
             _session.Score.Changed += OnScoreChanged;
             _session.Health.Changed += OnHealthChanged;
             _session.Punk.BarChanged += OnPunkBarChanged;
+            GameSettings.ImmortalModeChanged += OnImmortalChanged;
 
+            OnImmortalChanged(GameSettings.ImmortalMode);
             OnPunkBarChanged(_session.Punk.Bar, _session.Punk.IsActive);
             OnScoreChanged(_session.Score.Score, _session.Score.Multiplier, _session.Score.Combo);
             OnHealthChanged(_session.Health.Current, _session.Health.Max);
@@ -46,6 +52,12 @@ namespace DiosPunk.Rhythm
             _session.Score.Changed -= OnScoreChanged;
             _session.Health.Changed -= OnHealthChanged;
             _session.Punk.BarChanged -= OnPunkBarChanged;
+            GameSettings.ImmortalModeChanged -= OnImmortalChanged;
+        }
+
+        private void OnImmortalChanged(bool immortal)
+        {
+            if (_immortalIndicator != null) _immortalIndicator.SetActive(immortal);
         }
 
         private void OnPunkBarChanged(float bar, bool active)

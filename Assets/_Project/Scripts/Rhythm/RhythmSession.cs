@@ -62,6 +62,7 @@ namespace DiosPunk.Rhythm
             Punk.Configure(_punkMissCharge, _punkPerfectCharge, _punkGoodCharge, _punkActiveSeconds);
             Debuffs.Configure(_debuffInterval, _debuffDuration, _debuffLead);
             Debuffs.SetAbsorber(Punk.TryAbsorbDebuff);
+            Health.ImmortalMode = GameSettings.ImmortalMode;
             ResetAll();
         }
 
@@ -85,7 +86,11 @@ namespace DiosPunk.Rhythm
             Health.Depleted += OnDepleted;
             Punk.Activated += OnPunkActivated;
             Punk.Deactivated += OnPunkDeactivated;
+            GameSettings.ImmortalModeChanged += OnImmortalChanged;
+            Health.ImmortalMode = GameSettings.ImmortalMode;
         }
+
+        private void OnImmortalChanged(bool immortal) => Health.ImmortalMode = immortal;
 
         private void OnDisable()
         {
@@ -95,6 +100,7 @@ namespace DiosPunk.Rhythm
             Health.Depleted -= OnDepleted;
             Punk.Activated -= OnPunkActivated;
             Punk.Deactivated -= OnPunkDeactivated;
+            GameSettings.ImmortalModeChanged -= OnImmortalChanged;
         }
 
         private void Update()

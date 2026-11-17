@@ -374,6 +374,12 @@ namespace DiosPunk.Rhythm.Editor
                 new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(6f, 0f), new Vector2(508f, 30f), Image.Type.Filled);
             ConfigureFill(healthFill, 1f);
 
+            // Indicador discreto del Modo Inmortal sobre la barra de vida (se activa por script).
+            TMP_Text immortalText = FindOrCreateText(healthBar, "ImmortalIndicator", "MODO INMORTAL", 26f, TextAlignmentOptions.Center,
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(500f, 30f), new Color(0.05f, 0.05f, 0.05f, 1f));
+            immortalText.fontStyle = FontStyles.Bold;
+            immortalText.gameObject.SetActive(false);
+
             // Progreso de la pista (arriba centro, bajo la vida): cinta con aguja + contador "mm:ss / mm:ss"
             Image progressPanel = FindOrCreateImage(ui, "SongProgressPanel", panelSprite, Color.white,
                 new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -84f), new Vector2(540f, 84f), Image.Type.Sliced);
@@ -415,7 +421,7 @@ namespace DiosPunk.Rhythm.Editor
             var presenter = GetOrAdd<RhythmHudPresenter>(presenterGo);
             SetRefs(presenter, ("_session", session), ("_scoreText", scoreText), ("_multiplierText", multiplierText),
                 ("_healthFill", healthFill), ("_accuracyText", accuracyText),
-                ("_punkFill", punkFill), ("_punkLabel", punkLabel));
+                ("_punkFill", punkFill), ("_punkLabel", punkLabel), ("_immortalIndicator", immortalText.gameObject));
 
             var debuffVisuals = GetOrAdd<RhythmDebuffVisuals>(track);
             SetRefs(debuffVisuals, ("_session", session), ("_shakeTarget", track.transform),

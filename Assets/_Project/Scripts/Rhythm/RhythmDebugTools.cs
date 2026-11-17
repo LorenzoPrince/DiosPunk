@@ -9,7 +9,8 @@ namespace DiosPunk.Rhythm
     /// <summary>
     /// Hotkeys de testeo, resumen en consola y monitoreo de GC.
     ///   F1 Auto-Play on/off · F2 reiniciar · F3 pausa/reanudar · F4 cambiar modo del bot ·
-    ///   +/- (numpad o fila numérica) LatencyOffsetMs en pasos de 5 ms.
+    ///   +/- (numpad o fila numérica) LatencyOffsetMs en pasos de 5 ms ·
+    ///   F5 o P: Modo Punk al 100 % · F6 o B: debuff / proyectil del NPC · V: Modo Inmortal on/off.
     /// Resumen en consola al terminar la canción y al pausar.
     /// GC: usa ProfilerRecorder("GC Allocated In Frame"). En el Editor puede incluir allocations del propio
     /// editor (Inspector/Game view); para la cifra definitiva usar el Profiler o un Development Build.
@@ -47,8 +48,9 @@ namespace DiosPunk.Rhythm
                 CreateAction("<Keyboard>/f4", null, CycleMode),
                 CreateAction("<Keyboard>/numpadPlus", "<Keyboard>/equals", () => AdjustLatency(_latencyStepMs)),
                 CreateAction("<Keyboard>/numpadMinus", "<Keyboard>/minus", () => AdjustLatency(-_latencyStepMs)),
-                CreateAction("<Keyboard>/f5", null, ForcePunk),
-                CreateAction("<Keyboard>/f6", null, ForceDebuff),
+                CreateAction("<Keyboard>/f5", "<Keyboard>/p", ForcePunk),
+                CreateAction("<Keyboard>/f6", "<Keyboard>/b", ForceDebuff),
+                CreateAction("<Keyboard>/v", null, ToggleImmortal),
             };
         }
 
@@ -115,13 +117,23 @@ namespace DiosPunk.Rhythm
             _autoPlayer.Mode = (AutoPlayMode)(((int)_autoPlayer.Mode + 1) % count);
         }
 
-        /// <summary>F5: llena la barra y activa el Modo Punk.</summary>
+        /// <summary>
+        /// V: alterna el Modo Inmortal al instante. Solo cambia el estado de la sesión (no se guarda en progress.json):
+        /// la preferencia persistente se elige en Opciones. El indicador del HUD y el texto de estado se actualizan.
+        /// </summary>
+        private void ToggleImmortal()
+        {
+            GameSettings.ImmortalMode = !GameSettings.ImmortalMode;
+            RefreshStatus();
+        }
+
+        /// <summary>F5 / P: llena la barra y activa el Modo Punk.</summary>
         private void ForcePunk()
         {
             if (_session != null && _track.IsRunning) _session.Punk.ForceActivate();
         }
 
-        /// <summary>F6: dispara un debuff ahora (lo absorbe el escudo si el Modo Punk está activo).</summary>
+        /// <summary>F6 / B: dispara un debuff ahora (lo absorbe el escudo si el Modo Punk está activo).</summary>
         private void ForceDebuff()
         {
             if (_session != null && _track.IsRunning) _session.Debuffs.TriggerNow(_track.Clock.SongTime);
@@ -169,7 +181,8 @@ namespace DiosPunk.Rhythm
             _statusText.text =
                 "AutoPlay: " + auto + "  [F1 on/off, F4 modo]\n" +
                 "Latency offset: " + _track.Clock.LatencyOffsetMs.ToString("0") + " ms  [+/-]" + paused + "\n" +
-                "[F2 reiniciar, F3 pausa, F5 Modo Punk, F6 debuff]";
+                "Inmortal: " + (GameSettings.ImmortalMode ? "ON" : "OFF") + "  [V]\n" +
+                "[F2 reiniciar, F3 pausa, F5/P Modo Punk, F6/B debuff]";
             _skipFrames = 2;
         }
 

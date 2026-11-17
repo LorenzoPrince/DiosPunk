@@ -22,6 +22,9 @@ namespace DiosPunk.Flow
 
         /// <summary>Esquema de teclas (valor de ControlScheme). Por defecto 3 = Todos; un progress.json viejo sin el campo lo conserva.</summary>
         public int controlScheme = 3;
+
+        /// <summary>Modo Inmortal / No Fail (accesibilidad y práctica). Por defecto apagado.</summary>
+        public bool immortalMode;
     }
 
     /// <summary>Progreso local en JSON (Application.persistentDataPath/progress.json). Solo I/O en eventos, nunca por frame.</summary>
@@ -45,6 +48,15 @@ namespace DiosPunk.Flow
         /// lo tome por una partida guardada y se saltara la calibración. Si no existe, queda en memoria y se
         /// escribe con el primer guardado.
         /// </summary>
+        public bool ImmortalMode => _data.immortalMode;
+
+        /// <summary>Guarda la preferencia del Modo Inmortal (mismas reglas que SetControlScheme: no crea el archivo).</summary>
+        public void SetImmortalMode(bool enabled)
+        {
+            _data.immortalMode = enabled;
+            if (FileExists) Save();
+        }
+
         public void SetControlScheme(ControlScheme scheme)
         {
             _data.controlScheme = (int)scheme;

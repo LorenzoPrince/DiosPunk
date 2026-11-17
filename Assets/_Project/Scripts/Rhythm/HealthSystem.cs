@@ -19,6 +19,12 @@ namespace DiosPunk.Rhythm
         /// <summary>Daño de una pulsación fuera de tiempo (juicio Bad): leve, para no castigar el casi-acierto.</summary>
         public float BadDamage { get; private set; } = 5f;
 
+        /// <summary>
+        /// Modo Inmortal / No Fail (accesibilidad y práctica): los fallos se registran y rompen el combo como siempre,
+        /// pero la vida nunca baja de 1 HP, así que no se emite Depleted ni hay Game Over.
+        /// </summary>
+        public bool ImmortalMode { get; set; }
+
         public float Normalized => Max > 0f ? Current / Max : 0f;
         public bool IsDepleted => Current <= 0f;
 
@@ -59,6 +65,7 @@ namespace DiosPunk.Rhythm
             float next = Current + delta;
             if (next > Max) next = Max;
             if (next < 0f) next = 0f;
+            if (ImmortalMode && next < 1f) next = Current < 1f ? Current : 1f; // piso de 1 HP
             if (next == Current) return;
 
             Current = next;

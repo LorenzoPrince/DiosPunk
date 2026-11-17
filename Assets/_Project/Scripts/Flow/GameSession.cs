@@ -46,8 +46,16 @@ namespace DiosPunk.Flow
 
                 // Y el esquema de teclas elegido.
                 GameSettings.ControlScheme = s_progress.ControlScheme;
+                GameSettings.ImmortalMode = s_progress.ImmortalMode;
             }
             return s_progress;
+        }
+
+        /// <summary>Aplica el Modo Inmortal y lo guarda en progress.json (si ya hay progreso cargado).</summary>
+        public static void SetImmortalMode(bool enabled)
+        {
+            GameSettings.ImmortalMode = enabled;
+            s_progress?.SetImmortalMode(enabled);
         }
 
         /// <summary>Aplica un esquema de teclas y lo guarda en progress.json (si ya hay progreso cargado).</summary>
