@@ -43,13 +43,14 @@ namespace DiosPunk.Rhythm.Editor
             GameObject tutorial = FindOrCreateRect(root, "TutorialPanel", phasePos, phaseSize);
             Color[] laneColors = LaneStyle.CreateDefaultColors();
             var boxes = new Image[RhythmInputReader.LaneCount];
+            var keyTexts = new TMP_Text[RhythmInputReader.LaneCount];
             for (int i = 0; i < boxes.Length; i++)
             {
                 Color c = laneColors[i];
                 c.a = 0.35f;
                 boxes[i] = FindOrCreateImage(tutorial.transform, "Lane" + i, panel, c, Center, Center,
                     new Vector2((i - 1.5f) * 260f, 100f), new Vector2(220f, 220f), Image.Type.Sliced);
-                FindOrCreateText(boxes[i].transform, "Key", KeyLabels[i], 50f, TextAlignmentOptions.Center, Center, Center,
+                keyTexts[i] = FindOrCreateText(boxes[i].transform, "Key", ControlSchemes.GetLaneLabel(ControlScheme.All, i), 50f, TextAlignmentOptions.Center, Center, Center,
                     Vector2.zero, new Vector2(220f, 220f), Color.black);
             }
             TMP_Text status = FindOrCreateText(tutorial.transform, "StatusText", "", 44f, TextAlignmentOptions.Center,
@@ -83,6 +84,7 @@ namespace DiosPunk.Rhythm.Editor
                 ("_progressText", progress), ("_resultText", resultText), ("_clickSourceA", sources[0]),
                 ("_clickSourceB", sources[1]), ("_clickClip", fx.Click), ("_tutorialStatus", status));
             SetRefArray(screen, "_laneBoxes", boxes);
+            SetRefArray(screen, "_laneKeyLabels", keyTexts);
 
             calibrating.SetActive(false);
             result.SetActive(false);

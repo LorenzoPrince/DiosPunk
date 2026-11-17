@@ -43,8 +43,18 @@ namespace DiosPunk.Flow
 
                 // La latencia calibrada se aplica apenas se conoce el progreso.
                 if (s_progress.Calibrated) GameSettings.LatencyOffsetMs = s_progress.LatencyOffsetMs;
+
+                // Y el esquema de teclas elegido.
+                GameSettings.ControlScheme = s_progress.ControlScheme;
             }
             return s_progress;
+        }
+
+        /// <summary>Aplica un esquema de teclas y lo guarda en progress.json (si ya hay progreso cargado).</summary>
+        public static void SetControlScheme(ControlScheme scheme)
+        {
+            GameSettings.ControlScheme = scheme;
+            s_progress?.SetControlScheme(scheme);
         }
 
         public static bool ConsumeOpenLevelSelect()

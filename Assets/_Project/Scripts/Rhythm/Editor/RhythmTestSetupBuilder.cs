@@ -267,6 +267,7 @@ namespace DiosPunk.Rhythm.Editor
 
             // --- Receptáculos (forma de la nota, color del carril, translúcidos) y pads de feedback ---
             var pads = new SpriteRenderer[RhythmInputReader.LaneCount];
+            var keyLabels = new TextMeshPro[RhythmInputReader.LaneCount];
             for (int lane = 0; lane < pads.Length; lane++)
             {
                 float x = (lane - (pads.Length - 1) * 0.5f) * LaneSpacing;
@@ -280,10 +281,13 @@ namespace DiosPunk.Rhythm.Editor
                 pads[lane] = FindOrCreateSprite(track.transform, "LanePad_" + lane, noteSprite, Color.clear,
                     new Vector3(x, HitLineY, 0f), new Vector3(1.15f, 1.3f, 1f), 6);
 
-                // Indicación de las teclas bajo el receptáculo (teclado A S D F / flechas)
-                FindOrCreateWorldLabel(track.transform, "KeyLabel_" + lane, KeyLabels[lane],
-                    new Vector3(x, HitLineY - 0.62f, 0f));
+                // Indicación de las teclas bajo el receptáculo; LaneKeyLabels la actualiza según el esquema elegido.
+                keyLabels[lane] = FindOrCreateWorldLabel(track.transform, "KeyLabel_" + lane,
+                    ControlSchemes.GetLaneLabel(ControlScheme.All, lane), new Vector3(x, HitLineY - 0.62f, 0f));
             }
+
+            var laneKeyLabels = GetOrAdd<LaneKeyLabels>(track);
+            SetRefArray(laneKeyLabels, "_labels", keyLabels);
 
             var feedback = GetOrAdd<RhythmHitFeedback>(track);
             SetRefs(feedback, ("_track", controller), ("_input", input));
@@ -446,9 +450,6 @@ namespace DiosPunk.Rhythm.Editor
             T c = go.GetComponent<T>();
             return c != null ? c : go.AddComponent<T>();
         }
-
-        // Teclas por carril: 0 rojo, 1 amarillo, 2 verde, 3 azul (letra / flecha)
-        private static readonly string[] KeyLabels = { "A / ←", "S / ↓", "D / ↑", "F / →" };
 
         private static TextMeshPro FindOrCreateWorldLabel(Transform parent, string name, string text, Vector3 localPosition)
         {

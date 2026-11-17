@@ -20,6 +20,22 @@ namespace DiosPunk.Rhythm
         /// <summary>Calibración de latencia (ms) que SongClock toma al iniciar. Positivo = el jugador pulsa tarde.</summary>
         public static float LatencyOffsetMs = DefaultLatencyOffsetMs;
 
+        private static ControlScheme s_controlScheme = ControlScheme.All;
+
+        /// <summary>Esquema de teclas activo. Al cambiarlo se notifica por evento (input y rótulos se actualizan solos).</summary>
+        public static ControlScheme ControlScheme
+        {
+            get => s_controlScheme;
+            set
+            {
+                if (s_controlScheme == value) return;
+                s_controlScheme = value;
+                ControlSchemeChanged?.Invoke(value);
+            }
+        }
+
+        public static event System.Action<ControlScheme> ControlSchemeChanged;
+
         /// <summary>Volumen de efectos de sonido (0..1), independiente de la música. Lo ajusta el slider de Opciones.</summary>
         public static float SfxVolume = 1f;
 
@@ -30,6 +46,8 @@ namespace DiosPunk.Rhythm
             ReduceVisualEffects = false;
             LatencyOffsetMs = DefaultLatencyOffsetMs;
             SfxVolume = 1f;
+            s_controlScheme = ControlScheme.All;
+            ControlSchemeChanged = null;
         }
     }
 }

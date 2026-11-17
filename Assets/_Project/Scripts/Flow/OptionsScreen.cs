@@ -2,6 +2,7 @@ using System;
 using DiosPunk.Rhythm;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace DiosPunk.Flow
@@ -18,6 +19,14 @@ namespace DiosPunk.Flow
         [SerializeField] private Slider _volume;
         [Tooltip("Volumen de efectos de sonido (GameSettings.SfxVolume), independiente del volumen general.")]
         [SerializeField] private Slider _sfxVolume;
+        [Header("Controles")]
+        [SerializeField] private Button _schemePrev;
+        [SerializeField] private Button _schemeNext;
+        [SerializeField] private TMP_Text _schemeValue;
+        [SerializeField] private TMP_Text _schemeDetail;
+        [Tooltip("Texto de ayuda de la pestaña Controles; se actualiza con el esquema elegido.")]
+        [SerializeField] private TMP_Text _controlsHelp;
+
         [SerializeField] private Toggle _fullscreen;
         [SerializeField] private Toggle _reduceEffects;
         [SerializeField] private Button _back;
@@ -43,6 +52,46 @@ namespace DiosPunk.Flow
             _reduceEffects.onValueChanged.AddListener(value => GameSettings.ReduceVisualEffects = value);
             _back.onClick.AddListener(() => BackRequested?.Invoke());
             if (_recalibrate != null) _recalibrate.onClick.AddListener(() => RecalibrateRequested?.Invoke());
+
+            _schemePrev.onClick.AddListener(() => CycleScheme(-1));
+            _schemeNext.onClick.AddListener(() => CycleScheme(1));
+
+            // Flechas Izquierda/Derecha cambian el esquema mientras la pestaña Controles está visible.
+            _schemeLeft = new InputAction("SchemeLeft", InputActionType.Button, "<Keyboard>/leftArrow");
+            _schemeLeft.performed += _ => CycleScheme(-1);
+            _schemeRight = new InputAction("SchemeRight", InputActionType.Button, "<Keyboard>/rightArrow");
+            _schemeRight.performed += _ => CycleScheme(1);
+        }
+
+        private const int ControlsTabIndex = 2;
+        private InputAction _schemeLeft;
+        private InputAction _schemeRight;
+
+        private void CycleScheme(int step)
+        {
+            // Aplica, notifica (input y rótulos de la pista) y guarda en progress.json de inmediato.
+            GameSession.SetControlScheme(ControlSchemes.Cycle(GameSettings.ControlScheme, step));
+            RefreshScheme();
+        }
+
+        private void RefreshScheme()
+        {
+            ControlScheme scheme = GameSettings.ControlScheme;
+            _schemeValue.text = ControlSchemes.GetName(scheme);
+            _schemeDetail.text = ControlSchemes.Describe(scheme);
+            _controlsHelp.text = "Pausa: Escape\nDebug: F1 Auto-Play, F2 reiniciar, F3 pausa, F4 modo, F5 Modo Punk, F6 debuff, +/- latencia";
+        }
+
+        private void OnDisable()
+        {
+            _schemeLeft.Disable();
+            _schemeRight.Disable();
+        }
+
+        private void OnDestroy()
+        {
+            _schemeLeft?.Dispose();
+            _schemeRight?.Dispose();
         }
 
         private void OnEnable()
@@ -58,6 +107,7 @@ namespace DiosPunk.Flow
                 _latencyLabel.text = "Latencia actual: " + (latency >= 0f ? "+" : string.Empty) + latency.ToString("F0") + " ms";
             }
 
+            RefreshScheme();
             ShowTab(0);
         }
 
@@ -76,6 +126,9 @@ namespace DiosPunk.Flow
         private void ShowTab(int index)
         {
             for (int i = 0; i < _tabPages.Length; i++) _tabPages[i].SetActive(i == index);
+
+            if (index == ControlsTabIndex) { _schemeLeft.Enable(); _schemeRight.Enable(); }
+            else { _schemeLeft.Disable(); _schemeRight.Disable(); }
         }
     }
 }

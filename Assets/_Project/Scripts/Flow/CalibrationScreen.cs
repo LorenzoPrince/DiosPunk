@@ -53,13 +53,15 @@ namespace DiosPunk.Flow
 
         [Header("Tutorial de controles")]
         [SerializeField] private Image[] _laneBoxes = new Image[RhythmInputReader.LaneCount];
+        [Tooltip("Rótulo de tecla de cada carril; refleja el esquema elegido en Opciones.")]
+        [SerializeField] private TMP_Text[] _laneKeyLabels = new TMP_Text[RhythmInputReader.LaneCount];
         [SerializeField] private TMP_Text _tutorialStatus;
 
         private const string AcceptLabelNewGame = "ACEPTAR";
         private const string AcceptLabelRecalibrate = "GUARDAR";
 
         private InputAction _anyKey;
-        private InputAction[] _laneActions;
+        private LaneInputSet _laneSet;
         private readonly bool[] _laneDone = new bool[RhythmInputReader.LaneCount];
         private Color[] _laneColors;
 
@@ -122,16 +124,8 @@ namespace DiosPunk.Flow
             _anyKey = new InputAction("CalibrationPress", InputActionType.Button, "<Keyboard>/anyKey");
             _anyKey.performed += ctx => RegisterPress(ctx.time);
 
-            _laneActions = new InputAction[RhythmInputReader.LaneCount];
-            for (int i = 0; i < _laneActions.Length; i++)
-            {
-                int lane = i;
-                var action = new InputAction("TutorialLane" + lane, InputActionType.Button);
-                action.AddBinding(RhythmInputReader.PrimaryKeys[lane]);
-                action.AddBinding(RhythmInputReader.ArrowKeys[lane]);
-                action.performed += _ => RegisterLanePress(lane);
-                _laneActions[i] = action;
-            }
+            // Tutorial de carriles: acepta el esquema de teclas elegido (ASDF, DFJK, flechas o ambos).
+            _laneSet = new LaneInputSet((lane, time) => RegisterLanePress(lane));
         }
 
         private void OnEnable()
@@ -143,7 +137,7 @@ namespace DiosPunk.Flow
         private void OnDisable()
         {
             _anyKey.Disable();
-            for (int i = 0; i < _laneActions.Length; i++) _laneActions[i].Disable();
+            _laneSet.Disable();
             if (_clickSourceA != null) _clickSourceA.Stop();
             if (_clickSourceB != null) _clickSourceB.Stop();
         }
@@ -151,8 +145,7 @@ namespace DiosPunk.Flow
         private void OnDestroy()
         {
             _anyKey?.Dispose();
-            if (_laneActions == null) return;
-            for (int i = 0; i < _laneActions.Length; i++) _laneActions[i].Dispose();
+            _laneSet?.Dispose();
         }
 
         // ---------- Fases ----------
@@ -166,10 +159,7 @@ namespace DiosPunk.Flow
             _tutorialPanel.SetActive(phase == Phase.Tutorial);
 
             if (phase == Phase.Calibrating) _anyKey.Enable(); else _anyKey.Disable();
-            for (int i = 0; i < _laneActions.Length; i++)
-            {
-                if (phase == Phase.Tutorial) _laneActions[i].Enable(); else _laneActions[i].Disable();
-            }
+            if (phase == Phase.Tutorial) _laneSet.Enable(); else _laneSet.Disable();
         }
 
         private void StartCalibration()
@@ -204,7 +194,14 @@ namespace DiosPunk.Flow
                 _laneBoxes[i].color = c;
             }
             _finishTutorial.interactable = false;
-            _tutorialStatus.text = "Pulsa cada carril (A S D F o flechas): 0 / " + _laneDone.Length;
+
+            // Rótulos de tecla del esquema elegido.
+            ControlScheme scheme = GameSettings.ControlScheme;
+            for (int i = 0; i < _laneKeyLabels.Length && i < RhythmInputReader.LaneCount; i++)
+            {
+                if (_laneKeyLabels[i] != null) _laneKeyLabels[i].text = ControlSchemes.GetLaneLabel(scheme, i);
+            }
+            _tutorialStatus.text = TutorialProgressText();
             ShowPhase(Phase.Tutorial);
         }
 
@@ -334,8 +331,13 @@ namespace DiosPunk.Flow
             }
             else
             {
-                _tutorialStatus.text = "Pulsa cada carril (A S D F o flechas): " + _lanesDone + " / " + _laneDone.Length;
+                _tutorialStatus.text = TutorialProgressText();
             }
+        }
+
+        private string TutorialProgressText()
+        {
+            return "Pulsa cada carril (" + ControlSchemes.Describe(GameSettings.ControlScheme) + "): " + _lanesDone + " / " + _laneDone.Length;
         }
     }
 }

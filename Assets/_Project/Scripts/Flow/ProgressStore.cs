@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using DiosPunk.Rhythm;
 using UnityEngine;
 
 namespace DiosPunk.Flow
@@ -18,6 +19,9 @@ namespace DiosPunk.Flow
 
         /// <summary>true si se completó el juego (nivel 5, epílogo y créditos).</summary>
         public bool gameCompleted;
+
+        /// <summary>Esquema de teclas (valor de ControlScheme). Por defecto 3 = Todos; un progress.json viejo sin el campo lo conserva.</summary>
+        public int controlScheme = 3;
     }
 
     /// <summary>Progreso local en JSON (Application.persistentDataPath/progress.json). Solo I/O en eventos, nunca por frame.</summary>
@@ -32,6 +36,20 @@ namespace DiosPunk.Flow
         public bool Calibrated => _data.calibrated;
         public float LatencyOffsetMs => _data.latencyOffsetMs;
         public bool GameCompleted => _data.gameCompleted;
+
+        public ControlScheme ControlScheme =>
+            (ControlScheme)Math.Clamp(_data.controlScheme, 0, ControlSchemes.Count - 1);
+
+        /// <summary>
+        /// Guarda la preferencia de teclas. Solo escribe el archivo si ya existe: crearlo aquí haría que "JUGAR"
+        /// lo tome por una partida guardada y se saltara la calibración. Si no existe, queda en memoria y se
+        /// escribe con el primer guardado.
+        /// </summary>
+        public void SetControlScheme(ControlScheme scheme)
+        {
+            _data.controlScheme = (int)scheme;
+            if (FileExists) Save();
+        }
 
         private ProgressStore(ProgressData data, int levelCount)
         {

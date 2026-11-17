@@ -441,9 +441,20 @@ namespace DiosPunk.Rhythm.Editor
             Toggle fullscreen = FindOrCreateToggle(pages[1].transform, "FullscreenToggle", "Pantalla completa",
                 new Vector2(0f, 40f), panel, white);
 
-            FindOrCreateText(pages[2].transform, "ControlsText",
-                "Carriles: A  S  D  F  o  Flechas (Izq, Abajo, Arriba, Der)\nPausa: Escape\nDebug: F1 Auto-Play, F2 reiniciar, F3 pausa, F4 modo, F5 Modo Punk, F6 debuff, +/- latencia",
-                38f, TextAlignmentOptions.Center, Center, Center, Vector2.zero, new Vector2(1000f, 300f), Color.black);
+            // Selector de esquema de teclas: « ESQUEMA » con clic o con las flechas Izquierda/Derecha.
+            FindOrCreateText(pages[2].transform, "SchemeTitle", "Esquema de teclas", 44f, TextAlignmentOptions.Center,
+                Center, Center, new Vector2(0f, 190f), new Vector2(900f, 70f), Color.black);
+            Button schemePrev = CreateButton(pages[2].transform, "SchemePrevButton", "«", new Vector2(-330f, 100f), new Vector2(120f, 90f), panel);
+            Button schemeNext = CreateButton(pages[2].transform, "SchemeNextButton", "»", new Vector2(330f, 100f), new Vector2(120f, 90f), panel);
+            TMP_Text schemeValue = FindOrCreateText(pages[2].transform, "SchemeValue", "TODOS", 64f, TextAlignmentOptions.Center,
+                Center, Center, new Vector2(0f, 100f), new Vector2(480f, 90f), Red);
+            schemeValue.fontStyle = FontStyles.Bold;
+            TMP_Text schemeDetail = FindOrCreateText(pages[2].transform, "SchemeDetail", "", 40f, TextAlignmentOptions.Center,
+                Center, Center, new Vector2(0f, 25f), new Vector2(900f, 60f), Color.black);
+            FindOrCreateText(pages[2].transform, "SchemeHint", "Clic en « » o flechas Izquierda / Derecha. Se guarda al instante.", 28f,
+                TextAlignmentOptions.Center, Center, Center, new Vector2(0f, -35f), new Vector2(1000f, 50f), new Color(0.35f, 0.35f, 0.35f, 1f));
+            TMP_Text controlsHelp = FindOrCreateText(pages[2].transform, "ControlsText", "",
+                32f, TextAlignmentOptions.Center, Center, Center, new Vector2(0f, -150f), new Vector2(1000f, 200f), Color.black);
 
             Toggle reduce = FindOrCreateToggle(pages[3].transform, "ReduceEffectsToggle",
                 "Reducir intensidad de efectos visuales", new Vector2(0f, 40f), panel, white);
@@ -453,6 +464,8 @@ namespace DiosPunk.Rhythm.Editor
             var screen = GetOrAdd<OptionsScreen>(root.gameObject);
             SetRefArray(screen, "_tabButtons", tabs);
             SetRefArray(screen, "_tabPages", pages);
+            SetRefs(screen, ("_schemePrev", schemePrev), ("_schemeNext", schemeNext), ("_schemeValue", schemeValue),
+                ("_schemeDetail", schemeDetail), ("_controlsHelp", controlsHelp));
             SetRefs(screen, ("_volume", volume), ("_sfxVolume", sfxVolume), ("_fullscreen", fullscreen), ("_reduceEffects", reduce), ("_back", back),
                 ("_recalibrate", recalibrate), ("_latencyLabel", latencyLabel));
             return screen;
