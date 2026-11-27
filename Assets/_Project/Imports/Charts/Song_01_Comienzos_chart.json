@@ -1,11 +1,12 @@
 {
  "_formato": "Dios Punk chart v1. 'beat' es la fuente de verdad: tiempo = firstBeatSeconds + beat*60/bpm + globalOffsetMs/1000. 'time' viene precalculado (segundos desde el primer sample del audio) por si se carga sin importer. lane: 0 rojo, 1 amarillo, 2 verde, 3 azul.",
+ "_ajusteSincronia": "globalOffsetMs: negativo = las notas caen ANTES (adelanta), positivo = DESPUES. -55 compensa el retardo del MP3 y el adelanto de la guitarra. Para ajuste fino mover de a +-10 ms y reimportar (menu DiosPunk/Scenes/Build MainMenu + Gameplay o CONTEXT del SongData > Importar chart JSON).",
  "songResource": "Song_01_Comienzos",
  "title": "Volver a soñar",
  "audioBase": "Nivel 1 MUESTRA.mp3 (mezcla completa = Mx_Nivel1bk_41 + Mx_Nivel1p_42)",
  "bpm": 101.0,
  "firstBeatSeconds": 2.4209,
- "globalOffsetMs": 0.0,
+ "globalOffsetMs": -55.0,
  "difficulty": "Nivel 1 (equivalente Easy/Medium de Guitar Hero)",
  "notes": [
   {

@@ -34,7 +34,9 @@ namespace DiosPunk.Flow
         [Header("Mecanografiado")]
         [SerializeField, Min(1f)] private float _charsPerSecond = 45f;
         [Tooltip("Cada cuántos caracteres revelados suena la birome (#44 a #48).")]
-        [SerializeField, Min(1)] private int _charsPerPenSound = 3;
+        [SerializeField, Min(1)] private int _charsPerPenSound = 4;
+        [Tooltip("Volumen del sonido de tipeo (multiplica al de SfxLibrary): bajo para que no sature al repetirse.")]
+        [SerializeField, Range(0.05f, 1f)] private float _penVolume = 0.14f;
 
         private DialogueData _data;
         private int _index;
@@ -43,6 +45,10 @@ namespace DiosPunk.Flow
         private float _revealed;
         private int _totalChars;
         private int _lastPenChar;
+
+        // true desde el instante en que se decide cerrar (Saltar, Continuar, respuesta, ocultar o destruir el panel):
+        // desde ahí el tipeo no puede disparar ni un trazo más, ni siquiera en el mismo frame.
+        private bool _isClosing;
 
         /// <summary>Se terminó, se saltó o se eligió una respuesta.</summary>
         public event Action Finished;
@@ -58,6 +64,20 @@ namespace DiosPunk.Flow
             }
         }
 
+        // Al ocultarse el panel (cambio de pantalla, carga de escena) se corta cualquier trazo pendiente.
+        private void OnDisable() => CloseTyping();
+
+        private void OnDestroy() => CloseTyping();
+
+        /// <summary>Apaga el tipeo ANTES de cualquier cambio de estado y corta la birome (y el hover que pudiera estar sonando).</summary>
+        private void CloseTyping()
+        {
+            _isClosing = true;
+            _typing = false;
+            SoundEffectManager.Stop(SfxId.Pen);
+            SoundEffectManager.Stop(SfxId.UiHover);
+        }
+
         public void Begin(LevelData level) => BeginDialogue(level.Title, level.Dialogue);
 
         /// <summary>Muestra cualquier DialogueData (escena pre-nivel o epílogo) bajo el título indicado.</summary>
@@ -68,6 +88,7 @@ namespace DiosPunk.Flow
             _data = data;
             _index = 0;
             _finished = false;
+            _isClosing = false; // diálogo nuevo: el tipeo vuelve a estar permitido
             _titleText.text = title;
             _choicesRoot.SetActive(false);
             _advance.gameObject.SetActive(true);
@@ -85,7 +106,7 @@ namespace DiosPunk.Flow
 
         private void Update()
         {
-            if (!_typing) return;
+            if (!_typing || _isClosing) return;
 
             _revealed += Time.unscaledDeltaTime * _charsPerSecond;
             int visible = (int)_revealed;
@@ -98,7 +119,7 @@ namespace DiosPunk.Flow
                 if (visible - _lastPenChar >= _charsPerPenSound)
                 {
                     _lastPenChar = visible;
-                    SoundEffectManager.Play(SfxId.Pen);
+                    SoundEffectManager.Play(SfxId.Pen, _penVolume); // el pitch varía ±0,05 por la entrada de SfxLibrary
                 }
             }
         }
@@ -130,6 +151,7 @@ namespace DiosPunk.Flow
         private void CompleteLine()
         {
             _typing = false;
+            SoundEffectManager.Stop(SfxId.Pen); // la línea se completó de golpe: se corta el trazo
             _bodyText.maxVisibleCharacters = int.MaxValue;
         }
 
@@ -185,7 +207,7 @@ namespace DiosPunk.Flow
         {
             if (_finished) return; // evita doble disparo por doble clic
             _finished = true;
-            _typing = false;
+            CloseTyping(); // Continuar / Saltar / respuesta: primero se apaga el tipeo, después se avisa al flujo
             _choicesRoot.SetActive(false);
             Finished?.Invoke();
         }

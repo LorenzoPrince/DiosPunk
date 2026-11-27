@@ -64,6 +64,9 @@ namespace DiosPunk.Rhythm
         public bool IsPlaying => _isPlaying;
         public bool IsPaused => _isPaused;
 
+        /// <summary>Instante dsp (AudioSettings.dspTime) del primer sample de la canción: SongTime 0.</summary>
+        public double SongStartDsp => _songStartDsp;
+
         /// <summary>true si la canción en curso tiene una segunda mezcla (stem del Modo Punk).</summary>
         public bool HasPunkStem => _hasPunkStem;
 
@@ -119,7 +122,8 @@ namespace DiosPunk.Rhythm
         /// Programa el audio con PlayScheduled y arranca el reloj. clip puede ser null (reloj mudo).
         /// punkStem es opcional: si se pasa, suena en sincronía con clip pero con volumen 0 hasta SetPunkStemActive(true).
         /// </summary>
-        public void Play(AudioClip clip, AudioClip punkStem = null)
+        /// <param name="leadInSeconds">Segundos hasta el primer sample del audio; 0 o menos = el valor del componente.</param>
+        public void Play(AudioClip clip, AudioClip punkStem = null, float leadInSeconds = 0f)
         {
             _audioSource.Stop();
             _punkSource.Stop();
@@ -129,7 +133,7 @@ namespace DiosPunk.Rhythm
             _offsetInitialized = false;
             SampleOffset(Time.realtimeSinceStartupAsDouble);
 
-            _songStartDsp = AudioSettings.dspTime + _startDelaySeconds;
+            _songStartDsp = AudioSettings.dspTime + (leadInSeconds > 0f ? leadInSeconds : _startDelaySeconds);
 
             _hasPunkStem = clip != null && punkStem != null;
             _punkBlend = 0f;

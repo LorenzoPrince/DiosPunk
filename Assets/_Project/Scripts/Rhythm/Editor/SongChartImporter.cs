@@ -91,8 +91,7 @@ namespace DiosPunk.EditorTools
             try { chart = JsonUtility.FromJson<ChartFile>(File.ReadAllText(path, Encoding.UTF8)); }
             catch (System.Exception e)
             {
-                error = "No se pudo leer el JSON:
-" + e.Message;
+                error = "No se pudo leer el JSON:\n" + e.Message;
                 return false;
             }
 

@@ -15,6 +15,10 @@ MonoBehaviour:
   _title: Lucha Interior (placeholder 140 BPM)
   _audioClip: {fileID: 8300000, guid: f44e3a313212d094b80058d04271d1af, type: 3}
   _punkStemClip: {fileID: 8300000, guid: 83086fc7c72a23f4b899dd809cd5f08f, type: 3}
+  _backingTrackClip: {fileID: 0}
+  _leadLineClip: {fileID: 0}
+  _leadInSeconds: 2
+  _useHitPlaceholderSfx: 1
   _bpm: 140
   _notes:
   - targetTimeDSP: 2

@@ -24,12 +24,19 @@ namespace DiosPunk.Rhythm
         [Tooltip("Cada cuántos aciertos seguidos festeja (#06-09). Si coincide con un grito, manda el festejo.")]
         [SerializeField, Min(5)] private int _cheerComboStep = 50;
 
+        [Header("Cuenta de inicio ('1, 2, 3, ¡VA!', #33)")]
+        [Tooltip("Cuántos beats antes de la primera nota cae el '¡VA!' (2 beats a 101 BPM = 1,19 s). El instante del '¡VA!' " +
+                 "dentro del clip es SfxEntry.cueSeconds de LevelStart en la SfxLibrary.")]
+        [SerializeField, Min(0f)] private float _countInBeats = 2f;
+
         private int _lastCombo;
 
         private void OnEnable()
         {
             _session.Track.NoteJudged += OnNoteJudged;
             _session.Track.SongStarted += OnSongStarted;
+            _session.Track.SongPaused += OnSongInterrupted;
+            _session.Track.SongStopped += OnSongInterrupted;
             _session.Debuffs.Incoming += OnIncoming;
             _session.Debuffs.Started += OnDebuffStarted;
             _session.Debuffs.Absorbed += OnAbsorbed;
@@ -43,6 +50,8 @@ namespace DiosPunk.Rhythm
         {
             _session.Track.NoteJudged -= OnNoteJudged;
             _session.Track.SongStarted -= OnSongStarted;
+            _session.Track.SongPaused -= OnSongInterrupted;
+            _session.Track.SongStopped -= OnSongInterrupted;
             _session.Debuffs.Incoming -= OnIncoming;
             _session.Debuffs.Started -= OnDebuffStarted;
             _session.Debuffs.Absorbed -= OnAbsorbed;
@@ -51,14 +60,29 @@ namespace DiosPunk.Rhythm
             _session.HealthDepleted -= OnHealthDepleted;
         }
 
-        private void OnSongStarted() => _lastCombo = 0;
+        private void OnSongStarted()
+        {
+            _lastCombo = 0;
 
-        private static void OnNoteJudged(HitType type, int lane, float deltaMs)
+            // "1, 2, 3, ¡VA!" sincronizado con el pulso de la canción: el ¡VA! cae _countInBeats beats antes de la primera
+            // nota (en el grid de beats del chart) y se programa con PlayScheduled sobre el mismo dspTime que el audio.
+            RhythmTrackController track = _session.Track;
+            if (track.TotalNotes == 0) return;
+            double beatSeconds = 60.0 / track.SongBpm;
+            double cueSongTime = track.FirstNoteTime - _countInBeats * beatSeconds;
+            SoundEffectManager.PlayAtCue(SfxId.LevelStart, track.Clock.SongStartDsp + cueSongTime);
+        }
+
+        // Pausa o corte: la cuenta de inicio no debe seguir sonando (ni quedar programada) sobre el menú.
+        private static void OnSongInterrupted() => SoundEffectManager.Stop(SfxId.LevelStart);
+
+        private void OnNoteJudged(HitType type, int lane, float deltaMs)
         {
             switch (type)
             {
-                case HitType.Perfect: SoundEffectManager.Play(SfxId.HitPerfect); break;
-                case HitType.Good: SoundEffectManager.Play(SfxId.HitGood); break;
+                // Los aciertos sintéticos (placeholder) solo suenan en niveles con metrónomo: con música real chocan con la banda.
+                case HitType.Perfect: if (_session.Track.UseHitPlaceholderSfx) SoundEffectManager.Play(SfxId.HitPerfect); break;
+                case HitType.Good: if (_session.Track.UseHitPlaceholderSfx) SoundEffectManager.Play(SfxId.HitGood); break;
                 case HitType.Miss: SoundEffectManager.Play(SfxId.Miss); break;
                 case HitType.Bad: SoundEffectManager.Play(SfxId.Miss, 0.6f); break;
             }

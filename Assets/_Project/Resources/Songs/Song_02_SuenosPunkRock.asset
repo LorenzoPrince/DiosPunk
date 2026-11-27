@@ -15,6 +15,10 @@ MonoBehaviour:
   _title: "Sue\xF1os Punk Rock (placeholder 110 BPM)"
   _audioClip: {fileID: 8300000, guid: 02ea90733719c9841b94f1c00ea8fb49, type: 3}
   _punkStemClip: {fileID: 8300000, guid: 612b88610265441478c6ebfc694b3e8e, type: 3}
+  _backingTrackClip: {fileID: 0}
+  _leadLineClip: {fileID: 0}
+  _leadInSeconds: 2
+  _useHitPlaceholderSfx: 1
   _bpm: 110
   _notes:
   - targetTimeDSP: 2

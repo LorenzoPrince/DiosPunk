@@ -141,6 +141,7 @@ namespace DiosPunk.Flow
 
         private void OnPreLevelFinished()
         {
+            StopNarrativeSounds();
             _preparation.Begin(CurrentLevel, _song);
             Machine.TryGoTo(GameState.SongPreparation);
         }
@@ -161,8 +162,9 @@ namespace DiosPunk.Flow
             }
             if (!Machine.TryGoTo(GameState.Gameplay)) return;
 
+            StopNarrativeSounds();
             if (_preLevelMusic != null) _preLevelMusic.Stop();
-            SoundEffectManager.Play(SfxId.LevelStart); // #33
+            // La cuenta "1, 2, 3, ¡VA!" (#33) la programa GameplaySfxBridge al iniciar la canción, sincronizada con la primera nota.
 
             // El cambio de estado ya activó el mundo de juego: cargar la canción y arrancar.
             // Velocidad del nivel x ajuste de dificultad elegido en la narrativa.
@@ -170,6 +172,13 @@ namespace DiosPunk.Flow
             ApplyLevelMechanics();
             _track.LoadSong(_song);
             _track.StartSong();
+        }
+
+        /// <summary>Al salir de la narrativa o empezar la canción nada de la pantalla anterior sigue sonando (birome, hover).</summary>
+        private static void StopNarrativeSounds()
+        {
+            SoundEffectManager.Stop(SfxId.Pen);
+            SoundEffectManager.Stop(SfxId.UiHover);
         }
 
         /// <summary>Debuffs y Modo Punk del nivel actual; la barra Punk se oculta si el nivel no la usa.</summary>

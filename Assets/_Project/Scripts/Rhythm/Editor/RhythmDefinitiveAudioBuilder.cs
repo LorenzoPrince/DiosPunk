@@ -31,6 +31,8 @@ namespace DiosPunk.Rhythm.Editor
             public SfxId id;
             public int from, to;
             public float volume, pitchMin, pitchMax;
+            public float cue;   // instante (s) de la palabra clave dentro del clip, para PlayAtCue
+            public float maxSeconds; // tope de duración (0 = clip completo)
         }
 
         // Rangos de la guía de audio (#NN). Las tomas de un rango son variantes que no se repiten seguidas.
@@ -42,13 +44,42 @@ namespace DiosPunk.Rhythm.Editor
             new DefinitiveSfx { id = SfxId.Motto, from = 17, to = 30, volume = 1f, pitchMin = 1f, pitchMax = 1f },
             new DefinitiveSfx { id = SfxId.ResultExcellent, from = 31, to = 31, volume = 1f, pitchMin = 1f, pitchMax = 1f },
             new DefinitiveSfx { id = SfxId.ResultGood, from = 32, to = 32, volume = 1f, pitchMin = 1f, pitchMax = 1f },
-            new DefinitiveSfx { id = SfxId.LevelStart, from = 33, to = 33, volume = 1f, pitchMin = 1f, pitchMax = 1f },
+            // "1, 2, 3, ¡VA!": los números caen en ~0,07 / 0,45 / 0,87 s y el "¡VA!" en ~1,22 s (medido sobre el WAV).
+            // Si el equipo de audio entrega otra toma, ajustar cue (o SfxEntry.cueSeconds en la SfxLibrary).
+            new DefinitiveSfx { id = SfxId.LevelStart, from = 33, to = 33, volume = 1f, pitchMin = 1f, pitchMax = 1f, cue = 1.22f },
             new DefinitiveSfx { id = SfxId.Splash, from = 34, to = 34, volume = 0.9f, pitchMin = 1f, pitchMax = 1f },
             new DefinitiveSfx { id = SfxId.UiClick, from = 38, to = 38, volume = 0.8f, pitchMin = 0.98f, pitchMax = 1.02f },
             new DefinitiveSfx { id = SfxId.UiHover, from = 39, to = 39, volume = 0.5f, pitchMin = 0.98f, pitchMax = 1.02f },
             new DefinitiveSfx { id = SfxId.UiImportant, from = 43, to = 43, volume = 0.9f, pitchMin = 1f, pitchMax = 1f },
-            new DefinitiveSfx { id = SfxId.Pen, from = 44, to = 48, volume = 0.6f, pitchMin = 0.95f, pitchMax = 1.05f },
+            // Birome: volumen 1 en la biblioteca; el presentador lo multiplica por 0,33 y el pitch varía ±0,05.
+            // El clip #44 dura 2,16 s: cada trazo se recorta a 0,25 s para que no se apilen colas largas.
+            new DefinitiveSfx { id = SfxId.Pen, from = 44, to = 48, volume = 1f, pitchMin = 0.95f, pitchMax = 1.05f, maxSeconds = 0.25f },
             new DefinitiveSfx { id = SfxId.PageTurn, from = 49, to = 52, volume = 0.8f, pitchMin = 0.97f, pitchMax = 1.03f }
+        };
+
+        private struct FallbackSfx
+        {
+            public SfxId id;
+            public int sourceNumber;       // número de la guía del archivo que se reutiliza
+            public float volume, pitchMin, pitchMax;
+            public float maxSeconds;       // tope de duración: los audios reutilizados son largos (1,5 a 2,2 s)
+        }
+
+        // Respaldo mientras faltan los archivos propios de estos efectos: se reutiliza audio definitivo ya disponible.
+        // Solo se aplica si el efecto no tiene archivo propio en Imports/Audio; apenas llegue (#31, #34, #38, #39)
+        // el mapeo normal lo reemplaza en la siguiente corrida.
+        private static readonly FallbackSfx[] s_fallbacks =
+        {
+            // #39 hover: toque suave y agudo con la birome, bajito (se distingue del tipeo por el pitch).
+            // El clip #44 dura 2,16 s: como hover se recorta a 0,15 s (antes seguía sonando sobre la pantalla siguiente).
+            new FallbackSfx { id = SfxId.UiHover, sourceNumber = 44, volume = 0.25f, pitchMin = 1.25f, pitchMax = 1.35f, maxSeconds = 0.15f },
+            // #38 clic: el sonido de "Start" suavizado (más bajo y más agudo que el de las opciones importantes).
+            // No se usa el cambio de hoja para no duplicarlo con las transiciones de pantalla.
+            new FallbackSfx { id = SfxId.UiClick, sourceNumber = 43, volume = 0.45f, pitchMin = 1.2f, pitchMax = 1.3f, maxSeconds = 0.35f },
+            // #34 arranque: el sonido de inicio de nivel.
+            new FallbackSfx { id = SfxId.Splash, sourceNumber = 33, volume = 0.9f, pitchMin = 1f, pitchMax = 1f },
+            // #31 resultados excelentes: el festejo "Arriba" de Dios Punk.
+            new FallbackSfx { id = SfxId.ResultExcellent, sourceNumber = 7, volume = 1f, pitchMin = 1f, pitchMax = 1f }
         };
 
         // ---------------- SFX definitivos ----------------
@@ -72,6 +103,7 @@ namespace DiosPunk.Rhythm.Editor
             var so = new SerializedObject(library);
             var missing = new List<int>();
             var mapped = new List<string>();
+            var withOwnFile = new HashSet<SfxId>();
 
             foreach (DefinitiveSfx def in s_definitive)
             {
@@ -84,6 +116,7 @@ namespace DiosPunk.Rhythm.Editor
                     if (clip != null) clips.Add(clip);
                 }
                 if (clips.Count == 0) continue;
+                withOwnFile.Add(def.id);
 
                 SerializedProperty entry = so.FindProperty(LibraryField(def.id));
                 if (entry == null) throw new MissingFieldException(nameof(SfxLibrary), LibraryField(def.id));
@@ -97,13 +130,40 @@ namespace DiosPunk.Rhythm.Editor
                 entry.FindPropertyRelative("volume").floatValue = def.volume;
                 entry.FindPropertyRelative("pitchMin").floatValue = def.pitchMin;
                 entry.FindPropertyRelative("pitchMax").floatValue = def.pitchMax;
+                entry.FindPropertyRelative("cueSeconds").floatValue = def.cue;
+                entry.FindPropertyRelative("maxSeconds").floatValue = def.maxSeconds;
                 mapped.Add(def.id + " x" + clips.Count);
+            }
+
+            // Respaldo para los eventos sin archivo propio (mudos o con placeholder): audio definitivo ya disponible.
+            var usedFallback = new List<string>();
+            foreach (FallbackSfx fb in s_fallbacks)
+            {
+                if (withOwnFile.Contains(fb.id)) continue;
+                if (!byNumber.TryGetValue(fb.sourceNumber, out string path)) continue;
+
+                ImportSfxClip(path);
+                var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+                if (clip == null) continue;
+
+                SerializedProperty entry = so.FindProperty(LibraryField(fb.id));
+                SerializedProperty prop = entry.FindPropertyRelative("clips");
+                if (!AssignableWithPlaceholders(prop, ImportAudioDir)) continue; // asignado a mano: no se toca
+
+                prop.arraySize = 1;
+                prop.GetArrayElementAtIndex(0).objectReferenceValue = clip;
+                entry.FindPropertyRelative("volume").floatValue = fb.volume;
+                entry.FindPropertyRelative("pitchMin").floatValue = fb.pitchMin;
+                entry.FindPropertyRelative("pitchMax").floatValue = fb.pitchMax;
+                entry.FindPropertyRelative("maxSeconds").floatValue = fb.maxSeconds;
+                usedFallback.Add(fb.id + " <- #" + fb.sourceNumber);
             }
 
             so.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(library);
             AssetDatabase.SaveAssetIfDirty(library);
 
+            if (usedFallback.Count > 0) Debug.Log("[Audio] Respaldo mientras faltan archivos propios: " + string.Join(", ", usedFallback) + ".");
             Debug.Log("[Audio] SFX definitivos asignados: " + (mapped.Count > 0 ? string.Join(", ", mapped) : "ninguno") +
                       ". Sin archivo en Imports/Audio (numeros de la guia): " + (missing.Count > 0 ? string.Join(", ", missing) : "ninguno") + ".");
         }
@@ -177,14 +237,14 @@ namespace DiosPunk.Rhythm.Editor
             AudioClipLoadType loadType = playable ? AudioClipLoadType.DecompressOnLoad : AudioClipLoadType.CompressedInMemory;
             AudioCompressionFormat format = playable ? AudioCompressionFormat.PCM : AudioCompressionFormat.Vorbis;
 
-            if (importer.forceToMono || s.loadType != loadType || s.compressionFormat != format || importer.preloadAudioData != playable)
+            if (importer.forceToMono || s.loadType != loadType || s.compressionFormat != format || s.preloadAudioData != playable)
             {
                 importer.forceToMono = false;
                 s.loadType = loadType;
                 s.compressionFormat = format;
                 s.quality = 0.7f;
+                s.preloadAudioData = playable; // las capas de apoyo no se precargan con el SongData
                 importer.defaultSampleSettings = s;
-                importer.preloadAudioData = playable;
                 importer.SaveAndReimport();
             }
             return AssetDatabase.LoadAssetAtPath<AudioClip>(path);
@@ -217,6 +277,11 @@ namespace DiosPunk.Rhythm.Editor
             so.FindProperty("_punkStemClip").objectReferenceValue = null; // el nivel 1 no usa Modo Punk
             so.FindProperty("_backingTrackClip").objectReferenceValue = backing;
             so.FindProperty("_leadLineClip").objectReferenceValue = lead;
+
+            // Música real: lead-in corto (la cuenta "1, 2, 3, ¡VA!" se solapa con la intro, sin tiempos muertos) y sin los
+            // SFX sintéticos de acierto, que chocarían con la mezcla de la banda.
+            so.FindProperty("_leadInSeconds").floatValue = 0.4f;
+            so.FindProperty("_useHitPlaceholderSfx").boolValue = false;
             so.ApplyModifiedPropertiesWithoutUndo();
 
             // Notas, BPM (101) y título ("Volver a soñar") salen del JSON.

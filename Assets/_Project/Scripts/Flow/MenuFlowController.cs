@@ -194,6 +194,7 @@ namespace DiosPunk.Flow
         private void StartLevel(int index)
         {
             if (SceneLoader.IsLoading) return;
+            if (_music != null) _music.Stop(); // fade-out mientras la cortinilla cubre la pantalla
             GameSession.SelectedLevelIndex = index;
             SceneLoader.Load(SceneLoader.GameplayScene);
         }

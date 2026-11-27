@@ -45,6 +45,14 @@ namespace DiosPunk.Rhythm
         [Range(0.5f, 2f)] public float pitchMin = 1f;
         [Range(0.5f, 2f)] public float pitchMax = 1f;
 
+        [Tooltip("Instante dentro del clip (s) donde cae la palabra o golpe clave (p. ej. el '¡VA!' de la cuenta). " +
+                 "Con PlayAtCue ese instante coincide con el momento pedido (sincronía con el pulso de la canción).")]
+        [Min(0f)] public float cueSeconds;
+
+        [Tooltip("Duración máxima de la reproducción (s); 0 = el clip completo. Recorta colas largas cuando se reutiliza " +
+                 "un audio extenso como sonido corto (hover, clic, trazo de birome).")]
+        [Min(0f)] public float maxSeconds;
+
         public bool HasClips
         {
             get

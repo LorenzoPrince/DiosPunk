@@ -87,6 +87,15 @@ namespace DiosPunk.Rhythm
         /// instante. 0 si no hay canción cargada.
         /// </summary>
         public float DurationSeconds { get; private set; }
+
+        /// <summary>Instante (s desde el primer sample del audio) de la primera nota del chart; 0 si no hay notas.</summary>
+        public double FirstNoteTime => _notes.Length > 0 ? _notes[0].targetTimeDSP : 0.0;
+
+        /// <summary>BPM de la canción cargada (120 si no hay).</summary>
+        public float SongBpm => _song != null ? _song.Bpm : 120f;
+
+        /// <summary>false si la canción tiene música real: no se disparan los SFX sintéticos de acierto (Perfect / Good).</summary>
+        public bool UseHitPlaceholderSfx => _song == null || _song.UseHitPlaceholderSfx;
         public int ActiveNoteCount => _active.Count;
         public NoteView GetActiveNote(int index) => _active[index];
 
@@ -167,7 +176,7 @@ namespace DiosPunk.Rhythm
             _nextSpawn = 0;
             Stats.Reset();
             _running = true;
-            _clock.Play(_song.AudioClip, _song.PunkStemClip);
+            _clock.Play(_song.AudioClip, _song.PunkStemClip, _song.LeadInSeconds);
             SongStarted?.Invoke();
         }
 

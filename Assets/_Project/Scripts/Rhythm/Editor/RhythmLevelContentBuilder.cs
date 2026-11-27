@@ -102,6 +102,8 @@ namespace DiosPunk.Rhythm.Editor
                 so.FindProperty("_title").stringValue = spec.title + " (placeholder " + spec.bpm.ToString("0") + " BPM)";
                 so.FindProperty("_audioClip").objectReferenceValue = clip;
                 so.FindProperty("_punkStemClip").objectReferenceValue = punkStem;
+                so.FindProperty("_leadInSeconds").floatValue = 2f;
+                so.FindProperty("_useHitPlaceholderSfx").boolValue = true; // audio de metrónomo: los aciertos suenan con los SFX placeholder
                 so.FindProperty("_bpm").floatValue = spec.bpm;
                 so.FindProperty("_testFirstBeatSeconds").floatValue = FirstBeatSeconds;
                 so.FindProperty("_testBeatCount").intValue = spec.beats;

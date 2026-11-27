@@ -21,6 +21,13 @@ namespace DiosPunk.Rhythm
         [Tooltip("Línea principal / melodía (ej. #42). Referencia para usos futuros; no se reproduce todavía.")]
         [SerializeField] private AudioClip _leadLineClip;
 
+        [Header("Arranque y mezcla")]
+        [Tooltip("Segundos entre pedir Play y el primer sample del audio. Un lead-in corto elimina tiempos muertos antes de la primera nota.")]
+        [SerializeField, Range(0.1f, 5f)] private float _leadInSeconds = 2f;
+        [Tooltip("true = los aciertos (Perfect / Good) suenan con los SFX sintéticos de placeholder (niveles con metrónomo). " +
+                 "false = niveles con música real: el platillo/maraca sintético chocaría con la mezcla de la banda.")]
+        [SerializeField] private bool _useHitPlaceholderSfx = true;
+
         [Space]
         [SerializeField, Min(1f)] private float _bpm = 120f;
         [SerializeField] private NoteData[] _notes = System.Array.Empty<NoteData>();
@@ -39,6 +46,9 @@ namespace DiosPunk.Rhythm
 
         /// <summary>Pista secundaria del Modo Punk (puede ser null: la canción solo tiene la mezcla base).</summary>
         public AudioClip PunkStemClip => _punkStemClip;
+
+        public float LeadInSeconds => _leadInSeconds;
+        public bool UseHitPlaceholderSfx => _useHitPlaceholderSfx;
 
         public AudioClip BackingTrackClip => _backingTrackClip;
         public AudioClip LeadLineClip => _leadLineClip;

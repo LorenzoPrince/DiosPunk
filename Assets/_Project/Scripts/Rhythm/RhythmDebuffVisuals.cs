@@ -24,7 +24,6 @@ namespace DiosPunk.Rhythm
         [SerializeField] private Color _overlayColor = new Color(0.45f, 0.03f, 0.08f, 0.2f);
         [SerializeField, Min(0f)] private float _shakeAmount = 0.12f;
         [SerializeField, Min(0.1f)] private float _pulseHz = 4f;
-        [SerializeField, Min(0.1f)] private float _messageSeconds = 1.5f;
 
         private bool _active;
         private float _messageRemaining;
