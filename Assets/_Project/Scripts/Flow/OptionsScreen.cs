@@ -93,7 +93,7 @@ namespace DiosPunk.Flow
             ControlScheme scheme = GameSettings.ControlScheme;
             _schemeValue.text = ControlSchemes.GetName(scheme);
             _schemeDetail.text = ControlSchemes.Describe(scheme);
-            _controlsHelp.text = "Pausa: Escape\nDebug: F1 Auto-Play, F2 reiniciar, F3 pausa, F4 modo, F5/P Modo Punk, F6/B debuff, V Inmortal, +/- latencia";
+            _controlsHelp.text = "Pausa: Escape\nDebug: F1 panel, F2 reiniciar, F3 pausa, F4 modo bot, F5/P Modo Punk, F6/B debuff, V Inmortal, F7 Auto-Play, +/- latencia";
         }
 
         private void RefreshLatency(float latency)

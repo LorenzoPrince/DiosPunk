@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 473780c0d69dc354b997fa705207c280, type: 3}
+  m_Name: Stage_01_Peatonal
+  m_EditorClassIdentifier: DiosPunk.Rhythm::DiosPunk.Rhythm.StageTheme
+  _background: {fileID: 21300000, guid: 9b2aff292ff597f438d6f86acf3b1be4, type: 3}
+  _highway: {fileID: 21300000, guid: 491c01e14c19c7d4f9902c80b51d1758, type: 3}
+  _highwayPosition: {x: 0.1035, y: -0.25010014}
+  _notes:
+  - {fileID: 21300000, guid: bbf78e39ce892044ca277c724087d5f7, type: 3}
+  - {fileID: 21300000, guid: 69809e5f2f5a7314a9173cb9c03cc455, type: 3}
+  - {fileID: 21300000, guid: d8cfc8e648efba14f8fcc4b31b64670c, type: 3}
+  - {fileID: 21300000, guid: 35c0c4624fe27434baba1e4160faf1ef, type: 3}
+  _receptacles:
+  - {fileID: 21300000, guid: aa02be1312c1d3c41adc16d6ce6d60da, type: 3}
+  - {fileID: 21300000, guid: 6803b4c4094aafb4dbf7608dfba37bf7, type: 3}
+  - {fileID: 21300000, guid: 6a47a0a7ce3f5e245aa032b3f2aa85eb, type: 3}
+  - {fileID: 21300000, guid: 39a4230ba5defef4d8bcdf2650a3b814, type: 3}
+  _laneBottomX:
+  - -4.8748226
+  - -1.7247376
+  - 1.5577579
+  - 5.027271
+  _laneTopX:
+  - -1.2933223
+  - -0.69511276
+  - 0.054309934
+  - 0.6237252
+  _artScale: 1.38
+  _hitLineY: -3.5
+  _spawnY: 4.021
+  _noteSpeed: 6.3334737
+  _noteTopScale: 0.22
+  _keyLabelOffsetY: 0
+  _perfect:
+  - {fileID: 21300000, guid: 90d839078e8094a46b7395cadc302c60, type: 3}
+  - {fileID: 21300000, guid: 0784cafc1207e824aa5faacf054d3c7a, type: 3}
+  _good:
+  - {fileID: 21300000, guid: 9744694fdd6466a4787659f74731345e, type: 3}
+  - {fileID: 21300000, guid: 5747e5e15307ca646b89ebca0e9adcbb, type: 3}
+  _miss:
+  - {fileID: 21300000, guid: 94dfbc3117b1d6942b4afb4d0048db83, type: 3}
+  - {fileID: 21300000, guid: 1aec9b8466491bd48bd9a6b1c6b96e50, type: 3}
+  _scorePanel: {fileID: 21300000, guid: ec70172395441404b93e47085a9cc03b, type: 3}

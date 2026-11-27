@@ -17,6 +17,9 @@ namespace DiosPunk.Flow
 
         [SerializeField] private LevelCatalog _catalog;
 
+        [Tooltip("Aplica el arte definitivo del nivel (StageTheme) si lo tiene; sin tema quedan los visuales placeholder.")]
+        [SerializeField] private StageThemeApplier _stageApplier;
+
         [Tooltip("Música de la narrativa pre-nivel (#36). Opcional: sin clip no suena nada.")]
         [SerializeField] private MusicLoop _preLevelMusic;
 
@@ -131,6 +134,7 @@ namespace DiosPunk.Flow
         {
             // La canción se carga solo en esta escena (Resources) y se libera al salir de ella.
             _song = CurrentLevel.LoadSong();
+            if (_stageApplier != null) _stageApplier.Apply(CurrentLevel.LoadStageTheme()); // arte del nivel (null = placeholders)
             ApplyLevelMechanics();
             _preLevel.Begin(CurrentLevel);
             Machine.Force(GameState.PreLevel);

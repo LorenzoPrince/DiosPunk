@@ -22,3 +22,4 @@ MonoBehaviour:
   _enablePunkMode: 1
   _firstDebuffSeconds: 0
   _debuffIntervalSeconds: 22
+  _stageThemeResource: 

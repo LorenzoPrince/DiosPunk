@@ -8,7 +8,7 @@ namespace DiosPunk.Rhythm
 {
     /// <summary>
     /// Hotkeys de testeo, resumen en consola y monitoreo de GC.
-    ///   F1 Auto-Play on/off · F2 reiniciar · F3 pausa/reanudar · F4 cambiar modo del bot ·
+    ///   F1 panel de depuración (oculto por defecto) · F7 Auto-Play on/off · F2 reiniciar · F3 pausa/reanudar · F4 cambiar modo del bot ·
     ///   +/- (numpad o fila numérica) LatencyOffsetMs en pasos de 5 ms ·
     ///   F5 o P: Modo Punk al 100 % · F6 o B: debuff / proyectil del NPC · V: Modo Inmortal on/off.
     /// Resumen en consola al terminar la canción y al pausar.
@@ -26,6 +26,11 @@ namespace DiosPunk.Rhythm
         [SerializeField] private RhythmSession _session;
         [SerializeField] private TMP_Text _statusText;
         [SerializeField] private TMP_Text _gcText;
+
+        [Tooltip("Textos del panel de depuración (estadísticas, métricas, GC y estado con la lista de atajos). Arrancan ocultos; F1 los muestra u oculta.")]
+        [SerializeField] private TMP_Text[] _panelTexts = new TMP_Text[0];
+
+        private bool _panelVisible;
         [SerializeField, Min(1f)] private float _latencyStepMs = 5f;
 
         private InputAction[] _actions;
@@ -42,7 +47,8 @@ namespace DiosPunk.Rhythm
         {
             _actions = new[]
             {
-                CreateAction("<Keyboard>/f1", null, ToggleAutoPlay),
+                CreateAction("<Keyboard>/f1", null, TogglePanel),
+                CreateAction("<Keyboard>/f7", null, ToggleAutoPlay),
                 CreateAction("<Keyboard>/f2", null, Restart),
                 CreateAction("<Keyboard>/f3", null, TogglePause),
                 CreateAction("<Keyboard>/f4", null, CycleMode),
@@ -75,6 +81,25 @@ namespace DiosPunk.Rhythm
             _gcRecorder = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "GC Allocated In Frame");
             ResetGcCounters();
             RefreshStatus();
+
+            // El panel arranca oculto (ya no hay texto técnico sobre la partida); los atajos funcionan igual.
+            _panelVisible = false;
+            ApplyPanelVisibility();
+        }
+
+        /// <summary>F1: muestra u oculta el panel de depuración completo (estadísticas, métricas, GC y lista de atajos).</summary>
+        private void TogglePanel()
+        {
+            _panelVisible = !_panelVisible;
+            ApplyPanelVisibility();
+        }
+
+        private void ApplyPanelVisibility()
+        {
+            for (int i = 0; i < _panelTexts.Length; i++)
+            {
+                if (_panelTexts[i] != null) _panelTexts[i].enabled = _panelVisible;
+            }
         }
 
         private void OnDisable()
@@ -179,10 +204,12 @@ namespace DiosPunk.Rhythm
             string auto = _autoPlayer.Enabled ? "ON (" + _autoPlayer.Mode + ")" : "OFF";
             string paused = _track.IsPaused ? "  [PAUSADO]" : string.Empty;
             _statusText.text =
-                "AutoPlay: " + auto + "  [F1 on/off, F4 modo]\n" +
-                "Latency offset: " + _track.Clock.LatencyOffsetMs.ToString("0") + " ms  [+/-]" + paused + "\n" +
+                "DEBUG  [F1 ocultar]\n" +
+                "AutoPlay: " + auto + "  [F7 on/off, F4 modo]\n" +
+                "Latencia: " + _track.Clock.LatencyOffsetMs.ToString("0") + " ms  [+/-]" + paused + "\n" +
                 "Inmortal: " + (GameSettings.ImmortalMode ? "ON" : "OFF") + "  [V]\n" +
-                "[F2 reiniciar, F3 pausa, F5/P Modo Punk, F6/B debuff]";
+                "F2 Reiniciar  |  F3 Pausar  |  F4 Modo Bot\n" +
+                "F5/P Modo Punk  |  F6/B Debuff  |  V Inmortal";
             _skipFrames = 2;
         }
 

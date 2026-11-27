@@ -58,6 +58,9 @@ namespace DiosPunk.Rhythm
         private float _speedMultiplier = 1f;
         private SongData _notesBuiltFor;
 
+        // Escenario con arte definitivo (perspectiva): null = pista recta placeholder.
+        private StageTheme _stage;
+
         /// <summary>Resultado de un juicio: tipo, carril y delta en ms (negativo = temprano, positivo = tarde).</summary>
         public event Action<HitType, int, float> NoteJudged;
 
@@ -155,6 +158,22 @@ namespace DiosPunk.Rhythm
             BuildNoteList();
         }
 
+        /// <summary>
+        /// Aplica la geometría y el arte de notas de un escenario definitivo: línea de impacto, punto de nacimiento,
+        /// velocidad base, perspectiva (las notas convergen hacia el fondo y se achican) y sprites por carril.
+        /// Solo cambia lo visual: el juicio sigue dependiendo de tiempos. Llamar antes de iniciar la canción.
+        /// </summary>
+        public void ApplyStage(StageTheme stage)
+        {
+            _stage = stage;
+            if (stage == null) return;
+
+            _hitLineY = stage.HitLineY;
+            _spawnY = stage.SpawnY;
+            _noteSpeed = stage.NoteSpeed;
+            RecomputeDerived();
+        }
+
         /// <summary>Multiplicador de velocidad de caída (dificultad). Solo afecta lo visual: el juicio usa tiempos.</summary>
         public void SetSpeedMultiplier(float multiplier)
         {
@@ -243,6 +262,7 @@ namespace DiosPunk.Rhythm
                 NoteData data = _notes[_nextSpawn];
                 NoteView view = _pool.Get();
                 view.Init(data.laneIndex, data.targetTimeDSP, data.isDebuffNote, GetLaneColor(data.laneIndex));
+                if (_stage != null) view.SetArt(_stage.Notes[data.laneIndex], _stage.ArtScale, data.isDebuffNote);
                 PlaceNote(view, songTime);
                 _active.Add(view);
                 _nextSpawn++;
@@ -256,9 +276,22 @@ namespace DiosPunk.Rhythm
 
         private void PlaceNote(NoteView view, double songTime)
         {
-            float x = (view.LaneIndex - (RhythmInputReader.LaneCount - 1) * 0.5f) * _laneSpacing;
             float y = _hitLineY + (float)((view.TargetTime - songTime) * _noteSpeed * _speedMultiplier);
-            view.SetPosition(x, y);
+
+            if (_stage != null)
+            {
+                // Perspectiva: u = 0 en la línea de impacto, 1 en el extremo lejano. La X sigue la recta del carril dibujado
+                // y la nota se achica hacia el fondo (sin pasar de 1,15 si ya cruzó la línea).
+                float u = (y - _hitLineY) / (_spawnY - _hitLineY);
+                int lane = view.LaneIndex;
+                float x = Mathf.LerpUnclamped(_stage.LaneBottomX[lane], _stage.LaneTopX[lane], u);
+                float scale = Mathf.Clamp(Mathf.LerpUnclamped(1f, _stage.NoteTopScale, u), _stage.NoteTopScale, 1.15f);
+                view.SetPlacement(x, y, scale);
+                return;
+            }
+
+            float flatX = (view.LaneIndex - (RhythmInputReader.LaneCount - 1) * 0.5f) * _laneSpacing;
+            view.SetPosition(flatX, y);
         }
 
         // ---------- Juicio ----------

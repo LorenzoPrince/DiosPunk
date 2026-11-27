@@ -76,7 +76,11 @@ namespace DiosPunk.Rhythm
             Debuffs.Configure(debuffIntervalSeconds > 0f ? debuffIntervalSeconds : _debuffInterval, _debuffDuration, _debuffLead, firstDebuffSeconds);
             Debuffs.Enabled = enableDebuffs;
             Punk.Enabled = enablePunkMode;
+            LevelConfigured?.Invoke(enableDebuffs, enablePunkMode);
         }
+
+        /// <summary>Se dispara al configurar las mecánicas del nivel (enableDebuffs, enablePunkMode): los NPC saboteadores se ocultan sin debuffs.</summary>
+        public event Action<bool, bool> LevelConfigured;
 
         private void OnEnable()
         {

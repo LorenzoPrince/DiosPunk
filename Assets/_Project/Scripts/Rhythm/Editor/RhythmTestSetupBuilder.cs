@@ -255,19 +255,31 @@ namespace DiosPunk.Rhythm.Editor
             SpriteRenderer highway = FindOrCreateSprite(track.transform, "Highway", whiteSprite,
                 new Color(0.93f, 0.93f, 0.90f, 1f), new Vector3(0f, 0.5f, 0f), new Vector3(highwayWidth, 11f, 1f), -10);
             highway.gameObject.name = "Highway";
+
+            // Objetos placeholder que el arte definitivo de un nivel (StageTheme) reemplaza: se apagan al aplicarlo.
+            var stagePlaceholders = new System.Collections.Generic.List<GameObject> { highway.gameObject };
             for (int i = 0; i < 5; i++)
             {
-                FindOrCreateSprite(track.transform, "LaneLine_" + i, whiteSprite, Color.black,
-                    new Vector3((i - 2f) * LaneSpacing, 0.5f, 0f), new Vector3(0.07f, 11f, 1f), -9);
+                stagePlaceholders.Add(FindOrCreateSprite(track.transform, "LaneLine_" + i, whiteSprite, Color.black,
+                    new Vector3((i - 2f) * LaneSpacing, 0.5f, 0f), new Vector3(0.07f, 11f, 1f), -9).gameObject);
             }
 
             // --- Barra de impacto (línea translúcida) ---
-            FindOrCreateSprite(track.transform, "HitBar", hitBarSprite, new Color(0f, 0f, 0f, 0.45f),
-                new Vector3(0f, HitLineY, 0f), Vector3.one, 2);
+            stagePlaceholders.Add(FindOrCreateSprite(track.transform, "HitBar", hitBarSprite, new Color(0f, 0f, 0f, 0.45f),
+                new Vector3(0f, HitLineY, 0f), Vector3.one, 2).gameObject);
+
+            // Fondo y pista del arte definitivo (apagados: los enciende StageThemeApplier solo en niveles con tema).
+            SpriteRenderer stageBackground = FindOrCreateSprite(track.transform, "StageBackground", null, Color.white,
+                Vector3.zero, Vector3.one, -30);
+            stageBackground.gameObject.SetActive(false);
+            SpriteRenderer stageHighway = FindOrCreateSprite(track.transform, "StageHighway", null, Color.white,
+                Vector3.zero, Vector3.one, -20);
+            stageHighway.gameObject.SetActive(false);
 
             // --- Receptáculos (forma de la nota, color del carril, translúcidos) y pads de feedback ---
             var pads = new SpriteRenderer[RhythmInputReader.LaneCount];
             var keyLabels = new TextMeshPro[RhythmInputReader.LaneCount];
+            var receptacleRenderers = new SpriteRenderer[RhythmInputReader.LaneCount];
             for (int lane = 0; lane < pads.Length; lane++)
             {
                 float x = (lane - (pads.Length - 1) * 0.5f) * LaneSpacing;
@@ -275,7 +287,7 @@ namespace DiosPunk.Rhythm.Editor
 
                 Color receptacle = laneColor;
                 receptacle.a = 0.45f;
-                FindOrCreateSprite(track.transform, "LaneReceptacle_" + lane, noteSprite, receptacle,
+                receptacleRenderers[lane] = FindOrCreateSprite(track.transform, "LaneReceptacle_" + lane, noteSprite, receptacle,
                     new Vector3(x, HitLineY, 0f), Vector3.one, 3);
 
                 pads[lane] = FindOrCreateSprite(track.transform, "LanePad_" + lane, noteSprite, Color.clear,
@@ -298,6 +310,14 @@ namespace DiosPunk.Rhythm.Editor
 
             var session = GetOrAdd<RhythmSession>(track);
             SetRefs(session, ("_track", controller));
+
+            // Arte definitivo del escenario (se aplica por nivel; las referencias del HUD se completan más abajo).
+            var stageApplier = GetOrAdd<StageThemeApplier>(track);
+            SetRefs(stageApplier, ("_track", controller), ("_background", stageBackground), ("_highway", stageHighway));
+            SetRefArray(stageApplier, "_placeholders", stagePlaceholders.ToArray());
+            SetRefArray(stageApplier, "_receptacles", receptacleRenderers);
+            SetRefArray(stageApplier, "_pads", pads);
+            SetRefArray(stageApplier, "_keyLabels", keyLabels);
 
             // SFX de juego (juicios, debuffs, Modo Punk) por eventos de la sesión.
             var sfxBridge = GetOrAdd<GameplaySfxBridge>(track);
@@ -367,6 +387,17 @@ namespace DiosPunk.Rhythm.Editor
             TMP_Text accuracyText = FindOrCreateText(scorePanel, "AccuracyText", "100.0%", 40f, TextAlignmentOptions.BottomLeft,
                 new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(24f, 12f), new Vector2(260f, 50f), Color.black);
 
+            // Panel de puntaje con arte (Puntaje+combo) y popups de juicio: los configura StageThemeApplier en niveles con tema.
+            var scorePanelImage = scorePanel.GetComponent<Image>();
+            Image judgementPopupImage = FindOrCreateImage(ui, "JudgementPopup", null, Color.white,
+                new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0f, 275f), new Vector2(300f, 60f), Image.Type.Simple);
+            judgementPopupImage.preserveAspect = true;
+            judgementPopupImage.enabled = false;
+            var judgementPopup = GetOrAdd<JudgementPopup>(judgementPopupImage.gameObject);
+            SetRefs(judgementPopup, ("_track", controller), ("_image", judgementPopupImage));
+            SetRefs(stageApplier, ("_scorePanelImage", scorePanelImage), ("_scoreText", scoreText.rectTransform),
+                ("_multiplierText", multiplierText.rectTransform), ("_accuracyText", accuracyText.rectTransform), ("_popup", judgementPopup));
+
             // Barra de vida (arriba centro)
             RectTransform healthBar = FindOrCreateImage(ui, "HealthBar", panelSprite, Color.white,
                 new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -30f), new Vector2(520f, 44f), Image.Type.Sliced).rectTransform;
@@ -414,7 +445,7 @@ namespace DiosPunk.Rhythm.Editor
             TMP_Text gc = FindOrCreateText(ui, "GcText", null, 22f, TextAlignmentOptions.BottomLeft,
                 new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(30f, 20f), new Vector2(1000f, 36f), Color.white);
             TMP_Text status = FindOrCreateText(ui, "StatusText", null, 24f, TextAlignmentOptions.BottomRight,
-                new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-30f, 20f), new Vector2(900f, 120f), Color.white);
+                new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-30f, 20f), new Vector2(900f, 190f), Color.white);
 
             // --- Presenter + debug ---
             GameObject presenterGo = FindOrCreate("RhythmHudPresenter");
@@ -435,6 +466,9 @@ namespace DiosPunk.Rhythm.Editor
             var tools = GetOrAdd<RhythmDebugTools>(hudGo);
             SetRefs(tools, ("_track", controller), ("_autoPlayer", autoPlayer), ("_session", session),
                 ("_statusText", status), ("_gcText", gc));
+            // Panel de depuración: estos textos arrancan ocultos y F1 los muestra u oculta (RhythmDebugTools).
+            SetRefArray(tools, "_panelTexts", new UnityEngine.Object[] { stats, metrics, gc, status });
+            SetRefArray(stageApplier, "_hideWhenThemed", new UnityEngine.Object[] { judgement });
 
         }
 

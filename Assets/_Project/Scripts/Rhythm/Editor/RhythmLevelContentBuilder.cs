@@ -25,6 +25,7 @@ namespace DiosPunk.Rhythm.Editor
             public bool debuffs, punk;    // mecánicas activas (revelación progresiva)
             public float firstDebuff;     // segundo del primer debuff (0 = igual al intervalo)
             public float debuffInterval;  // segundos entre debuffs
+            public string stageTheme;     // StageTheme (Resources/Stages) con el arte definitivo; null = placeholders
         }
 
         // Dificultad creciente y orgánica: BPM, duración y contratiempos suben de a poco; el nivel 2 entra con
@@ -33,7 +34,7 @@ namespace DiosPunk.Rhythm.Editor
         {
             // Nivel 1: ritmo puro (sin debuffs ni Modo Punk), lento y con la primera mitad a media densidad.
             new LevelSpec { title = "Comienzos", stage = "El cuarto", difficulty = "Facil", songName = "Song_01_Comienzos", bpm = 100f, beats = 56, offbeatEvery = 0, warmupBeats = 28, speed = 0.78f,
-                debuffs = false, punk = false, firstDebuff = 0f, debuffInterval = 25f },
+                debuffs = false, punk = false, firstDebuff = 0f, debuffInterval = 25f, stageTheme = Stage01Name },
             // Nivel 2: primer debuff a los 30 s, Modo Punk como salvavidas, notas más espaciadas (sin contratiempos).
             new LevelSpec { title = "Sueños Punk Rock", stage = "El garaje", difficulty = "Facil", songName = "Song_02_SuenosPunkRock", bpm = 110f, beats = 64, offbeatEvery = 0, warmupBeats = 32, speed = 0.82f,
                 debuffs = true, punk = true, firstDebuff = 30f, debuffInterval = 30f },
@@ -146,6 +147,10 @@ namespace DiosPunk.Rhythm.Editor
                 so.FindProperty("_noteSpeedMultiplier").floatValue = Specs[i].speed;
                 so.FindProperty("_enableDebuffs").boolValue = Specs[i].debuffs;
                 so.FindProperty("_enablePunkMode").boolValue = Specs[i].punk;
+                // Arte definitivo solo si el StageTheme existe (si falta el arte importado, el nivel queda con placeholders).
+                bool hasTheme = !string.IsNullOrEmpty(Specs[i].stageTheme) &&
+                                AssetDatabase.LoadAssetAtPath<StageTheme>($"{StageDir}/{Specs[i].stageTheme}.asset") != null;
+                so.FindProperty("_stageThemeResource").stringValue = hasTheme ? Specs[i].stageTheme : string.Empty;
                 so.FindProperty("_firstDebuffSeconds").floatValue = Specs[i].firstDebuff;
                 so.FindProperty("_debuffIntervalSeconds").floatValue = Specs[i].debuffInterval;
                 so.ApplyModifiedPropertiesWithoutUndo();

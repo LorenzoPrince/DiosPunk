@@ -56,7 +56,10 @@ namespace DiosPunk.Rhythm.Editor
             MigrateSongAsset();
             BuiltAssets assets = BuildAssets();
             FxAssets fx = BuildFxAssets();
-            BuildSfxAssets(false);                               // SFX placeholders + SfxLibrary (Resources/Audio)
+            int artChanged = ConfigureArtImports();              // sprites del arte definitivo: Sprite 2D/UI, Bilinear, Full Rect
+            CreateStage01();                                     // StageTheme del nivel 1 (Resources/Stages)
+            if (artChanged > 0) Debug.Log("[Art] Texture Importer ajustado en " + artChanged + " sprites de Imports/Art.");
+            BuildSfxAssets(false);                              // SFX placeholders + SfxLibrary (Resources/Audio)
             BuildTransitionOverlayPrefab(assets);                // cortinilla de carga (Resources/UI)
             CreateLevelSongs();                                // 5 canciones (audio placeholder + chart) en Resources/Songs
             DialogueData[] dialogues = CreateStoryDialogues(fx.Portrait);
@@ -180,6 +183,7 @@ namespace DiosPunk.Rhythm.Editor
             var preLevelMusic = flowGo.AddComponent<MusicLoop>();
             SetRefs(preLevelMusic, ("_clip", LoadMenuMusicClip(36)));
             SetRefs(flow, ("_preLevelMusic", preLevelMusic));
+            SetRefs(flow, ("_stageApplier", track.GetComponent<StageThemeApplier>()));
 
             SetRefs(flow, ("_track", controller), ("_session", session), ("_catalog", catalog), ("_preLevel", preLevel),
                 ("_preparation", preparation), ("_options", options), ("_pause", pause), ("_gameOver", gameOver),
@@ -201,7 +205,7 @@ namespace DiosPunk.Rhythm.Editor
             var gameplayStates = new[] { GameState.Gameplay, GameState.PauseMenu, GameState.GameOver };
             panels.Add(MakePanel(track, true, gameplayStates));
             foreach (string hudName in new[] { "PunkPanel", "ScorePanel", "HealthBar", "SongProgressPanel", "JudgementText", "StatsText",
-                         "MetricsText", "GcText", "StatusText" })
+                         "MetricsText", "GcText", "StatusText", "JudgementPopup" })
             {
                 Transform t = ui.Find(hudName);
                 if (t != null) panels.Add(MakePanel(t.gameObject, true, gameplayStates));
@@ -338,6 +342,9 @@ namespace DiosPunk.Rhythm.Editor
 
         private static MainMenuScreen BuildMainMenu(RectTransform root, Sprite panel, Sprite white)
         {
+            // Arte definitivo (Imports/Art/Menu_Principal): si falta algún archivo cae al menú placeholder de abajo.
+            if (MenuArtAvailable()) return BuildMainMenuWithArt(root, panel, white);
+
             FindOrCreateText(root, "Title", "DIOS PUNK", 160f, TextAlignmentOptions.Center, Center, Center,
                 new Vector2(0f, 270f), new Vector2(1400f, 220f), Red);
             Button play = CreateButton(root, "PlayButton", "JUGAR", new Vector2(0f, 90f), new Vector2(460f, 90f), panel);
@@ -659,6 +666,9 @@ namespace DiosPunk.Rhythm.Editor
 
         private static PauseMenuScreen BuildPause(RectTransform root, Sprite panel)
         {
+            // Arte definitivo (Imports/Art/Pantalla_Pausa): si falta algún archivo cae a la pausa placeholder de abajo.
+            if (PauseArtAvailable()) return BuildPauseWithArt(root);
+
             Image paper = FindOrCreateImage(root, "Paper", panel, new Color(0.97f, 0.97f, 0.93f, 1f), Center, Center,
                 Vector2.zero, new Vector2(620f, 760f), Image.Type.Sliced);
             RectTransform p = paper.rectTransform;

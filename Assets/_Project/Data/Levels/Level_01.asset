@@ -22,3 +22,4 @@ MonoBehaviour:
   _enablePunkMode: 0
   _firstDebuffSeconds: 0
   _debuffIntervalSeconds: 25
+  _stageThemeResource: Stage_01_Peatonal

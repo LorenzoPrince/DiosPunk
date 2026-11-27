@@ -112,7 +112,21 @@ namespace DiosPunk.Rhythm
             _session.Debuffs.Absorbed += OnAbsorbed;
             _session.Track.SongStarted += Clear;
             _session.Track.SongStopped += Clear;
+            _session.LevelConfigured += OnLevelConfigured;
+            SetNpcsVisible(_session.Debuffs.Enabled);
             Clear();
+        }
+
+        /// <summary>
+        /// Sin debuffs (Nivel 1) los saboteadores laterales no tienen razón de estar y desentonan con el arte del nivel: se
+        /// mantienen ocultos. Un debuff forzado por debug (F6 / B) igual lanza el proyectil, pero sin los personajes.
+        /// </summary>
+        private void OnLevelConfigured(bool enableDebuffs, bool enablePunkMode) => SetNpcsVisible(enableDebuffs);
+
+        private void SetNpcsVisible(bool visible)
+        {
+            if (_leftNpc != null) _leftNpc.gameObject.SetActive(visible);
+            if (_rightNpc != null) _rightNpc.gameObject.SetActive(visible);
         }
 
         private void OnDisable()
@@ -123,6 +137,7 @@ namespace DiosPunk.Rhythm
             _session.Debuffs.Absorbed -= OnAbsorbed;
             _session.Track.SongStarted -= Clear;
             _session.Track.SongStopped -= Clear;
+            _session.LevelConfigured -= OnLevelConfigured;
             Clear();
         }
 

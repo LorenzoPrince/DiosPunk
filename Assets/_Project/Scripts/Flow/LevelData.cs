@@ -33,6 +33,20 @@ namespace DiosPunk.Flow
         [Tooltip("Segundos entre debuffs.")]
         [SerializeField, Min(5f)] private float _debuffIntervalSeconds = 25f;
 
+        [Header("Escenario")]
+        [Tooltip("Nombre del StageTheme dentro de Resources/Stages/ (arte definitivo del nivel). Vacío = visuales placeholder. " +
+                 "Se carga por nombre, igual que la canción, para que el menú no cargue los sprites.")]
+        [SerializeField] private string _stageThemeResource;
+
+        public string StageThemeResource => _stageThemeResource;
+
+        public StageTheme LoadStageTheme()
+        {
+            return string.IsNullOrEmpty(_stageThemeResource)
+                ? null
+                : Resources.Load<StageTheme>(StageTheme.ResourceFolder + _stageThemeResource);
+        }
+
         public bool EnableDebuffs => _enableDebuffs;
         public bool EnablePunkMode => _enablePunkMode;
         public float FirstDebuffSeconds => _firstDebuffSeconds;
