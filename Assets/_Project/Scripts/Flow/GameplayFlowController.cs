@@ -17,6 +17,12 @@ namespace DiosPunk.Flow
 
         [SerializeField] private LevelCatalog _catalog;
 
+        [Tooltip("Música de la narrativa pre-nivel (#36). Opcional: sin clip no suena nada.")]
+        [SerializeField] private MusicLoop _preLevelMusic;
+
+        [Tooltip("Precisión (%) desde la cual la pantalla de resultados suena 'Excelente' (#31); por debajo, #32.")]
+        [SerializeField, Range(50f, 100f)] private float _excellentAccuracy = 85f;
+
         [Tooltip("CanvasGroup del panel MODO PUNK: se oculta en los niveles sin Modo Punk.")]
         [SerializeField] private CanvasGroup _punkPanelGroup;
 
@@ -128,6 +134,7 @@ namespace DiosPunk.Flow
             ApplyLevelMechanics();
             _preLevel.Begin(CurrentLevel);
             Machine.Force(GameState.PreLevel);
+            if (_preLevelMusic != null) _preLevelMusic.Play();
         }
 
         // ---------- Narrativa y preparación ----------
@@ -153,6 +160,9 @@ namespace DiosPunk.Flow
                 return;
             }
             if (!Machine.TryGoTo(GameState.Gameplay)) return;
+
+            if (_preLevelMusic != null) _preLevelMusic.Stop();
+            SoundEffectManager.Play(SfxId.LevelStart); // #33
 
             // El cambio de estado ya activó el mundo de juego: cargar la canción y arrancar.
             // Velocidad del nivel x ajuste de dificultad elegido en la narrativa.
@@ -229,6 +239,9 @@ namespace DiosPunk.Flow
 
             _track.StopSong();
             _results.Display(data);
+
+            // Sonido de resultados: #31 excelente (precisión >= umbral), #32 del muy bueno para abajo.
+            SoundEffectManager.Play(score.AccuracyPercent >= _excellentAccuracy ? SfxId.ResultExcellent : SfxId.ResultGood);
             Machine.TryGoTo(GameState.ResultsScreen);
         }
 
@@ -238,6 +251,7 @@ namespace DiosPunk.Flow
         {
             _preLevel.Begin(CurrentLevel);
             Machine.TryGoTo(GameState.PreLevel);
+            if (_preLevelMusic != null) _preLevelMusic.Play();
         }
 
         /// <summary>

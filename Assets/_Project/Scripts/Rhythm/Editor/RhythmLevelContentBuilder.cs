@@ -60,6 +60,19 @@ namespace DiosPunk.Rhythm.Editor
             for (int i = 0; i < Specs.Length; i++)
             {
                 LevelSpec spec = Specs[i];
+
+                // Nivel 1: canción y chart definitivos del equipo (si están en Imports); no se generan placeholders.
+                if (i == 0)
+                {
+                    SongData real = ConfigureRealLevel1($"{SongDir}/{spec.songName}.asset");
+                    if (real != null)
+                    {
+                        songs[0] = real;
+                        continue;
+                    }
+                    Debug.LogWarning("[Levels] Faltan el audio o el chart real del nivel 1 en Imports: se usa el placeholder.");
+                }
+
                 string wavPath = $"{AudioDir}/Level{i + 1}_{spec.bpm:0}BPM.wav";
                 WriteClickTrackWav(wavPath, spec.bpm, FirstBeatSeconds, spec.beats, 1.5f);
                 AssetDatabase.ImportAsset(wavPath, ImportAssetOptions.ForceUpdate);
@@ -154,9 +167,11 @@ namespace DiosPunk.Rhythm.Editor
                     : song == null ? "no se encuentra la cancion '" + level.SongResource + "' en Resources/Songs"
                     : song.Notes.Length == 0 ? "chart vacio"
                     : song.AudioClip == null ? "cancion sin audio"
-                    : song.PunkStemClip == null ? "sin stem punk (segunda mezcla)"
-                    : song.PunkStemClip.samples != song.AudioClip.samples || song.PunkStemClip.frequency != song.AudioClip.frequency
+                    : level.EnablePunkMode && song.PunkStemClip == null ? "sin stem punk (segunda mezcla)"
+                    : song.PunkStemClip != null && (song.PunkStemClip.samples != song.AudioClip.samples || song.PunkStemClip.frequency != song.AudioClip.frequency)
                         ? "el stem punk no coincide en muestras/frecuencia con la pista base"
+                    : song.Notes[song.Notes.Length - 1].targetTimeDSP > song.AudioClip.length
+                        ? "el chart tiene notas despues del final del audio"
                     : null;
 
                 if (problem != null)

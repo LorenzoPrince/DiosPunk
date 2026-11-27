@@ -1,5 +1,5 @@
 // Dios Punk - Importador / exportador de charts JSON para SongData
-// Ubicacion: Assets/Editor/SongChartImporter.cs  (tiene que estar en una carpeta "Editor")
+// Ubicacion: Assets/_Project/Scripts/Rhythm/Editor/SongChartImporter.cs (ensamblado DiosPunk.Rhythm.Editor)
 //
 // Uso:
 //   1) Click derecho sobre el asset SongData (ej. Resources/Songs/Song_01_Comienzos) en el Inspector
@@ -72,23 +72,39 @@ namespace DiosPunk.EditorTools
             string path = EditorUtility.OpenFilePanel("Chart JSON para " + song.name, Application.dataPath, "json");
             if (string.IsNullOrEmpty(path)) return;
 
+            if (!TryImportFromFile(song, path, out int count, out string error))
+            {
+                EditorUtility.DisplayDialog("Importar chart", error, "OK");
+            }
+        }
+
+        /// <summary>
+        /// Importa un chart JSON en el SongData sin diálogos (lo usa el generador de escenas). Reemplaza _notes, _bpm y,
+        /// si el JSON trae título, _title. Devuelve false y el motivo en error si el archivo no es válido.
+        /// </summary>
+        public static bool TryImportFromFile(SongData song, string path, out int imported, out string error)
+        {
+            imported = 0;
+            error = null;
+
             ChartFile chart;
             try { chart = JsonUtility.FromJson<ChartFile>(File.ReadAllText(path, Encoding.UTF8)); }
             catch (System.Exception e)
             {
-                EditorUtility.DisplayDialog("Importar chart", "No se pudo leer el JSON:\n" + e.Message, "OK");
-                return;
+                error = "No se pudo leer el JSON:
+" + e.Message;
+                return false;
             }
 
             if (chart == null || chart.notes == null || chart.notes.Length == 0)
             {
-                EditorUtility.DisplayDialog("Importar chart", "El JSON no tiene notas.", "OK");
-                return;
+                error = "El JSON no tiene notas.";
+                return false;
             }
             if (chart.bpm <= 0f)
             {
-                EditorUtility.DisplayDialog("Importar chart", "El JSON necesita un bpm mayor a 0.", "OK");
-                return;
+                error = "El JSON necesita un bpm mayor a 0.";
+                return false;
             }
 
             var so = new SerializedObject(song);
@@ -97,9 +113,8 @@ namespace DiosPunk.EditorTools
             var titleProp = so.FindProperty("_title");
             if (notesProp == null || bpmProp == null)
             {
-                EditorUtility.DisplayDialog("Importar chart",
-                    "No se encontraron los campos _notes/_bpm en SongData. Revisar nombres de campos.", "OK");
-                return;
+                error = "No se encontraron los campos _notes/_bpm en SongData. Revisar nombres de campos.";
+                return false;
             }
 
             Undo.RecordObject(song, "Importar chart JSON");
@@ -131,9 +146,11 @@ namespace DiosPunk.EditorTools
             EditorUtility.SetDirty(song);
             AssetDatabase.SaveAssets();
 
+            imported = write;
             Debug.Log($"[Charts] {song.name}: {write} notas importadas desde {Path.GetFileName(path)} " +
                       $"(bpm {chart.bpm.ToString(CultureInfo.InvariantCulture)}, offset {chart.globalOffsetMs} ms" +
                       (skipped > 0 ? $", {skipped} ignoradas por carril/tiempo invalido" : "") + ").", song);
+            return true;
         }
 
         // ---------- Exportar (para editar a mano y volver a importar) ----------

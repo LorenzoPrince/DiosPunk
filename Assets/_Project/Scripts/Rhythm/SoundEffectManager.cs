@@ -18,6 +18,7 @@ namespace DiosPunk.Rhythm
         private AudioSource[] _voices;
         private SfxEntry[] _entries;
         private int _next;
+        private int[] _lastVariant; // última variante elegida por efecto: con varias tomas no se repite la misma seguida
 
         /// <summary>true si el servicio está listo (hay biblioteca cargada).</summary>
         public static bool IsReady => s_instance != null && s_instance._entries != null;
@@ -57,7 +58,12 @@ namespace DiosPunk.Rhythm
             // Tabla indexada por SfxId: el lookup en juego es un acceso a array.
             int count = System.Enum.GetValues(typeof(SfxId)).Length;
             _entries = new SfxEntry[count];
-            for (int i = 0; i < count; i++) _entries[i] = library.Get((SfxId)i);
+            _lastVariant = new int[count];
+            for (int i = 0; i < count; i++)
+            {
+                _entries[i] = library.Get((SfxId)i);
+                _lastVariant[i] = -1;
+            }
 
             _voices = new AudioSource[VoiceCount];
             for (int i = 0; i < VoiceCount; i++)
@@ -79,7 +85,17 @@ namespace DiosPunk.Rhythm
             if (entry == null || !entry.HasClips) return;
 
             AudioClip[] clips = entry.clips;
-            AudioClip clip = clips[clips.Length == 1 ? 0 : Random.Range(0, clips.Length)];
+            int variant = 0;
+            if (clips.Length > 1)
+            {
+                // Al azar pero distinta de la anterior: se sortea entre las demás y se salta la última.
+                int last = _lastVariant[(int)id];
+                variant = last < 0 ? Random.Range(0, clips.Length) : Random.Range(0, clips.Length - 1);
+                if (last >= 0 && variant >= last) variant++;
+            }
+            _lastVariant[(int)id] = variant;
+
+            AudioClip clip = clips[variant];
             if (clip == null) return;
 
             AudioSource voice = AcquireVoice();

@@ -176,6 +176,11 @@ namespace DiosPunk.Rhythm.Editor
             punkGroup.interactable = false;
             SetRefs(flow, ("_punkPanelGroup", punkGroup));
 
+            // Música de la narrativa pre-nivel (#36): opcional, solo suena si el archivo está en Imports/Audio.
+            var preLevelMusic = flowGo.AddComponent<MusicLoop>();
+            SetRefs(preLevelMusic, ("_clip", LoadMenuMusicClip(36)));
+            SetRefs(flow, ("_preLevelMusic", preLevelMusic));
+
             SetRefs(flow, ("_track", controller), ("_session", session), ("_catalog", catalog), ("_preLevel", preLevel),
                 ("_preparation", preparation), ("_options", options), ("_pause", pause), ("_gameOver", gameOver),
                 ("_results", results), ("_epilogue", epilogue), ("_epilogueData", epilogueData), ("_credits", credits));
@@ -270,8 +275,13 @@ namespace DiosPunk.Rhythm.Editor
             var flowGo = new GameObject("MenuFlow");
             var flow = flowGo.AddComponent<MenuFlowController>();
             var screenManager = flowGo.AddComponent<ScreenManager>();
+
+            // Música del menú principal (#35) en loop.
+            var menuMusic = flowGo.AddComponent<MusicLoop>();
+            SetRefs(menuMusic, ("_clip", LoadMenuMusicClip(35)));
+
             SetRefs(flow, ("_catalog", catalog), ("_mainMenu", mainMenu), ("_levelSelect", levelSelect),
-                ("_options", options), ("_credits", credits), ("_calibration", calibration));
+                ("_options", options), ("_credits", credits), ("_calibration", calibration), ("_music", menuMusic));
 
             var panels = new[]
             {

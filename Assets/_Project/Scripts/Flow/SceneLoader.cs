@@ -72,6 +72,7 @@ namespace DiosPunk.Flow
         private IEnumerator LoadRoutine(string sceneName)
         {
             IsLoading = true;
+            DiosPunk.Rhythm.SoundEffectManager.Play(DiosPunk.Rhythm.SfxId.PageTurn); // cambio de hoja entre escenas
 
             // 1) La cortinilla cubre la pantalla antes de tocar la escena.
             if (_overlay != null)

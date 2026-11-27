@@ -14,6 +14,14 @@ namespace DiosPunk.Rhythm
         [Tooltip("Opcional. Segunda mezcla (guitarra distorsionada / furia) para el Modo Punk. Debe tener la misma duración, " +
                  "frecuencia de muestreo y alineación que el audio base: se reproducen en sincronía exacta (PlayScheduled).")]
         [SerializeField] private AudioClip _punkStemClip;
+
+        [Header("Capas de la canción (opcionales)")]
+        [Tooltip("Backintrack: la base sin la línea principal (ej. #41). Referencia para usos futuros; no se reproduce todavía.")]
+        [SerializeField] private AudioClip _backingTrackClip;
+        [Tooltip("Línea principal / melodía (ej. #42). Referencia para usos futuros; no se reproduce todavía.")]
+        [SerializeField] private AudioClip _leadLineClip;
+
+        [Space]
         [SerializeField, Min(1f)] private float _bpm = 120f;
         [SerializeField] private NoteData[] _notes = System.Array.Empty<NoteData>();
 
@@ -31,6 +39,9 @@ namespace DiosPunk.Rhythm
 
         /// <summary>Pista secundaria del Modo Punk (puede ser null: la canción solo tiene la mezcla base).</summary>
         public AudioClip PunkStemClip => _punkStemClip;
+
+        public AudioClip BackingTrackClip => _backingTrackClip;
+        public AudioClip LeadLineClip => _leadLineClip;
         public float Bpm => _bpm;
 
         /// <summary>Solo lectura por convención: no modificar en runtime.</summary>

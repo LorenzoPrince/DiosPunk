@@ -20,6 +20,10 @@ namespace DiosPunk.Flow
         [SerializeField] private CreditsScreen _credits;
         [SerializeField] private CalibrationScreen _calibration;
 
+        [Header("Música")]
+        [Tooltip("Música del menú principal (#35) en loop. Se pausa durante la calibración para no tapar el metrónomo.")]
+        [SerializeField] private MusicLoop _music;
+
         private ProgressStore _progress;
         private InputAction _escape;
 
@@ -52,10 +56,21 @@ namespace DiosPunk.Flow
             _calibration.Completed += OnCalibrationCompleted;
             _calibration.SkipRequested += OnCalibrationSkipped;
             _calibration.BackRequested += CloseCalibration;
+
+            Machine.Changed += OnStateChangedForMusic;
+        }
+
+        // La calibración usa un metrónomo: la música del menú se pausa mientras dura y vuelve al salir.
+        private void OnStateChangedForMusic(GameState previous, GameState next)
+        {
+            if (_music == null) return;
+            if (next == GameState.Calibration) _music.Pause();
+            else if (previous == GameState.Calibration) _music.Resume();
         }
 
         private void OnDisable()
         {
+            Machine.Changed -= OnStateChangedForMusic;
             _escape.Disable();
 
             _mainMenu.PlayRequested -= OnPlayRequested;
@@ -89,6 +104,15 @@ namespace DiosPunk.Flow
 
             // Al volver desde el gameplay ("Selector") se abre directamente el selector.
             Machine.Force(GameSession.ConsumeOpenLevelSelect() ? GameState.LevelSelect : GameState.MainMenu);
+
+            if (_music != null) _music.Play();
+
+            // Sonido de arranque (#34): una sola vez por ejecución del juego, no al volver del gameplay.
+            if (!GameSession.SplashPlayed)
+            {
+                GameSession.SplashPlayed = true;
+                SoundEffectManager.Play(SfxId.Splash);
+            }
         }
 
         // ---------- Menú principal ----------

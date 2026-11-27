@@ -1,4 +1,5 @@
 using System;
+using DiosPunk.Rhythm;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -32,6 +33,8 @@ namespace DiosPunk.Flow
 
         [Header("Mecanografiado")]
         [SerializeField, Min(1f)] private float _charsPerSecond = 45f;
+        [Tooltip("Cada cuántos caracteres revelados suena la birome (#44 a #48).")]
+        [SerializeField, Min(1)] private int _charsPerPenSound = 3;
 
         private DialogueData _data;
         private int _index;
@@ -39,6 +42,7 @@ namespace DiosPunk.Flow
         private bool _finished;
         private float _revealed;
         private int _totalChars;
+        private int _lastPenChar;
 
         /// <summary>Se terminó, se saltó o se eligió una respuesta.</summary>
         public event Action Finished;
@@ -86,7 +90,17 @@ namespace DiosPunk.Flow
             _revealed += Time.unscaledDeltaTime * _charsPerSecond;
             int visible = (int)_revealed;
             if (visible >= _totalChars) CompleteLine();
-            else _bodyText.maxVisibleCharacters = visible;
+            else
+            {
+                _bodyText.maxVisibleCharacters = visible;
+
+                // Birome al escribir: un trazo cada _charsPerPenSound letras nuevas (sin sonar en los espacios).
+                if (visible - _lastPenChar >= _charsPerPenSound)
+                {
+                    _lastPenChar = visible;
+                    SoundEffectManager.Play(SfxId.Pen);
+                }
+            }
         }
 
         private void ShowLine()
@@ -108,6 +122,7 @@ namespace DiosPunk.Flow
             _bodyText.ForceMeshUpdate();
             _totalChars = _bodyText.textInfo.characterCount;
             _revealed = 0f;
+            _lastPenChar = 0;
             _typing = _totalChars > 0;
             if (!_typing) _bodyText.maxVisibleCharacters = int.MaxValue;
         }
@@ -129,6 +144,7 @@ namespace DiosPunk.Flow
             }
 
             _index++;
+            SoundEffectManager.Play(SfxId.PageTurn); // cambio de hoja al avanzar el diálogo
             if (_data != null && _index < _data.Lines.Length) ShowLine();
             else if (_data != null && _data.Choices.Length > 0) ShowChoices();
             else Finish();

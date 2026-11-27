@@ -16,6 +16,9 @@ namespace DiosPunk.Flow
         private static ProgressStore s_progress;
         private static int s_levelCount;
 
+        /// <summary>true si el sonido de arranque (#34) ya se reprodujo en esta ejecución.</summary>
+        public static bool SplashPlayed { get; set; }
+
         /// <summary>Índice base 0 del nivel a jugar en la escena Gameplay.</summary>
         public static int SelectedLevelIndex { get; set; }
 
@@ -101,6 +104,7 @@ namespace DiosPunk.Flow
             s_progress = null;
             s_levelCount = 0;
             SelectedLevelIndex = 0;
+            SplashPlayed = false;
             OpenLevelSelectOnMenu = false;
             DifficultyModifier = 0;
             ScenarioVariant = 0;

@@ -15,7 +15,18 @@ namespace DiosPunk.Rhythm
         TomatoImpact,
         ShieldBreak,
         PunkActivate,
-        PunkShout
+        PunkShout,
+        // Audio definitivo (guía de audio del equipo). Se agregan al final para no alterar los valores existentes.
+        Splash,
+        UiImportant,
+        PageTurn,
+        Pen,
+        LevelStart,
+        ResultExcellent,
+        ResultGood,
+        CrowdShout,
+        Cheer,
+        Motto
     }
 
     /// <summary>
@@ -76,13 +87,47 @@ namespace DiosPunk.Rhythm
         [Header("Modo Punk")]
         [Tooltip("Efecto de activación (acorde distorsionado, golpe de platillo, etc.).")]
         [SerializeField] private SfxEntry _punkActivate = new SfxEntry();
-        [Tooltip("Arengas / frases breves de Javier al llegar al 100 %. Se elige una al azar.")]
+        [Tooltip("Arengas / frases breves de Javier al llegar al 100 % (#10 a #16). Se elige una al azar, sin repetir seguidas.")]
         [SerializeField] private SfxEntry _punkShout = new SfxEntry();
+
+        [Header("Flujo y narrativa (audio definitivo)")]
+        [Tooltip("#34 Inicio del juego / splash.")]
+        [SerializeField] private SfxEntry _splash = new SfxEntry();
+        [Tooltip("#43 Opción importante / Comenzar.")]
+        [SerializeField] private SfxEntry _uiImportant = new SfxEntry();
+        [Tooltip("#49 a #52 Cambio de hoja (transiciones y avance de diálogo). Varias tomas, sin repetir seguidas.")]
+        [SerializeField] private SfxEntry _pageTurn = new SfxEntry();
+        [Tooltip("#44 a #48 Birome (mecanografiado de los diálogos pre-nivel).")]
+        [SerializeField] private SfxEntry _pen = new SfxEntry();
+        [Tooltip("#33 Inicio de nivel.")]
+        [SerializeField] private SfxEntry _levelStart = new SfxEntry();
+        [Tooltip("#31 Resultados excelentes (precisión >= 85 %).")]
+        [SerializeField] private SfxEntry _resultExcellent = new SfxEntry();
+        [Tooltip("#32 Resultados del muy bueno para abajo.")]
+        [SerializeField] private SfxEntry _resultGood = new SfxEntry();
+
+        [Header("Arengas en partida (voz de Javier)")]
+        [Tooltip("#00 a #05 Gritos.")]
+        [SerializeField] private SfxEntry _crowdShout = new SfxEntry();
+        [Tooltip("#06 a #09 Festejos.")]
+        [SerializeField] private SfxEntry _cheer = new SfxEntry();
+        [Tooltip("#17 a #30 Lemas.")]
+        [SerializeField] private SfxEntry _motto = new SfxEntry();
 
         public SfxEntry Get(SfxId id)
         {
             switch (id)
             {
+                case SfxId.Splash: return _splash;
+                case SfxId.UiImportant: return _uiImportant;
+                case SfxId.PageTurn: return _pageTurn;
+                case SfxId.Pen: return _pen;
+                case SfxId.LevelStart: return _levelStart;
+                case SfxId.ResultExcellent: return _resultExcellent;
+                case SfxId.ResultGood: return _resultGood;
+                case SfxId.CrowdShout: return _crowdShout;
+                case SfxId.Cheer: return _cheer;
+                case SfxId.Motto: return _motto;
                 case SfxId.UiClick: return _uiClick;
                 case SfxId.UiHover: return _uiHover;
                 case SfxId.HitPerfect: return _hitPerfect;

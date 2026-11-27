@@ -1,3 +1,4 @@
+using DiosPunk.Rhythm;
 using UnityEngine;
 
 namespace DiosPunk.Flow
@@ -19,7 +20,20 @@ namespace DiosPunk.Flow
             _flow.Machine.Changed -= OnStateChanged;
         }
 
-        private void OnStateChanged(GameState previous, GameState next) => Apply();
+        private bool _firstChangeSeen;
+
+        private void OnStateChanged(GameState previous, GameState next)
+        {
+            Apply();
+
+            // Cambio de hoja entre pantallas. No en el estado inicial de la escena (la cortinilla ya suena) ni
+            // dentro del juego (pausa, Game Over, resultados): ahí manda el feedback propio de cada caso.
+            if (_firstChangeSeen && previous != GameState.Gameplay && next != GameState.Gameplay)
+            {
+                SoundEffectManager.Play(SfxId.PageTurn);
+            }
+            _firstChangeSeen = true;
+        }
 
         private void Apply()
         {

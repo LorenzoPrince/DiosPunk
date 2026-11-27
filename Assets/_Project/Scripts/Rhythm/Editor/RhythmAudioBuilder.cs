@@ -114,6 +114,9 @@ namespace DiosPunk.Rhythm.Editor
 
             EditorUtility.SetDirty(library);
             AssetDatabase.SaveAssetIfDirty(library);
+
+            // Audio definitivo del equipo (Imports/Audio) sobre los placeholders.
+            MapDefinitiveSfx(library);
         }
 
         private static string LibraryField(SfxId id)
@@ -129,18 +132,31 @@ namespace DiosPunk.Rhythm.Editor
                 case SfxId.TomatoImpact: return "_tomatoImpact";
                 case SfxId.ShieldBreak: return "_shieldBreak";
                 case SfxId.PunkActivate: return "_punkActivate";
-                default: return "_punkShout";
+                case SfxId.PunkShout: return "_punkShout";
+                case SfxId.Splash: return "_splash";
+                case SfxId.UiImportant: return "_uiImportant";
+                case SfxId.PageTurn: return "_pageTurn";
+                case SfxId.Pen: return "_pen";
+                case SfxId.LevelStart: return "_levelStart";
+                case SfxId.ResultExcellent: return "_resultExcellent";
+                case SfxId.ResultGood: return "_resultGood";
+                case SfxId.CrowdShout: return "_crowdShout";
+                case SfxId.Cheer: return "_cheer";
+                default: return "_motto";
             }
         }
 
         /// <summary>true si el campo está vacío o solo contiene placeholders generados (no hay audio definitivo que proteger).</summary>
-        private static bool AssignableWithPlaceholders(SerializedProperty clips)
+        private static bool AssignableWithPlaceholders(SerializedProperty clips, string alsoAllowedDir = null)
         {
             for (int i = 0; i < clips.arraySize; i++)
             {
                 UnityEngine.Object clip = clips.GetArrayElementAtIndex(i).objectReferenceValue;
                 if (clip == null) continue;
-                if (!AssetDatabase.GetAssetPath(clip).StartsWith(SfxDir, StringComparison.Ordinal)) return false;
+                string path = AssetDatabase.GetAssetPath(clip);
+                if (path.StartsWith(SfxDir, StringComparison.Ordinal)) continue;
+                if (alsoAllowedDir != null && path.StartsWith(alsoAllowedDir, StringComparison.Ordinal)) continue;
+                return false;
             }
             return true;
         }

@@ -82,8 +82,9 @@ namespace DiosPunk.Rhythm
         public int TotalNotes => _notes.Length;
 
         /// <summary>
-        /// Duración de la pista en segundos desde el primer sample del audio: instante de la última nota más un
-        /// pequeño margen (el nivel termina al resolverse la última nota). 0 si no hay canción cargada.
+        /// Duración de la pista en segundos desde el primer sample del audio: el mayor entre la última nota (más un
+        /// pequeño margen) y la duración del AudioClip. El nivel termina al resolverse la última nota y llegar a este
+        /// instante. 0 si no hay canción cargada.
         /// </summary>
         public float DurationSeconds { get; private set; }
         public int ActiveNoteCount => _active.Count;
@@ -215,7 +216,8 @@ namespace DiosPunk.Rhythm
 
             UpdateNotePositions(songTime);
 
-            if (_nextSpawn >= _notes.Length && _active.Count == 0)
+            // El nivel termina al resolverse la última nota Y al acabar el audio (clip.length): no se corta el final del tema.
+            if (_nextSpawn >= _notes.Length && _active.Count == 0 && songTime >= DurationSeconds)
             {
                 _running = false;
                 SongFinished?.Invoke();
@@ -319,7 +321,12 @@ namespace DiosPunk.Rhythm
             _notesBuiltFor = _song;
 
             // _notes está ordenada por tiempo: la última es la más tardía.
-            DurationSeconds = _notes.Length > 0 ? (float)_notes[_notes.Length - 1].targetTimeDSP + 0.1f : 0f;
+            float lastNote = _notes.Length > 0 ? (float)_notes[_notes.Length - 1].targetTimeDSP + 0.1f : 0f;
+
+            // La duración real es la del audio (si es más larga que el chart): así el nivel y la barra de progreso
+            // llegan al final del tema (p. ej. 83,2 s) y no a la última nota (78,5 s).
+            float audioLength = _song != null && _song.AudioClip != null ? _song.AudioClip.length : 0f;
+            DurationSeconds = Mathf.Max(lastNote, audioLength);
         }
 
         private void RecomputeDerived()
