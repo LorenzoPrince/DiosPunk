@@ -1,0 +1,31 @@
+En esta carpeta encontramos los audios para el proyecto.
+
+
+En el siguiente link encontras para que son cada audio actualizado:
+
+https://docs.google.com/spreadsheets/d/1dqxcpJnQpTJMoywYEw28qSH5LPeZaugy/edit?gid=1778241084#gid=1778241084
+
+Sacado del documento:
+
+#34	Inicio del Juego / Splash logos	SX	ARRANQUE
+#35	Menu principal musica	MX	MENU PRINCIPAL
+#36	Pre Nivel musica	MX	PRE NIVEL
+			
+#38	Sonido elegir	SX	UNI
+#39	Hover menu	SX	UNI
+			
+#41	Tema 1, Backintrack Volver a soñar	MX	CANCION EN CURSO
+#42	Tema 1, LineaPrincipal Volver a soñar	MX	CANCION EN CURSO
+#43	Sondo al elegir una opcion importante	SX	UNI
+#44	Sonido birome1	SX	PRE NIVEL
+#45	Sonido birome2	SX	PRE NIVEL
+#46	Sonido birome3	SX	PRE NIVEL
+#47	Sonido birome4	SX	PRE NIVEL
+#48	Sonido birome5	SX	PRE NIVEL
+#49	Cambio de hoja entre eventos1	SX	UNI
+#50	Cambio de hoja entre eventos2	SX	UNI
+#51	Cambio de hoja entre eventos3	SX	UNI
+#52	Cambio de hoja entre eventos4	SX	UNI
+			
+			
+			

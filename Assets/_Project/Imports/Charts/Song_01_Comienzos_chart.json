@@ -1,0 +1,612 @@
+{
+ "_formato": "Dios Punk chart v1. 'beat' es la fuente de verdad: tiempo = firstBeatSeconds + beat*60/bpm + globalOffsetMs/1000. 'time' viene precalculado (segundos desde el primer sample del audio) por si se carga sin importer. lane: 0 rojo, 1 amarillo, 2 verde, 3 azul.",
+ "songResource": "Song_01_Comienzos",
+ "title": "Volver a soñar",
+ "audioBase": "Nivel 1 MUESTRA.mp3 (mezcla completa = Mx_Nivel1bk_41 + Mx_Nivel1p_42)",
+ "bpm": 101.0,
+ "firstBeatSeconds": 2.4209,
+ "globalOffsetMs": 0.0,
+ "difficulty": "Nivel 1 (equivalente Easy/Medium de Guitar Hero)",
+ "notes": [
+  {
+   "beat": 0,
+   "time": 2.4209,
+   "lane": 2,
+   "isDebuffNote": false,
+   "section": "Intro",
+   "pitch": "E"
+  },
+  {
+   "beat": 4,
+   "time": 4.7971,
+   "lane": 0,
+   "isDebuffNote": false,
+   "section": "Intro",
+   "pitch": "G#m"
+  },
+  {
+   "beat": 8,
+   "time": 7.1734,
+   "lane": 1,
+   "isDebuffNote": false,
+   "section": "Intro",
+   "pitch": "C#m"
+  },
+  {
+   "beat": 12,
+   "time": 9.5496,
+   "lane": 0,
+   "isDebuffNote": false,
+   "section": "Intro",
+   "pitch": "G#m"
+  },
+  {
+   "beat": 16,
+   "time": 11.9259,
+   "lane": 1,
+   "isDebuffNote": false,
+   "section": "Intro",
+   "pitch": "A"
+  },
+  {
+   "beat": 18,
+   "time": 13.114,
+   "lane": 0,
+   "isDebuffNote": false,
+   "section": "Intro",
+   "pitch": "E"
+  },
+  {
+   "beat": 20,
+   "time": 14.3021,
+   "lane": 0,
+   "isDebuffNote": false,
+   "section": "Intro",
+   "pitch": "E"
+  },
+  {
+   "beat": 24,
+   "time": 16.6783,
+   "lane": 1,
+   "isDebuffNote": false,
+   "section": "Intro",
+   "pitch": "A"
+  },
+  {
+   "beat": 26,
+   "time": 17.8664,
+   "lane": 1,
+   "isDebuffNote": false,
+   "section": "Intro",
+   "pitch": "A"
+  },
+  {
+   "beat": 28,
+   "time": 19.0546,
+   "lane": 2,
+   "isDebuffNote": false,
+   "section": "Intro",
+   "pitch": "B"
+  },
+  {
+   "beat": 29,
+   "time": 19.6486,
+   "lane": 2,
+   "isDebuffNote": false,
+   "section": "Intro",
+   "pitch": "B"
+  },
+  {
+   "beat": 30,
+   "time": 20.2427,
+   "lane": 2,
+   "isDebuffNote": false,
+   "section": "Intro",
+   "pitch": "B"
+  },
+  {
+   "beat": 32,
+   "time": 21.4308,
+   "lane": 1,
+   "isDebuffNote": false,
+   "section": "Verso A",
+   "pitch": "G#4"
+  },
+  {
+   "beat": 33,
+   "time": 22.0249,
+   "lane": 0,
+   "isDebuffNote": false,
+   "section": "Verso A",
+   "pitch": "F#4"
+  },
+  {
+   "beat": 35,
+   "time": 23.213,
+   "lane": 2,
+   "isDebuffNote": false,
+   "section": "Verso A",
+   "pitch": "A4"
+  },
+  {
+   "beat": 37.5,
+   "time": 24.6981,
+   "lane": 1,
+   "isDebuffNote": false,
+   "section": "Verso A",
+   "pitch": "G#4"
+  },
+  {
+   "beat": 40,
+   "time": 26.1833,
+   "lane": 2,
+   "isDebuffNote": false,
+   "section": "Verso A",
+   "pitch": "C#5"
+  },
+  {
+   "beat": 41.5,
+   "time": 27.0744,
+   "lane": 2,
+   "isDebuffNote": false,
+   "section": "Verso A",
+   "pitch": "C#5"
+  },
+  {
+   "beat": 43,
+   "time": 27.9655,
+   "lane": 3,
+   "isDebuffNote": false,
+   "section": "Verso A",
+   "pitch": "D5"
+  },
+  {
+   "beat": 44,
+   "time": 28.5595,
+   "lane": 1,
+   "isDebuffNote": false,
+   "section": "Verso A",
+   "pitch": "B4"
+  },
+  {
+   "beat": 45.5,
+   "time": 29.4506,
+   "lane": 1,
+   "isDebuffNote": false,
+   "section": "Verso A",
+   "pitch": "B4"
+  },
+  {
+   "beat": 48,
+   "time": 30.9358,
+   "lane": 3,
+   "isDebuffNote": false,
+   "section": "Verso A",
+   "pitch": "E5"
+  },
+  {
+   "beat": 48.75,
+   "time": 31.3813,
+   "lane": 2,
+   "isDebuffNote": false,
+   "section": "Verso A",
+   "pitch": "B4"
+  },
+  {
+   "beat": 52,
+   "time": 33.312,
+   "lane": 2,
+   "isDebuffNote": false,
+   "section": "Verso A",
+   "pitch": "B4"
+  },
+  {
+   "beat": 56,
+   "time": 35.6882,
+   "lane": 1,
+   "isDebuffNote": false,
+   "section": "Puente grave",
+   "pitch": "A#4"
+  },
+  {
+   "beat": 56.75,
+   "time": 36.1338,
+   "lane": 0,
+   "isDebuffNote": false,
+   "section": "Puente grave",
+   "pitch": "E4"
+  },
+  {
+   "beat": 58,
+   "time": 36.8763,
+   "lane": 1,
+   "isDebuffNote": false,
+   "section": "Puente grave",
+   "pitch": "A4"
+  },
+  {
+   "beat": 58.75,
+   "time": 37.3219,
+   "lane": 0,
+   "isDebuffNote": false,
+   "section": "Puente grave",
+   "pitch": "E4"
+  },
+  {
+   "beat": 60,
+   "time": 38.0645,
+   "lane": 1,
+   "isDebuffNote": false,
+   "section": "Puente grave",
+   "pitch": "F#4"
+  },
+  {
+   "beat": 64,
+   "time": 40.4407,
+   "lane": 2,
+   "isDebuffNote": false,
+   "section": "Gancho 1",
+   "pitch": "B4"
+  },
+  {
+   "beat": 66,
+   "time": 41.6288,
+   "lane": 3,
+   "isDebuffNote": false,
+   "section": "Gancho 1",
+   "pitch": "E5"
+  },
+  {
+   "beat": 66.75,
+   "time": 42.0744,
+   "lane": 2,
+   "isDebuffNote": false,
+   "section": "Gancho 1",
+   "pitch": "B4"
+  },
+  {
+   "beat": 68,
+   "time": 42.8169,
+   "lane": 2,
+   "isDebuffNote": false,
+   "section": "Gancho 1",
+   "pitch": "B4"
+  },
+  {
+   "beat": 70,
+   "time": 44.0051,
+   "lane": 3,
+   "isDebuffNote": false,
+   "section": "Gancho 1",
+   "pitch": "E5"
+  },
+  {
+   "beat": 70.75,
+   "time": 44.4506,
+   "lane": 2,
+   "isDebuffNote": false,
+   "section": "Gancho 1",
+   "pitch": "B4"
+  },
+  {
+   "beat": 72,
+   "time": 45.1932,
+   "lane": 0,
+   "isDebuffNote": false,
+   "section": "Gancho 1",
+   "pitch": "G#4"
+  },
+  {
+   "beat": 75.25,
+   "time": 47.1239,
+   "lane": 1,
+   "isDebuffNote": false,
+   "section": "Gancho 1",
+   "pitch": "A4"
+  },
+  {
+   "beat": 76,
+   "time": 47.5694,
+   "lane": 0,
+   "isDebuffNote": false,
+   "section": "Gancho 1",
+   "pitch": "G#4"
+  },
+  {
+   "beat": 77,
+   "time": 48.1635,
+   "lane": 1,
+   "isDebuffNote": false,
+   "section": "Gancho 1",
+   "pitch": "A4"
+  },
+  {
+   "beat": 78,
+   "time": 48.7575,
+   "lane": 3,
+   "isDebuffNote": false,
+   "section": "Gancho 1",
+   "pitch": "E5"
+  },
+  {
+   "beat": 80,
+   "time": 49.9457,
+   "lane": 3,
+   "isDebuffNote": false,
+   "section": "Gancho 1",
+   "pitch": "E5"
+  },
+  {
+   "beat": 80.75,
+   "time": 50.3912,
+   "lane": 2,
+   "isDebuffNote": false,
+   "section": "Gancho 1",
+   "pitch": "B4"
+  },
+  {
+   "beat": 82,
+   "time": 51.1338,
+   "lane": 3,
+   "isDebuffNote": false,
+   "section": "Gancho 1",
+   "pitch": "E5"
+  },
+  {
+   "beat": 86.75,
+   "time": 53.9556,
+   "lane": 1,
+   "isDebuffNote": false,
+   "section": "Puente grave 2",
+   "pitch": "G#4"
+  },
+  {
+   "beat": 88,
+   "time": 54.6981,
+   "lane": 2,
+   "isDebuffNote": false,
+   "section": "Puente grave 2",
+   "pitch": "A4"
+  },
+  {
+   "beat": 88.75,
+   "time": 55.1437,
+   "lane": 1,
+   "isDebuffNote": false,
+   "section": "Puente grave 2",
+   "pitch": "G#4"
+  },
+  {
+   "beat": 90,
+   "time": 55.8862,
+   "lane": 2,
+   "isDebuffNote": false,
+   "section": "Puente grave 2",
+   "pitch": "A4"
+  },
+  {
+   "beat": 90.75,
+   "time": 56.3318,
+   "lane": 1,
+   "isDebuffNote": false,
+   "section": "Puente grave 2",
+   "pitch": "G#4"
+  },
+  {
+   "beat": 91.5,
+   "time": 56.7773,
+   "lane": 0,
+   "isDebuffNote": false,
+   "section": "Puente grave 2",
+   "pitch": "E4"
+  },
+  {
+   "beat": 94.75,
+   "time": 58.708,
+   "lane": 1,
+   "isDebuffNote": false,
+   "section": "Puente grave 2",
+   "pitch": "G#4"
+  },
+  {
+   "beat": 95.5,
+   "time": 59.1536,
+   "lane": 2,
+   "isDebuffNote": false,
+   "section": "Puente grave 2",
+   "pitch": "A4"
+  },
+  {
+   "beat": 96.5,
+   "time": 59.7476,
+   "lane": 0,
+   "isDebuffNote": false,
+   "section": "Puente grave 2",
+   "pitch": "E4"
+  },
+  {
+   "beat": 100,
+   "time": 61.8268,
+   "lane": 1,
+   "isDebuffNote": false,
+   "section": "Gancho 2",
+   "pitch": "B4"
+  },
+  {
+   "beat": 102,
+   "time": 63.015,
+   "lane": 3,
+   "isDebuffNote": false,
+   "section": "Gancho 2",
+   "pitch": "E5"
+  },
+  {
+   "beat": 102.75,
+   "time": 63.4605,
+   "lane": 2,
+   "isDebuffNote": false,
+   "section": "Gancho 2",
+   "pitch": "D#5"
+  },
+  {
+   "beat": 104,
+   "time": 64.2031,
+   "lane": 1,
+   "isDebuffNote": false,
+   "section": "Gancho 2",
+   "pitch": "B4"
+  },
+  {
+   "beat": 104.75,
+   "time": 64.6486,
+   "lane": 0,
+   "isDebuffNote": false,
+   "section": "Gancho 2",
+   "pitch": "A4"
+  },
+  {
+   "beat": 106,
+   "time": 65.3912,
+   "lane": 3,
+   "isDebuffNote": false,
+   "section": "Gancho 2",
+   "pitch": "E5"
+  },
+  {
+   "beat": 106.75,
+   "time": 65.8367,
+   "lane": 2,
+   "isDebuffNote": false,
+   "section": "Gancho 2",
+   "pitch": "D#5"
+  },
+  {
+   "beat": 108,
+   "time": 66.5793,
+   "lane": 1,
+   "isDebuffNote": false,
+   "section": "Gancho 2",
+   "pitch": "B4"
+  },
+  {
+   "beat": 110,
+   "time": 67.7674,
+   "lane": 3,
+   "isDebuffNote": false,
+   "section": "Gancho 2",
+   "pitch": "E5"
+  },
+  {
+   "beat": 110.75,
+   "time": 68.213,
+   "lane": 2,
+   "isDebuffNote": false,
+   "section": "Gancho 2",
+   "pitch": "D#5"
+  },
+  {
+   "beat": 112,
+   "time": 68.9556,
+   "lane": 0,
+   "isDebuffNote": false,
+   "section": "Clímax",
+   "pitch": "B4"
+  },
+  {
+   "beat": 114,
+   "time": 70.1437,
+   "lane": 1,
+   "isDebuffNote": false,
+   "section": "Clímax",
+   "pitch": "C5"
+  },
+  {
+   "beat": 114.75,
+   "time": 70.5892,
+   "lane": 3,
+   "isDebuffNote": false,
+   "section": "Clímax",
+   "pitch": "G#5"
+  },
+  {
+   "beat": 116,
+   "time": 71.3318,
+   "lane": 2,
+   "isDebuffNote": false,
+   "section": "Clímax",
+   "pitch": "D#5"
+  },
+  {
+   "beat": 118,
+   "time": 72.5199,
+   "lane": 3,
+   "isDebuffNote": false,
+   "section": "Clímax",
+   "pitch": "B5"
+  },
+  {
+   "beat": 120,
+   "time": 73.708,
+   "lane": 0,
+   "isDebuffNote": false,
+   "section": "Clímax",
+   "pitch": "E5"
+  },
+  {
+   "beat": 120.75,
+   "time": 74.1536,
+   "lane": 0,
+   "isDebuffNote": false,
+   "section": "Clímax",
+   "pitch": "E5"
+  },
+  {
+   "beat": 122,
+   "time": 74.8961,
+   "lane": 3,
+   "isDebuffNote": false,
+   "section": "Clímax",
+   "pitch": "A5"
+  },
+  {
+   "beat": 122.75,
+   "time": 75.3417,
+   "lane": 2,
+   "isDebuffNote": false,
+   "section": "Clímax",
+   "pitch": "G#5"
+  },
+  {
+   "beat": 124,
+   "time": 76.0843,
+   "lane": 1,
+   "isDebuffNote": false,
+   "section": "Clímax",
+   "pitch": "F#5"
+  },
+  {
+   "beat": 124.75,
+   "time": 76.5298,
+   "lane": 1,
+   "isDebuffNote": false,
+   "section": "Clímax",
+   "pitch": "F#5"
+  },
+  {
+   "beat": 126,
+   "time": 77.2724,
+   "lane": 3,
+   "isDebuffNote": false,
+   "section": "Clímax",
+   "pitch": "A5"
+  },
+  {
+   "beat": 128,
+   "time": 78.4605,
+   "lane": 0,
+   "isDebuffNote": false,
+   "section": "Final",
+   "pitch": "E5"
+  }
+ ]
+}
