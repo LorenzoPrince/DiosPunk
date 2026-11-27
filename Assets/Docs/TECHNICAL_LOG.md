@@ -429,7 +429,14 @@ Una entrada por decisión; nunca se borran (si cambian: `Superseded by ADR-XXX`)
 - **Período de gracia de sonidos de UI:** `UiSfxTrigger` ignora hover y navegación durante los primeros 0,25 s tras cargarse la escena y mientras corre la entrada animada (`MenuIntroAnimator.IsPlaying`): los botones se mueven bajo el puntero y la selección inicial se asigna sola, y antes eso podía disparar varios hover juntos. El clic y el submit no se silencian.
 - **Pendiente en vivo:** confirmar con audio real que el arranque suena solo con el Splash y la música del menú, y que con Play desde Gameplay ahora se llega al menú. Si el menú sigue sin verse, indicar desde qué escena se dio Play y qué muestra la ventana Game.
 
-<!-- Añadir ADR-047+ debajo -->
+### ADR-048 — Verificación del ocultamiento de la pantalla de atrás (Opciones / Selector): sin cambios de código
+- **Estado:** Aceptada (verificada con raycasts del `EventSystem` en Play Mode; **sin probar con el mouse real**) · **Fecha:** 2026-11-27 · Revisa ADR-046.
+- **Reporte:** al abrir Opciones o el Selector desde el menú (y Opciones desde la pausa) todavía se percibía el mouse sobre lo de atrás.
+- **Lo que ya hacía el código:** `MainMenuScreen` y `PauseMenuScreen` son `ScreenPanel` visibles solo en su propio estado (`MainMenu` / `PauseMenu`), así que bajo Opciones o el Selector su GameObject raíz está **inactivo** (el cable, las ilustraciones y los botones son hijos suyos). Al volver se reactiva solo, y `MenuIntroAnimator` no se repite (`_played`).
+- **Medición:** raycasts en una grilla de la pantalla. Menú principal: golpea los botones del menú. Con Opciones abierto: `MainMenuScreen.activeInHierarchy = false` y el único objeto que recibe puntero es el de Opciones (`RecalibrateButton`); con el Selector: solo `Level1Button`…`Level5Button`. Al volver al menú: `introPlaying = false`, todos los elementos en `alpha = 1` y sin bloqueos (no se repite la cascada).
+- **Conclusión:** no hay nada del menú principal que reciba el mouse bajo esas pantallas, por lo que no se tocó el código ni se regeneraron las escenas. Lo que se mueve bajo el puntero son los botones propios de la pantalla abierta (los del Selector y de Opciones ocupan la misma zona que los del menú). Si el síntoma persiste, hace falta saber qué objeto exacto reacciona (nombre en la Jerarquía durante el hover) y qué pantalla estaba abierta.
+
+<!-- Añadir ADR-049+ debajo -->
 
 ---
 
