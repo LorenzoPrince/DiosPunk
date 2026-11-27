@@ -19,21 +19,35 @@ namespace DiosPunk.Flow
 
         private SfxId ClickId => Important ? SfxId.UiImportant : SfxId.UiClick;
 
+        // Período de gracia al cargar la escena: el hover/navegación no suenan durante los primeros 0,25 s ni mientras corre la
+        // entrada animada del menú (los botones se mueven bajo el puntero y la selección inicial se asigna sola).
+        private const float StartupGraceSeconds = 0.25f;
+        private static float s_graceUntil;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => s_graceUntil = 0f;
+
+        private static bool HoverMuted => MenuIntroAnimator.IsPlaying || Time.unscaledTime < s_graceUntil;
+
         private void Awake()
         {
             _selectable = GetComponent<Selectable>();
+            float until = Time.unscaledTime + StartupGraceSeconds;
+            if (until > s_graceUntil) s_graceUntil = until;
         }
 
-        private bool Interactable => _selectable == null || _selectable.IsInteractable();
+        // Sin sonido si el control no es interactable o su pantalla está tapada/bloqueada por un CanvasGroup (p. ej. el menú
+        // principal bajo Opciones): no se oye el hover ni el clic de lo que está detrás.
+        private bool Interactable => (_selectable == null || _selectable.IsInteractable()) && !UiInputGuard.IsBlocked(this);
 
         public void OnPointerEnter(PointerEventData eventData)
         {
-            if (Interactable) SoundEffectManager.Play(SfxId.UiHover);
+            if (!HoverMuted && Interactable) SoundEffectManager.Play(SfxId.UiHover);
         }
 
         public void OnMove(AxisEventData eventData)
         {
-            if (Interactable) SoundEffectManager.Play(SfxId.UiHover);
+            if (!HoverMuted && Interactable) SoundEffectManager.Play(SfxId.UiHover);
         }
 
         public void OnPointerClick(PointerEventData eventData)

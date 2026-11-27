@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace DiosPunk.Flow
 {
@@ -11,8 +12,20 @@ namespace DiosPunk.Flow
     {
         [SerializeField] private SelectionMarker _marker;
 
+        private bool Blocked
+        {
+            get
+            {
+                if (UiInputGuard.IsBlocked(this)) return true;
+                return TryGetComponent(out Selectable selectable) && !selectable.IsInteractable();
+            }
+        }
+
         public void OnPointerEnter(PointerEventData eventData)
         {
+            // Una pantalla tapada por otra (o un botón no interactable) no mueve la marca ni toma el foco.
+            if (Blocked) return;
+
             EventSystem es = EventSystem.current;
             if (es != null && es.currentSelectedGameObject != gameObject) es.SetSelectedGameObject(gameObject); // dispara OnSelect
             else Mark();
@@ -22,7 +35,7 @@ namespace DiosPunk.Flow
 
         private void Mark()
         {
-            if (_marker != null) _marker.MoveTo((RectTransform)transform);
+            if (_marker != null && !Blocked) _marker.MoveTo((RectTransform)transform);
         }
     }
 }

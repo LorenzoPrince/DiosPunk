@@ -30,11 +30,19 @@ namespace DiosPunk.Flow
         [Tooltip("Se reubica sobre el botón marcado al terminar (los botones se movieron durante la animación).")]
         [SerializeField] private SelectionMarker _marker;
 
+        private const float MaxFrameStep = 1f / 30f;
+
         private Vector2[] _basePositions;
         private float _elapsed;
         private float _total;
         private bool _running;
         private bool _played;
+
+        /// <summary>true mientras alguna entrada animada está en curso (los sonidos de hover de la UI se silencian).</summary>
+        public static bool IsPlaying { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => IsPlaying = false;
 
         private void Awake()
         {
@@ -53,15 +61,25 @@ namespace DiosPunk.Flow
 
             _elapsed = 0f;
             _running = true;
+            IsPlaying = true;
             if (_inputGate != null) _inputGate.blocksRaycasts = false;
             Apply(0f);
+        }
+
+        private void OnDisable()
+        {
+            // Si la pantalla se oculta a mitad de la entrada, todo queda en su estado final: nunca queda un elemento en alpha 0
+            // ni el grupo bloqueado para la próxima vez que se muestre.
+            if (_running) Finish();
         }
 
         private void Update()
         {
             if (!_running) return;
 
-            _elapsed += Time.unscaledDeltaTime;
+            // El primer cuadro tras cargar la escena puede durar medio segundo o más: se limita el paso para que la cascada no
+            // se "saltee" entera y se vea completa desde su comienzo.
+            _elapsed += Mathf.Min(Time.unscaledDeltaTime, MaxFrameStep);
             if (_elapsed >= _total)
             {
                 Finish();
@@ -91,8 +109,13 @@ namespace DiosPunk.Flow
             Apply(_total);
             _running = false;
             _played = true;
+            IsPlaying = false;
             if (_inputGate != null) _inputGate.blocksRaycasts = true;
-            if (_marker != null) _marker.Refresh();
+            if (_marker != null && isActiveAndEnabled)
+            {
+                _marker.Refresh();
+                _marker.SelectDefaultIfNone(); // el teclado funciona apenas termina la entrada
+            }
         }
     }
 }

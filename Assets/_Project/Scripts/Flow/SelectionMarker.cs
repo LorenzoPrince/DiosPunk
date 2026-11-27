@@ -48,6 +48,20 @@ namespace DiosPunk.Flow
             if (es != null) es.SetSelectedGameObject(_defaultTarget.gameObject);
         }
 
+        /// <summary>
+        /// Da el foco al botón por defecto si no hay ninguno válido seleccionado. Se llama al terminar la entrada animada del
+        /// menú (durante ella la pantalla está bloqueada y la selección inicial no pudo asignarse).
+        /// </summary>
+        public void SelectDefaultIfNone()
+        {
+            EventSystem es = EventSystem.current;
+            if (es == null || _defaultTarget == null) return;
+
+            GameObject selected = es.currentSelectedGameObject;
+            if (selected != null && !UiInputGuard.IsBlocked(selected.transform)) return;
+            es.SetSelectedGameObject(_defaultTarget.gameObject);
+        }
+
         /// <summary>Mueve la marca hacia un botón. snap = true la coloca de inmediato (sin seguimiento).</summary>
         public void MoveTo(RectTransform target, bool snap = false)
         {

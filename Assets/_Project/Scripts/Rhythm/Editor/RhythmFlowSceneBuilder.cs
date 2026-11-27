@@ -884,6 +884,12 @@ namespace DiosPunk.Rhythm.Editor
             for (int i = 0; i < states.Length; i++) visible.GetArrayElementAtIndex(i).intValue = (int)states[i];
 
             so.FindProperty("_keepWhenOptionsFromPause").boolValue = keepWhenOptionsFromPause;
+
+            // Pantallas de UI (con RectTransform): un CanvasGroup bloquea su interacción cuando no son la activa y la restaura
+            // al volver. El mundo de juego (pista) no es UI y no lleva grupo.
+            SerializedProperty inputGroup = so.FindProperty("_inputGroup");
+            inputGroup.objectReferenceValue = go.GetComponent<RectTransform>() != null ? GetOrAdd<CanvasGroup>(go) : null;
+
             so.ApplyModifiedPropertiesWithoutUndo();
             return panel;
         }
